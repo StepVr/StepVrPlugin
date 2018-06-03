@@ -1,0 +1,31 @@
+{
+  "CanContainContent": false,
+  "Category": "Virtual Reality",
+  "CreatedBy": "StepVR",
+  "CreatedByURL": "",
+  "Description": "Support for the StepVR API",
+  "DocsURL": "",
+  "EnabledByDefault": true,
+  "FileVersion": 3,
+  "FriendlyName": "StepVrPlugin",
+  "Installed": false,
+  "EnabledByDefault" : true,
+  "IsBetaVersion": false,
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "Version": 1,
+  "VersionName": "1.0",
+  "Modules": 
+  [
+    {
+      "Name": "StepVrPlugin",
+      "Type": "RunTime",
+      "LoadingPhase": "Default",
+	  "WhitelistPlatforms" :
+			[
+				"Win64",
+				"Win32"
+			]
+    }
+  ]
+}

@@ -1,7 +1,12 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
-#include "StepVrPluginPrivatePCH.h"
+#include "StepVrBPLibrary.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+#include "Runtime/Engine/Classes/Engine/World.h"
+#include "MessageDialog.h"
+#include "LocalDefine.h"
 #include "License/SDKLic.h"
 #include "StepVrGlobal.h"
+
 
 
 UStepVrBPLibrary::UStepVrBPLibrary(const FObjectInitializer& ObjectInitializer)
@@ -9,15 +14,6 @@ UStepVrBPLibrary::UStepVrBPLibrary(const FObjectInitializer& ObjectInitializer)
 {
 
 }
-//void UStepVrBPLibrary::SVDeviceSynchronize(int32 PlayerID)
-//{
-//	//StepVrServer::Get()->SetPLayerID(PlayerID);
-//}
-//
-//void UStepVrBPLibrary::SVDeviceEndSynchonize(int32 PlayerID)
-//{
-//	//StepVrServer::Get()->SetPLayerID(-1);
-//}
 
 bool UStepVrBPLibrary::SVStepVRIsValid()
 {

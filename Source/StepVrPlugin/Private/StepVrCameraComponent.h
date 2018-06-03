@@ -13,9 +13,6 @@ class STEPVRPLUGIN_API UStepVrCameraComponent : public UCameraComponent
 		
 public:
 	virtual void GetCameraView(float DeltaTime, FMinimalViewInfo& DesiredView) override;
-
-
-	virtual void BeginPlay() override;
 private:
 	void RecaclCameraData(float DeltaTime, FMinimalViewInfo& DesiredView);
 };

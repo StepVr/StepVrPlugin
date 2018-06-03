@@ -1,9 +1,7 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
-#include "StepVrPluginPrivatePCH.h"
 #include "StepVrInput.h"
-#include "StepVrBPLibrary.h"
 #include "Features/IModularFeatures.h"
 #include "IPluginManager.h"
+#include "StepVrBPLibrary.h"
 #include "StepVrGlobal.h"
 
 

@@ -6,6 +6,8 @@
 #define STEPVR_SERVER	StepVrGlobal::Get()->GetStepVrServer()
 
 class FStepVrServer;
+
+
 class STEPVRPLUGIN_API StepVrGlobal
 {
 public:

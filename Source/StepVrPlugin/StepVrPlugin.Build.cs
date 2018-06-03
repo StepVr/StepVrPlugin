@@ -14,8 +14,10 @@ public class StepVrPlugin : ModuleRules
     }
     public StepVrPlugin(ReadOnlyTargetRules Target) : base(Target)
     {
-		//外部链接头文件目录
-		PublicIncludePaths.AddRange(
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
+        //外部链接头文件目录
+        PublicIncludePaths.AddRange(
 			new string[] {
 				"StepVrPlugin/Public",
 				// ... add public include paths required here ...

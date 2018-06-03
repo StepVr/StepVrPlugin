@@ -1,10 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-#include "StepVrPluginPrivatePCH.h"
 #include "StepVrGlobal.h"
 #include "StepVrServerModule.h"
 #include "IPluginManager.h"
 #include "StepVrPlugin.h"
-
+#include "LocalDefine.h"
 
 
 StepVrGlobal::StepVrGlobal()
@@ -124,7 +123,11 @@ TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 
 void StepVrGlobal::CreateInstance()
 {
-	if (SingletonInstance.IsValid()) { return; }
+	if (SingletonInstance.IsValid()) 
+	{ 
+		return; 
+	}
+
 	SingletonInstance = MakeShareable(new StepVrGlobal());
 }
 

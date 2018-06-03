@@ -2,9 +2,10 @@
 
 #pragma once
 
-#if AFTER_ENGINEVERSION_413
+#if !!(AFTER_ENGINEVERSION_413)
 #include "CoreMinimal.h"
 #endif
+
 #include "GenericPlatform/GenericApplicationMessageHandler.h"
 #include "Features/IModularFeatures.h"
 #include "Features/IModularFeature.h"

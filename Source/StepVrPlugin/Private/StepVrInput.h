@@ -1,14 +1,14 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 #include "IInputDevice.h"
-#include "IMotionController.h"
+#include "XRMotionControllerBase.h"
 #include "StepVrInputState.h"
 
 
 
 typedef TMap<uint8, int32> MotionSet;
 
-class STEPVRPLUGIN_API FStepVrInput : public IInputDevice ,public IMotionController/* ,public IHapticDevice*/
+class STEPVRPLUGIN_API FStepVrInput : public IInputDevice ,public FXRMotionControllerBase/* ,public IHapticDevice*/
 {
 public:
 	FStepVrInput(const TSharedRef<FGenericApplicationMessageHandler>& InMessageHandler);

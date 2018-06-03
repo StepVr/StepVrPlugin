@@ -1,7 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-#include "StepVrPluginPrivatePCH.h"
 #include "StepVrCameraComponent.h"
+#include "Runtime/Engine/Classes/GameFramework/Pawn.h"
+#include "StepVrBPLibrary.h"
 #include "StepVrGlobal.h"
+#include "LocalDefine.h"
 
 
 
@@ -13,16 +15,6 @@ void UStepVrCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& De
 	{
 		RecaclCameraData(DeltaTime, DesiredView);
 	}
-}
-
-
-void UStepVrCameraComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	//static double __Frequency;
-	//FPlatformTime::InitTiming();
-	//__Frequency = FPlatformTime::GetSecondsPerCycle64();
 }
 
 void UStepVrCameraComponent::RecaclCameraData(float DeltaTime, FMinimalViewInfo& DesiredView)

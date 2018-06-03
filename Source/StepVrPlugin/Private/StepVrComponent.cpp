@@ -1,11 +1,15 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
-//
-#include "StepVrPluginPrivatePCH.h"
-#include "IHeadMountedDisplay.h"
 #include "StepVrComponent.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+#include "Runtime/Engine/Classes/GameFramework/PlayerState.h"
+#include "Runtime/Engine/Classes/GameFramework/Pawn.h"
+#include "Runtime/Engine/Classes/Engine/World.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
+#include "IHeadMountedDisplay.h"
+#include "StepVrBPLibrary.h"
 #include "StepVrInput.h"
 #include "StepVrGlobal.h"
-#include <HeadMountedDisplayFunctionLibrary.h>
+
+
 
 
 bool UStepVrComponent::s_bIsResetOculus = false;
@@ -29,27 +33,25 @@ void UStepVrComponent::ResetHMDForStepVr()
 bool UStepVrComponent::ResetControllPawnRotation()
 {
 	APawn* _pawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	if (!IsValid(_pawn)) { return false; }
+	if (!IsValid(_pawn)) 
+	{ 
+		return false; 
+	}
 
 	_pawn->SetActorRotation(FRotator::ZeroRotator);
-	if (!ResetOculusRif()) {return false;}
-
-	return true;
-}
-
-void UStepVrComponent::BeginPlay()
-{
-	Super::BeginPlay();
+	return ResetOculusRif();
 }
 
 void UStepVrComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	if (!StepVrGlobal::Get()->ServerIsValid()) { return; }
-	STEPVR_SERVER->UnRegistDelegate(PlayerID,this,bIsLocalControll);
+	if (StepVrGlobal::Get()->ServerIsValid()) 
+	{ 
+		STEPVR_SERVER->UnRegistDelegate(PlayerID, this, bIsLocalControll);
 
-	UE_LOG(LogStepVrPlugin, Warning, TEXT("Stop Replicate Player : %d"), PlayerID);
+		UE_LOG(LogStepVrPlugin, Warning, TEXT("Stop Replicate Player : %d"), PlayerID);
+	}
 }
 
 void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
@@ -76,6 +78,7 @@ bool UStepVrComponent::ResetOculusRif()
 #if WITH_EDITOR
 	s_bIsResetOculus = false;
 #endif
+
 	if (!s_bIsResetOculus)
 	{
 		float Yaw = CurrentNodeState.FHead.Rotator().Yaw;
@@ -94,7 +97,10 @@ bool UStepVrComponent::ResetOculusRif()
 
 void UStepVrComponent::TickSimulate()
 {
-	if (!StepVrGlobal::Get()->ServerIsValid()) { return; }
+	if (!StepVrGlobal::Get()->ServerIsValid()) 
+	{ 
+		return; 
+	}
 
 	FTransform* Target = nullptr;
 	for (auto deviceID : StepVrGlobal::Get()->GetReplicatedDevices())

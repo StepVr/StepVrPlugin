@@ -1,7 +1,8 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
-#include "StepVrPluginPrivatePCH.h"
 #include "License/SDKLic.h"
+#include "Runtime/Core/Public/Misc/Paths.h"
 #include "IPluginManager.h"
+#include "LocalDefine.h"
 
 
 /** get gameid */

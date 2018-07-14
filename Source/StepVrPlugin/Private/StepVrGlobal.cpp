@@ -5,6 +5,7 @@
 #include "StepVrPlugin.h"
 #include "LocalDefine.h"
 
+TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 
 StepVrGlobal::StepVrGlobal()
 {
@@ -14,8 +15,10 @@ StepVrGlobal::StepVrGlobal()
 	ReplicateDevicesID.Add(StepVrDeviceID::DHead);
 	ReplicateDevicesID.Add(StepVrDeviceID::DGun);
 
-	/** Init Other Module */
+	//加载本地SDK
 	LoadSDK();
+
+	//加载Server
 	LoadServer();	
 }
 
@@ -24,6 +27,17 @@ StepVrGlobal::~StepVrGlobal()
 	CloseSDK();
 	UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrGlobal END"));
 }
+
+bool StepVrGlobal::ServerIsRun()
+{
+	if (!SingletonInstance.IsValid())
+	{
+		return false;
+	}
+
+	return SingletonInstance->ServerIsValid();
+}
+
 void StepVrGlobal::LoadServer()
 {
 	IModularFeatures& _ModularFeatures = IModularFeatures::Get();
@@ -114,12 +128,6 @@ void StepVrGlobal::SetReplicatedDevices(TArray<int32> Devices)
 	if (!StepVrServer.IsValid()) { return; }
 	StepVrServer->SetReplciatedDeviceID(Devices);
 }
-
-/**
-* 
-* Create Singleton Instance	
-*/
-TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 
 void StepVrGlobal::CreateInstance()
 {

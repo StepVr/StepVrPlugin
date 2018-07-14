@@ -16,6 +16,35 @@
 class FStepVrServer;
 
 
+
+/**
+ * 数据
+ */
+struct IKinemaReplicateData
+{
+	uint32				PlayerID;
+	//double				ReplicateTime;
+	TArray<int32>		SkeletionIDs;
+	TArray<FTransform>	SkeletonInfos;
+	IKinemaReplicateData()
+	{
+		PlayerID = 0;
+		//ReplicateTime = 0;
+		SkeletionIDs = {};
+		SkeletonInfos = {};
+	}
+};
+
+FORCEINLINE FArchive& operator<<(FArchive& Ar, IKinemaReplicateData& ArData)
+{
+	Ar << ArData.PlayerID;
+	//Ar << ArData.ReplicateTime;
+	Ar << ArData.SkeletionIDs;
+	Ar << ArData.SkeletonInfos;
+	return Ar;
+}
+
+
 class IStepvrServerModule : public IModuleInterface, public IModularFeature
 {
 public:
@@ -44,37 +73,39 @@ public:
 	virtual TSharedPtr<FStepVrServer> CreateServer() = 0;
 };
 
+
+
+
+
 typedef TMap<int32, FTransform> StepVRRemoteData;
 class ReplciateComponment
 {
 public:
 	virtual ~ReplciateComponment() {}
 	virtual void ReceiveRemoteData(TMap<int32, FTransform>&	DeviceInfo);
+
 protected:
 	virtual void GetRemoteData(int32 DeviceID,FTransform& data);
 	float LastReplicateTime;
 
 	StepVRRemoteData	RemoteData;
 };
+
+
+
+
+//Server
 class FStepVrServer
 {
 public:
 	virtual ~FStepVrServer() {}
-	virtual void SetLocalPlayerID(int32 playerID);
 
-	virtual void SetReplciatedDeviceID(TArray<int32> Devices);
-	virtual void RegistDelegate(int32 Playerid,ReplciateComponment* delegate,bool IsLocal);
-	virtual void UnRegistDelegate(int32 Playerid,ReplciateComponment* delegate, bool IsLocal);
-protected:
-	FCriticalSection	QueueCritical;
-	TArray<int32>	ReplicateDevices;
-	int32	LocalPlayerID;	
+	//StepVR设备同步
+	virtual void SetReplciatedDeviceID(TArray<int32> Devices) {}
+	virtual void RegistDelegate(int32 Playerid, ReplciateComponment* delegate, bool IsLocal) {}
+	virtual void UnRegistDelegate(int32 Playerid, ReplciateComponment* delegate, bool IsLocal) {}
 
-	/** delegate */
-	TMap<int32, ReplciateComponment*> Delegates;
-
-	FCriticalSection	DelegatesLock;
+	//IKinema 同步
+	virtual void IkinemaSendData(const IKinemaReplicateData& InData) {}
+	virtual void IkinemaGetData(uint32 InPlayerID , IKinemaReplicateData& InData) {}
 };
-
-
-

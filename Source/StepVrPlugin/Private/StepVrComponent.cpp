@@ -58,18 +58,20 @@ void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
-	if (IsInitOwner())
+	if (!IsInitOwner())
 	{
-		if (bIsLocalControll)
-		{
-			/** LocalPawn */
-			TickLocal();
-		}
-		else
-		{
-			/** Simulation Pawn*/
-			TickSimulate();
-		}
+		return;
+	}
+
+	if (bIsLocalControll)
+	{
+		//获取本地
+		TickLocal();
+	}
+	else
+	{
+		//获取远端数据
+		TickSimulate();
 	}
 }
 
@@ -102,35 +104,32 @@ void UStepVrComponent::TickSimulate()
 		return; 
 	}
 
-	FTransform* Target = nullptr;
 	for (auto deviceID : StepVrGlobal::Get()->GetReplicatedDevices())
 	{
 		switch ((StepVrDeviceID::Type)deviceID)
 		{
 			case StepVrDeviceID::DHead:
-				Target = &CurrentNodeState.FHead;
+				GetRemoteData(deviceID, CurrentNodeState.FHead);
 				break;
 			case StepVrDeviceID::DGun:
-				Target = &CurrentNodeState.FGun;
+				GetRemoteData(deviceID, CurrentNodeState.FGun);
 				break;
 			case StepVrDeviceID::DLeftController:
-				Target = &CurrentNodeState.FDLeftController;
+				GetRemoteData(deviceID, CurrentNodeState.FDLeftController);
 				break;
 			case StepVrDeviceID::DRightController:
-				Target = &CurrentNodeState.FRightController;
-				break;
-			default:
-				FTransform temp;
-				Target = &temp;
+				GetRemoteData(deviceID, CurrentNodeState.FRightController);
 				break;
 		}
-		GetRemoteData(deviceID, *Target);
 	}
 }
 
 void UStepVrComponent::TickLocal()
 {
-	if (!StepVrGlobal::Get()->SDKIsValid()) { return; }
+	if (!StepVrGlobal::Get()->SDKIsValid()) 
+	{ 
+		return; 
+	}
 
 	/** Update Device Data */
 	StepVR::Frame tmp = STEPVR_FRAME->GetFrame();
@@ -161,26 +160,37 @@ void UStepVrComponent::TickLocal()
 
 bool UStepVrComponent::IsInitOwner()
 {
-	if (!bIsInitOwner)
+	if (bIsInitOwner)
 	{
-		do 
-		{
-			auto _pawn = Cast<APawn>(GetOwner());
-			if (!IsValid(_pawn)) { break; }
-
-			auto _playerstate = Cast<APlayerState>(_pawn->PlayerState);
-			if (!IsValid(_playerstate)) { break; }
-
-			bIsInitOwner = true;
-			PlayerID = _playerstate->PlayerId;
-			bIsLocalControll = _pawn->IsLocallyControlled();
-
-			if (!StepVrGlobal::Get()->ServerIsValid()) { break; }
-			STEPVR_SERVER->RegistDelegate(PlayerID,this,bIsLocalControll);
-
-			UE_LOG(LogStepVrPlugin, Warning, TEXT("Start Replicate Player : %d"), PlayerID);
-		} while (0);
+		return bIsInitOwner;
 	}
+
+	do
+	{
+		auto _pawn = Cast<APawn>(GetOwner());
+		if (!IsValid(_pawn))
+		{
+			break;
+		}
+
+		auto _playerstate = Cast<APlayerState>(_pawn->PlayerState);
+		if (!IsValid(_playerstate))
+		{
+			break;
+		}
+
+		bIsInitOwner = true;
+		PlayerID = _playerstate->PlayerId;
+		bIsLocalControll = _pawn->IsLocallyControlled();
+
+		if (!StepVrGlobal::Get()->ServerIsValid())
+		{
+			break;
+		}
+		STEPVR_SERVER->RegistDelegate(PlayerID, this, bIsLocalControll);
+
+		UE_LOG(LogStepVrPlugin, Warning, TEXT("Start Replicate Player : %d"), PlayerID);
+	} while (0);
 
 	return bIsInitOwner;
 }

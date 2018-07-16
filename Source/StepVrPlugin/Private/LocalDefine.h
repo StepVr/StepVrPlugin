@@ -66,4 +66,8 @@ namespace StepVrDeviceID {
 	};
 }
 
+//标准件
 extern TMap<int32, FTransform>	S_mStepVrDeviceState;
+
+//手套
+extern TMap<int32, FRotator>	S_mStepVrGloveState;

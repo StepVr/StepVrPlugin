@@ -21,6 +21,8 @@ bIsInitOwner(false),
 PlayerID(0)
 {
 	PrimaryComponentTick.bCanEverTick = true;
+
+	StepVRGloveNode.Empty(int32(EStepVRGloveType::MAX));
 }
 
 
@@ -28,6 +30,22 @@ void UStepVrComponent::ResetHMDForStepVr()
 {
 	bIsReset = false;
 	s_bIsResetOculus = false;
+}
+
+
+bool UStepVrComponent::GetGloveIsConnect()
+{
+	return GloveIsConnect;
+}
+
+
+void UStepVrComponent::GetFingerRotator(EStepVRGloveType InType, FRotator& OutRotator)
+{
+	FRotator* Temp = StepVRGloveNode.Find(int32(InType));
+	if (Temp != nullptr)
+	{
+		OutRotator = *Temp;
+	}
 }
 
 bool UStepVrComponent::ResetControllPawnRotation()
@@ -131,29 +149,34 @@ void UStepVrComponent::TickLocal()
 		return; 
 	}
 
-	/** Update Device Data */
+	//一帧数据
 	StepVR::Frame tmp = STEPVR_FRAME->GetFrame();
-	UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DHead, CurrentNodeState.FHead);
-	UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DGun, CurrentNodeState.FGun);
-	UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DLeftController, CurrentNodeState.FDLeftController);
-	UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DRightController, CurrentNodeState.FRightController);
 
-	/** Auto Reset HMD */
-	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
+	//更新手套
+	UpdateGlove(&tmp);
+
+	//更新标准件
 	{
-		FRotator	S_QTemp;
-		FVector		S_VTemp;
-		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(S_QTemp, S_VTemp);
+		UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DHead, CurrentNodeState.FHead);
+		UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DGun, CurrentNodeState.FGun);
+		UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DLeftController, CurrentNodeState.FDLeftController);
+		UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DRightController, CurrentNodeState.FRightController);
 
-		CurrentNodeState.FHeadForOculus.SetLocation(CurrentNodeState.FHead.GetLocation() - S_VTemp);
-		CurrentNodeState.FHeadForOculus.SetRotation(S_QTemp.Quaternion());
-		S_mStepVrDeviceState.FindOrAdd(StepVrDeviceID::DOculusHead) = CurrentNodeState.FHeadForOculus;
-
-
-		/** Reset HMD */
-		if (!bIsReset)
+		//重置HMD
+		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
 		{
-			bIsReset = ResetControllPawnRotation();
+			FRotator	S_QTemp;
+			FVector		S_VTemp;
+			UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(S_QTemp, S_VTemp);
+
+			CurrentNodeState.FHeadForOculus.SetLocation(CurrentNodeState.FHead.GetLocation() - S_VTemp);
+			CurrentNodeState.FHeadForOculus.SetRotation(S_QTemp.Quaternion());
+			S_mStepVrDeviceState.FindOrAdd(StepVrDeviceID::DOculusHead) = CurrentNodeState.FHeadForOculus;
+
+			if (!bIsReset)
+			{
+				bIsReset = ResetControllPawnRotation();
+			}
 		}
 	}
 }
@@ -193,5 +216,60 @@ bool UStepVrComponent::IsInitOwner()
 	} while (0);
 
 	return bIsInitOwner;
+}
+
+void UStepVrComponent::UpdateGlove(StepVR::Frame* InFrame)
+{
+	StepVR::SpringData TempData = InFrame->GetSpringData();
+	
+	FRotator TempRotator;
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData,EStepVRGloveType::Left_Thumb_Up, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Thumb_Up)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Thumb_Down, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Thumb_Down)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Index, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Index)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Middle, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Middle)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Ring, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Ring)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Pinky, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Pinky)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Thumb_Up, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Thumb_Up)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Thumb_Down, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Thumb_Down)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Index, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Index)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Middle, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Middle)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Ring, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Ring)) = TempRotator;
+	}
+	{
+		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Pinky, TempRotator);
+		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Pinky)) = TempRotator;
+	}
 }
 

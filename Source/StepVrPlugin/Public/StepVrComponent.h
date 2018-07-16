@@ -10,87 +10,67 @@
 
 
 /**
-*   EquipID
-*	FHeadForOculus To deal with OculusHMD Offset,Not original Data
-*	FHead The original Data
+*   标准件
 */
 USTRUCT(BlueprintType)
 struct FStepVRNode
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FHeadForOculus;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FHead;
 	 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FGun;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FDLeftController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FRightController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FLeftHand;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FRightHand;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FLeftFoot;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FRighFoot;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(BlueprintReadOnly)
 	FTransform FBack;
 };
 
 
 /**
-*   MotionCapture Data
-*	The upper part of the joint
+*   手套
 */
-USTRUCT(BlueprintType)
-struct FStepVRMCapNode
+UENUM()
+enum class EStepVRGloveType : uint8
 {
-	GENERATED_USTRUCT_BODY()
+	Left_Thumb_Up = 0,
+	Left_Thumb_Down,
+	Left_Index,
+	Left_Middle,
+	Left_Ring,
+	Left_Pinky,
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FVector HipLoc;
+	Right_Thumb_Up,
+	Right_Thumb_Down,
+	Right_Index,
+	Right_Middle,
+	Right_Ring,
+	Right_Pinky,
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FRotator HipRot;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FRotator Head;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FRotator Neck;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FRotator LHand;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FRotator LUpperarm;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FRotator LLowerarm;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FRotator RHand;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FRotator RUpperarm;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FRotator RLowerarm;
+	MAX,
 };
-
 
 UCLASS(BlueprintType,meta = (BlueprintSpawnableComponent), ClassGroup = StepvrClassGroup)
 class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent ,public ReplciateComponment
@@ -99,40 +79,55 @@ class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent ,public Replcia
 public:
 	UStepVrComponent();
 
-	/**
-	* Reset OculusHMD Offset  
-	* When Auto Reset Something Wrong,You Can Run Function Reset Again
-	*/
+	//手动重置Oculus角度
 	UFUNCTION(BlueprintCallable,Category = StepvrLibrary)
 	void ResetHMDForStepVr();
 
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	//手套是否链接
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	bool GetGloveIsConnect();
 
-	void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
-
-
-public:
+	//标准件定位数据
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
 
+	//手套定位数据
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FStepVRMCapNode MotionCaptuerState;
+	TMap<int32, FRotator> StepVRGloveNode;
+	
+	//获取手指定位数据
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	void GetFingerRotator(EStepVRGloveType InType,FRotator& OutRotator);
+
+protected:
+	void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-	bool ResetControllPawnRotation();
+	bool IsInitOwner();
 
+	//重置Oculus的角度
+	bool ResetControllPawnRotation();
 	bool ResetOculusRif();
 
+	//模拟远端
 	void TickSimulate();
+
+	//本地模拟
 	void TickLocal();
 
-	bool IsInitOwner();
+	//更新手套
+	void UpdateGlove(StepVR::Frame* InFrame);
+
 private:
 	int32	PlayerID;
-	uint32	bIsReset : 1;
+	bool	bIsReset = false;
+	bool	bIsLocalControll = false;
+	bool	bIsInitOwner = false;
 
-	uint32	bIsLocalControll : 1;
-	uint32	bIsInitOwner : 1;
+	//手套是否连接
+	bool	GloveIsConnect = false;
 
 	static bool s_bIsResetOculus;
 };

@@ -19,28 +19,6 @@
 ***********************************************************************
 **/
 
-
-/**
-* StepVR is a Single-Node Location and Motion Capture library 
-* released by G-Wearables Company. This is a Dynamic-link 
-* library fit for C++ developer, Unity and C# developer, and 
-* Unreal developer. The C# library is based on C++ library 
-* and generated using SWIG. For more information about SWIG,
-* see: http://www.swig.org/. The C++ version is a Dynamic-link
-* library(DLL) generated via VS2013(Framework 3.5 and x86_64).
-* Copy the StepVR.dll and StepVRCSharp.dll to Unity project's
-* folder Assets to use it. For more details of the library, 
-* please contact G-Wearables Company.
-*
-* The StepVR SDK employs a right-handed Cartesian coordinate 
-* system. Values given are in units of real-world meters. The 
-* origin is centered at the center of the calibrated room. The
-* x-axis lies in the direction from the calibrated O point to 
-* the calibrated A point. The z-axis lies in the direction from
-* the calibrated O point to the calibrated B point. The y-axis
-* is vertical, with positive values increasing upwards.
-**/
-
 #ifndef StepVR_h__
 #define StepVR_h__
 
@@ -49,15 +27,49 @@
 #else
 #define STEPVR_API __declspec(dllimport) 
 #endif
-
-
-
-
+#pragma warning(disable:4091)
 
 namespace StepVR {
 	class Manager;
 	class Frame;
 	class SingleNode;
+
+
+	//spring data
+	STEPVR_API struct SpringData
+	{
+		float left_thumb_2_w, left_thumb_2_x, left_thumb_2_y, left_thumb_2_z;
+		float left_index_2_w, left_index_2_x, left_index_2_y, left_index_2_z;
+		float left_middle_2_w, left_middle_2_x, left_middle_2_y, left_middle_2_z;
+		float left_ring_2_w, left_ring_2_x, left_ring_2_y, left_ring_2_z;
+		float left_pinky_2_w, left_pinky_2_x, left_pinky_2_y, left_pinky_2_z;
+		float left_thumb_3_w, left_thumb_3_x, left_thumb_3_y, left_thumb_3_z;
+
+		float right_thumb_2_w, right_thumb_2_x, right_thumb_2_y, right_thumb_2_z;
+		float right_index_2_w, right_index_2_x, right_index_2_y, right_index_2_z;
+		float right_middle_2_w, right_middle_2_x, right_middle_2_y, right_middle_2_z;
+		float right_ring_2_w, right_ring_2_x, right_ring_2_y, right_ring_2_z;
+		float right_pinky_2_w, right_pinky_2_x, right_pinky_2_y, right_pinky_2_z;
+		float right_thumb_3_w, right_thumb_3_x, right_thumb_3_y, right_thumb_3_z;
+		SpringData()
+		{
+			//memset((void*)this, 0, sizeof(SpringData));
+			left_thumb_2_w = 1.0f; left_thumb_2_x = left_thumb_2_y = left_thumb_2_z = 0.0f;
+			left_index_2_w = 1.0f; left_index_2_x = left_index_2_y = left_index_2_z = 0.0f;
+			left_middle_2_w = 1.0f; left_middle_2_x= left_middle_2_y= left_middle_2_z=0.0f;
+			left_ring_2_w = 1.0f; left_ring_2_x = left_ring_2_y = left_ring_2_z = 0.0f;
+			left_pinky_2_w = 1.0f; left_pinky_2_x = left_pinky_2_y = left_pinky_2_z = 0.0f;
+			left_thumb_3_w = 1.0f; left_thumb_3_x = left_thumb_3_y = left_thumb_3_z=0.0f;
+
+			right_thumb_2_w = 1.0f; right_thumb_2_x= right_thumb_2_y= right_thumb_2_z=0.0f;
+			right_index_2_w = 1.0f; right_index_2_x = right_index_2_y = right_index_2_z = 0.0f;
+			right_middle_2_w = 1.0f; right_middle_2_x = right_middle_2_y = right_middle_2_z = 0.0f;
+			right_ring_2_w = 1.0f; right_ring_2_x = right_ring_2_y = right_ring_2_z = 0.0f;
+			right_pinky_2_w = 1.0f; right_pinky_2_x = right_pinky_2_y = right_pinky_2_z = 0.0f;
+			right_thumb_3_w = 1.0f; right_thumb_3_x = right_thumb_3_y = right_thumb_3_z = 0.0f;
+		}
+
+	};
 
 	/**
 	* Enumerates the names of Engine.
@@ -232,8 +244,8 @@ namespace StepVR {
 		/**
 		* The GetVelocity() function return speed of node.
 		**/
-		STEPVR_API Vector3f GetVelocity(NODEID _nodeid);
-		STEPVR_API Vector3f GetVelocity(NodeID _nodeid);
+		STEPVR_API float GetVelocity(NODEID _nodeid);
+		STEPVR_API float GetVelocity(NodeID _nodeid);
 
 		/**
 		* Check standard parts link or not.
@@ -243,6 +255,9 @@ namespace StepVR {
 		STEPVR_API bool IsHardWareLink(NODEID _nodeid);
 		STEPVR_API bool IsHardWareLink(NodeID _nodeid);
 
+		STEPVR_API float GetJoyStickPosX();
+		STEPVR_API float GetJoyStickPosY();
+
 		/**
 		* Check standard parts link or not.
 		*
@@ -251,8 +266,9 @@ namespace StepVR {
 		STEPVR_API float GetElectricity(NODEID _nodeid);
 		STEPVR_API float GetElectricity(NodeID _nodeid);
 
-	};
+		
 
+	};
 
 	/**
 	* The Frame class contains the all the detected data in a single
@@ -286,6 +302,9 @@ namespace StepVR {
 		**/
 		STEPVR_API SingleNode GetSingleNode();
 
+		STEPVR_API unsigned short GetValve();
+		//spring 手套数据返回值是48个float类型的数据
+		STEPVR_API SpringData GetSpringData();
 	};
 
 
@@ -322,9 +341,9 @@ namespace StepVR {
 		* start to capture frames of tracking data.
 		* Returns:   STEPVR_API int.
 		*            0 is ok
-		*            -1 is failed
+		*            other is failed
 		**/
-		STEPVR_API int Start(char* transmatfile = "TransMat.txt");
+		STEPVR_API int Start();
 
 		/**
 		* Call Stop() function to stop capturing frames of tracking data.
@@ -346,7 +365,7 @@ namespace StepVR {
 		STEPVR_API unsigned char* GetCalFrame();
 		
 		/**
-		* Set receive position and rotation mode. block or nonblock 
+		* Set receive position and rotation mode. block or non block 
 		*
 		**/
 		STEPVR_API void SetBlock(bool b);
@@ -366,27 +385,7 @@ namespace StepVR {
 		*
 		**/
 		STEPVR_API void SendVibrate(int nodeid, int vibrateTime);
-
-		/**
-		* Request the authority of game and hardware.
-		*
-		*
-		**/
-		STEPVR_API bool ReqAuth(int vendor_id, int game_id,int& game_status,int& time_status);
-
-		/**
-		* Request the authority of game and hardware.
-		*
-		*
-		**/
-		STEPVR_API bool ReqWebDB(const char* pszIp,const char* pszUserId, const char* pszPassWrod, const char* vendor_id, const char* game_id, const char* hmd_id);
-
-		/**
-		* Request binding vendor and game.
-		*
-		*
-		**/
-		STEPVR_API bool BindGame(int vendor_id, int game_id, int& game_status, int& time_status);
+		
 	};
 
 	//this class just for Unreal develop
@@ -398,6 +397,7 @@ namespace StepVR {
 		EulerOrder_YZX,
 		EulerOrder_ZXY
 	};
+
 
 	STEPVR_API class StepVR_EnginAdaptor
 	{
@@ -413,6 +413,7 @@ namespace StepVR {
 	private:
 		StepVR_EnginAdaptor(){};
 	};
+
 
 }
 

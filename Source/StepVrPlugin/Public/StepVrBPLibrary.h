@@ -2,8 +2,10 @@
 
 #pragma once
 #include "StepVr.h"
+#include "StepVrComponent.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "StepVrBPLibrary.generated.h"
+
 
 /* 
 *	Function library class.
@@ -32,30 +34,24 @@ UCLASS()
 class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
-	///**
-	//*   StepVr DeviceDate Replicate On (LAN)
-	//*   You Can Get Device Data By PlayerID On Multiply Game
-	//*/
-	//UFUNCTION(BlueprintCallable,Category = StepvrLibrary)
-	//static void SVDeviceSynchronize(int32 PlayerID);
-
-	///**
-	//*	destroy A Single Instance
-	//*/
-	//UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
-	//static void SVDeviceEndSynchonize(int32 PlayerID);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = StepvrLibrary)
 	static bool SVStepVRIsValid();
 
 	/**
-	*	Make sure that player controller is valid.
-	* @param: GameID = Your custom ID		
+	*	先确保PlayerController有效
+	* @param: GameId和自定义的ID匹配	
 	*/
 	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
 	static bool SVCheckGameLic(FString gameId);
 
-	/** GetStepVrDeviceData */
+	//获取标准件数据
 	static bool SVGetDeviceStateWithID(StepVR::Frame* Frame,int32 DeviceID, FTransform& Transform);
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	static bool SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
+
+	//获取手套
+	static void SVGetGloveState(StepVR::SpringData* InSpringData, EStepVRGloveType InType, FRotator& InRotator);
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	static void SVGetGloveState(EStepVRGloveType InType, FRotator& InRotator);
 };

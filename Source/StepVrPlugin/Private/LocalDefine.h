@@ -66,8 +66,30 @@ namespace StepVrDeviceID {
 	};
 }
 
+/**
+*   手套
+*/
+enum EStepVRGloveType
+{
+	Left_Thumb_Up = 0,
+	Left_Thumb_Down,
+	Left_Index,
+	Left_Middle,
+	Left_Ring,
+	Left_Pinky,
+
+	Right_Thumb_Up,
+	Right_Thumb_Down,
+	Right_Index,
+	Right_Middle,
+	Right_Ring,
+	Right_Pinky,
+
+	MAX,
+};
+
 //标准件
 extern TMap<int32, FTransform>	S_mStepVrDeviceState;
 
 //手套
-extern TMap<int32, FRotator>	S_mStepVrGloveState;
+extern TMap<int32, FQuat>	S_mStepVrGloveState;

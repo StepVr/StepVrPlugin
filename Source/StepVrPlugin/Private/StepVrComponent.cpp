@@ -1,4 +1,4 @@
-#include "StepVrComponent.h"
+ï»¿#include "StepVrComponent.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Classes/GameFramework/PlayerState.h"
 #include "Runtime/Engine/Classes/GameFramework/Pawn.h"
@@ -22,7 +22,7 @@ PlayerID(0)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	StepVRGloveNode.Empty(int32(EStepVRGloveType::MAX));
+	//StepVRGloveNode.Empty(int32(EStepVRGloveType::MAX));
 }
 
 
@@ -39,14 +39,14 @@ bool UStepVrComponent::GetGloveIsConnect()
 }
 
 
-void UStepVrComponent::GetFingerRotator(EStepVRGloveType InType, FRotator& OutRotator)
-{
-	FRotator* Temp = StepVRGloveNode.Find(int32(InType));
-	if (Temp != nullptr)
-	{
-		OutRotator = *Temp;
-	}
-}
+//void UStepVrComponent::GetFingerRotator(EStepVRGloveType InType, FRotator& OutRotator)
+//{
+//	FRotator* Temp = StepVRGloveNode.Find(int32(InType));
+//	if (Temp != nullptr)
+//	{
+//		OutRotator = *Temp;
+//	}
+//}
 
 bool UStepVrComponent::ResetControllPawnRotation()
 {
@@ -83,12 +83,12 @@ void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 
 	if (bIsLocalControll)
 	{
-		//»ñÈ¡±¾µØ
+		//èŽ·å–æœ¬åœ°
 		TickLocal();
 	}
 	else
 	{
-		//»ñÈ¡Ô¶¶ËÊý¾Ý
+		//èŽ·å–è¿œç«¯æ•°æ®
 		TickSimulate();
 	}
 }
@@ -149,20 +149,20 @@ void UStepVrComponent::TickLocal()
 		return; 
 	}
 
-	//Ò»Ö¡Êý¾Ý
+	//ä¸€å¸§æ•°æ®
 	StepVR::Frame tmp = STEPVR_FRAME->GetFrame();
 
-	//¸üÐÂÊÖÌ×
-	UpdateGlove(&tmp);
+	//æ›´æ–°æ‰‹å¥—
+	//UpdateGlove(&tmp);
 
-	//¸üÐÂ±ê×¼¼þ
+	//æ›´æ–°æ ‡å‡†ä»¶
 	{
 		UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DHead, CurrentNodeState.FHead);
 		UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DGun, CurrentNodeState.FGun);
 		UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DLeftController, CurrentNodeState.FDLeftController);
 		UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DRightController, CurrentNodeState.FRightController);
 
-		//ÖØÖÃHMD
+		//é‡ç½®HMD
 		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
 		{
 			FRotator	S_QTemp;
@@ -218,58 +218,58 @@ bool UStepVrComponent::IsInitOwner()
 	return bIsInitOwner;
 }
 
-void UStepVrComponent::UpdateGlove(StepVR::Frame* InFrame)
-{
-	StepVR::SpringData TempData = InFrame->GetSpringData();
-	
-	FRotator TempRotator;
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData,EStepVRGloveType::Left_Thumb_Up, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Thumb_Up)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Thumb_Down, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Thumb_Down)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Index, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Index)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Middle, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Middle)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Ring, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Ring)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Pinky, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Pinky)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Thumb_Up, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Thumb_Up)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Thumb_Down, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Thumb_Down)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Index, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Index)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Middle, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Middle)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Ring, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Ring)) = TempRotator;
-	}
-	{
-		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Pinky, TempRotator);
-		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Pinky)) = TempRotator;
-	}
-}
+//void UStepVrComponent::UpdateGlove(StepVR::Frame* InFrame)
+//{
+//	StepVR::SpringData TempData = InFrame->GetSpringData();
+//	
+//	FRotator TempRotator;
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData,EStepVRGloveType::Left_Thumb_Up, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Thumb_Up)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Thumb_Down, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Thumb_Down)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Index, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Index)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Middle, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Middle)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Ring, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Ring)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Left_Pinky, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Left_Pinky)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Thumb_Up, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Thumb_Up)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Thumb_Down, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Thumb_Down)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Index, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Index)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Middle, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Middle)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Ring, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Ring)) = TempRotator;
+//	}
+//	{
+//		UStepVrBPLibrary::SVGetGloveState(&TempData, EStepVRGloveType::Right_Pinky, TempRotator);
+//		StepVRGloveNode.FindOrAdd(int32(EStepVRGloveType::Right_Pinky)) = TempRotator;
+//	}
+//}
 

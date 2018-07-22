@@ -1,8 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-#include "StepVr.h"
-#include "StepVrComponent.h"
+#include "StepVrPlugin/Private/LocalDefine.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "StepVrBPLibrary.generated.h"
 
@@ -51,7 +50,5 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	static bool SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
 
 	//ªÒ»° ÷Ã◊
-	static void SVGetGloveState(StepVR::SpringData* InSpringData, EStepVRGloveType InType, FRotator& InRotator);
-	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
-	static void SVGetGloveState(EStepVRGloveType InType, FRotator& InRotator);
+	static void SVGetGloveState(StepVR::SpringData* InSpringData, EStepVRGloveType InType, FQuat& InQuat);
 };

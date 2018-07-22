@@ -1,6 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
+#include "StepVr.h"
 #include "StepVrServerModule.h"
 #include "Components/ActorComponent.h"
 #include "StepVrComponent.generated.h"
@@ -49,29 +50,6 @@ struct FStepVRNode
 };
 
 
-/**
-*   手套
-*/
-UENUM()
-enum class EStepVRGloveType : uint8
-{
-	Left_Thumb_Up = 0,
-	Left_Thumb_Down,
-	Left_Index,
-	Left_Middle,
-	Left_Ring,
-	Left_Pinky,
-
-	Right_Thumb_Up,
-	Right_Thumb_Down,
-	Right_Index,
-	Right_Middle,
-	Right_Ring,
-	Right_Pinky,
-
-	MAX,
-};
-
 UCLASS(BlueprintType,meta = (BlueprintSpawnableComponent), ClassGroup = StepvrClassGroup)
 class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent ,public ReplciateComponment
 {
@@ -91,13 +69,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
 
-	//手套定位数据
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	TMap<int32, FRotator> StepVRGloveNode;
-	
-	//获取手指定位数据
-	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
-	void GetFingerRotator(EStepVRGloveType InType,FRotator& OutRotator);
+	////手套定位数据
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	//TMap<int32, FRotator> StepVRGloveNode;
+	//
+	////获取手指定位数据
+	//UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	//void GetFingerRotator(EStepVRGloveType InType,FRotator& OutRotator);
 
 protected:
 	void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
@@ -118,7 +96,7 @@ private:
 	void TickLocal();
 
 	//更新手套
-	void UpdateGlove(StepVR::Frame* InFrame);
+	//void UpdateGlove(StepVR::Frame* InFrame);
 
 private:
 	int32	PlayerID;

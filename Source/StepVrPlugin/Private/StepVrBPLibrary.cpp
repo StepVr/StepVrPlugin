@@ -3,7 +3,6 @@
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Classes/Engine/World.h"
 #include "MessageDialog.h"
-#include "LocalDefine.h"
 #include "License/SDKLic.h"
 #include "StepVrGlobal.h"
 
@@ -76,7 +75,7 @@ bool UStepVrBPLibrary::SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transf
 	return false;
 }
 
-void UStepVrBPLibrary::SVGetGloveState(StepVR::SpringData* InSpringData, EStepVRGloveType InType, FRotator& InRotator)
+void UStepVrBPLibrary::SVGetGloveState(StepVR::SpringData* InSpringData, EStepVRGloveType InType, FQuat& InQuat)
 {
 	if (InSpringData == nullptr)
 	{
@@ -88,85 +87,76 @@ void UStepVrBPLibrary::SVGetGloveState(StepVR::SpringData* InSpringData, EStepVR
 	case EStepVRGloveType::Left_Thumb_Up: 
 	{
 		FQuat TempQuat(InSpringData->left_thumb_2_x, InSpringData->left_thumb_2_y, InSpringData->left_thumb_2_z, InSpringData->left_thumb_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Left_Thumb_Down:
 	{
 		FQuat TempQuat(InSpringData->left_thumb_3_x, InSpringData->left_thumb_3_y, InSpringData->left_thumb_3_z, InSpringData->left_thumb_3_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Left_Index:
 	{
 		FQuat TempQuat(InSpringData->left_index_2_x, InSpringData->left_index_2_y, InSpringData->left_index_2_z, InSpringData->left_index_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Left_Middle:
 	{
 		FQuat TempQuat(InSpringData->left_middle_2_x, InSpringData->left_middle_2_y, InSpringData->left_middle_2_z, InSpringData->left_middle_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Left_Ring:
 	{
 		FQuat TempQuat(InSpringData->left_ring_2_x, InSpringData->left_ring_2_y, InSpringData->left_ring_2_z, InSpringData->left_ring_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Left_Pinky:
 	{
 		FQuat TempQuat(InSpringData->left_pinky_2_x, InSpringData->left_pinky_2_y, InSpringData->left_pinky_2_z, InSpringData->left_pinky_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Right_Thumb_Up:
 	{
 		FQuat TempQuat(InSpringData->right_thumb_2_x, InSpringData->right_thumb_2_y, InSpringData->right_thumb_2_z, InSpringData->right_thumb_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Right_Thumb_Down:
 	{
 		FQuat TempQuat(InSpringData->right_thumb_3_x, InSpringData->right_thumb_3_y, InSpringData->right_thumb_3_z, InSpringData->right_thumb_3_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Right_Index:
 	{
 		FQuat TempQuat(InSpringData->right_index_2_x, InSpringData->right_index_2_y, InSpringData->right_index_2_z, InSpringData->right_index_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Right_Middle:
 	{
 		FQuat TempQuat(InSpringData->right_middle_2_x, InSpringData->right_middle_2_y, InSpringData->right_middle_2_z, InSpringData->right_middle_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Right_Ring:
 	{
 		FQuat TempQuat(InSpringData->right_ring_2_x, InSpringData->right_ring_2_y, InSpringData->right_ring_2_z, InSpringData->right_ring_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	case EStepVRGloveType::Right_Pinky:
 	{
 		FQuat TempQuat(InSpringData->right_pinky_2_x, InSpringData->right_pinky_2_y, InSpringData->right_pinky_2_z, InSpringData->right_pinky_2_w);
-		InRotator = TempQuat.Rotator();
+		InQuat = TempQuat;
 	}
 		break;
 	}
 
-	S_mStepVrGloveState.FindOrAdd(int32(InType)) = InRotator;
-}
-
-void UStepVrBPLibrary::SVGetGloveState(EStepVRGloveType InType, FRotator& InRotator)
-{
-	FRotator* Temp = S_mStepVrGloveState.Find(int32(InType));
-	if (Temp != nullptr)
-	{
-		InRotator = *Temp;
-	}
+	S_mStepVrGloveState.FindOrAdd(int32(InType)) = InQuat;
 }

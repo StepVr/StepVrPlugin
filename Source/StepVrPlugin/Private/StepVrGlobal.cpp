@@ -1,9 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-#include "StepVrGlobal.h"
-#include "StepVrServerModule.h"
-#include "IPluginManager.h"
+ï»¿#include "StepVrGlobal.h"
 #include "StepVrPlugin.h"
+#include "StepVrServerModule.h"
 #include "LocalDefine.h"
+
+#include "IPluginManager.h"
+#include "Misc/MessageDialog.h"
 
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 
@@ -15,10 +16,10 @@ StepVrGlobal::StepVrGlobal()
 	ReplicateDevicesID.Add(StepVrDeviceID::DHead);
 	ReplicateDevicesID.Add(StepVrDeviceID::DGun);
 
-	//¼ÓÔØ±¾µØSDK
+	//åŠ è½½æœ¬åœ°SDK
 	LoadSDK();
 
-	//¼ÓÔØServer
+	//åŠ è½½Server
 	LoadServer();	
 }
 
@@ -86,7 +87,7 @@ void StepVrGlobal::LoadSDK()
 		StepVrManager = MakeShareable(new StepVR::Manager());
 
 		//SDK Start
-		int32 Flag = StepVrManager->Start();
+		int32 Flag = 1;//StepVrManager->Start();
 		if (0 != Flag)
 		{
 			Message = "Failed to connect server";
@@ -119,6 +120,8 @@ void StepVrGlobal::CloseSDK()
 		FPlatformProcess::FreeDllHandle(DllHandle);
 		DllHandle = nullptr;
 	}
+
+	StepVrManager.Reset();
 }
 void StepVrGlobal::SetReplicatedDevices(TArray<int32> Devices)
 {

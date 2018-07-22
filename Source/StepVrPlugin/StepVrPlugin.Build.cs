@@ -15,6 +15,7 @@ public class StepVrPlugin : ModuleRules
     public StepVrPlugin(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        bFasterWithoutUnity = true;
 
         //外部链接头文件目录
         PublicIncludePaths.AddRange(

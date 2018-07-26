@@ -1,7 +1,6 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-#include "StepVr.h"
 #include "StepVrServerModule.h"
 #include "Components/ActorComponent.h"
 #include "StepVrComponent.generated.h"
@@ -11,7 +10,7 @@
 
 
 /**
-*   ±ê×¼¼ş
+*   æ ‡å‡†ä»¶
 */
 USTRUCT(BlueprintType)
 struct FStepVRNode
@@ -54,26 +53,27 @@ UCLASS(BlueprintType,meta = (BlueprintSpawnableComponent), ClassGroup = StepvrCl
 class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent ,public ReplciateComponment
 {
 	GENERATED_BODY()
+
 public:
 	UStepVrComponent();
 
-	//ÊÖ¶¯ÖØÖÃOculus½Ç¶È
+	//æ‰‹åŠ¨é‡ç½®Oculusè§’åº¦
 	UFUNCTION(BlueprintCallable,Category = StepvrLibrary)
 	void ResetHMDForStepVr();
 
-	//ÊÖÌ×ÊÇ·ñÁ´½Ó
+	//æ‰‹å¥—æ˜¯å¦é“¾æ¥
 	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	bool GetGloveIsConnect();
 
-	//±ê×¼¼ş¶¨Î»Êı¾İ
+	//æ ‡å‡†ä»¶å®šä½æ•°æ®
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
 
-	////ÊÖÌ×¶¨Î»Êı¾İ
+	////æ‰‹å¥—å®šä½æ•°æ®
 	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	//TMap<int32, FRotator> StepVRGloveNode;
 	//
-	////»ñÈ¡ÊÖÖ¸¶¨Î»Êı¾İ
+	////è·å–æ‰‹æŒ‡å®šä½æ•°æ®
 	//UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	//void GetFingerRotator(EStepVRGloveType InType,FRotator& OutRotator);
 
@@ -85,17 +85,17 @@ protected:
 private:
 	bool IsInitOwner();
 
-	//ÖØÖÃOculusµÄ½Ç¶È
+	//é‡ç½®Oculusçš„è§’åº¦
 	bool ResetControllPawnRotation();
 	bool ResetOculusRif();
 
-	//Ä£ÄâÔ¶¶Ë
+	//æ¨¡æ‹Ÿè¿œç«¯
 	void TickSimulate();
 
-	//±¾µØÄ£Äâ
+	//æœ¬åœ°æ¨¡æ‹Ÿ
 	void TickLocal();
 
-	//¸üĞÂÊÖÌ×
+	//æ›´æ–°æ‰‹å¥—
 	//void UpdateGlove(StepVR::Frame* InFrame);
 
 private:
@@ -104,7 +104,7 @@ private:
 	bool	bIsLocalControll = false;
 	bool	bIsInitOwner = false;
 
-	//ÊÖÌ×ÊÇ·ñÁ¬½Ó
+	//æ‰‹å¥—æ˜¯å¦è¿æ¥
 	bool	GloveIsConnect = false;
 
 	static bool s_bIsResetOculus;

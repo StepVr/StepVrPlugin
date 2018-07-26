@@ -1,4 +1,4 @@
-﻿#include "StepVrGlobal.h"
+#include "StepVrGlobal.h"
 #include "StepVrPlugin.h"
 #include "StepVrServerModule.h"
 #include "LocalDefine.h"
@@ -87,8 +87,8 @@ void StepVrGlobal::LoadSDK()
 		StepVrManager = MakeShareable(new StepVR::Manager());
 
 		//SDK Start
-		int32 Flag = 1;//StepVrManager->Start();
-		if (0 != Flag)
+		bool Flag = false; //StepVrManager->Start() == 0;
+		if (!Flag)
 		{
 			Message = "Failed to connect server";
 			break;
@@ -123,6 +123,8 @@ void StepVrGlobal::CloseSDK()
 
 	StepVrManager.Reset();
 }
+
+
 void StepVrGlobal::SetReplicatedDevices(TArray<int32> Devices)
 {
 	ReplicateDevicesID.Empty();
@@ -130,6 +132,23 @@ void StepVrGlobal::SetReplicatedDevices(TArray<int32> Devices)
 
 	if (!StepVrServer.IsValid()) { return; }
 	StepVrServer->SetReplciatedDeviceID(Devices);
+}
+
+TArray<int32> StepVrGlobal::GetReplicatedDevices()
+{
+	return ReplicateDevicesID;
+}
+
+
+StepVR::Manager* StepVrGlobal::GetStepVrManager()
+{
+	return StepVrManager.IsValid() ? StepVrManager.Get() : nullptr;
+}
+
+
+FStepVrServer* StepVrGlobal::GetStepVrServer()
+{
+	return StepVrServer.IsValid() ? StepVrServer.Get() : nullptr;
 }
 
 void StepVrGlobal::CreateInstance()
@@ -148,4 +167,13 @@ void StepVrGlobal::Shutdown()
 	{
 		SingletonInstance.Reset();
 	}		
+}
+
+StepVrGlobal * StepVrGlobal::Get()
+{
+	if (!SingletonInstance.IsValid())
+	{
+		return nullptr;
+	}
+	return SingletonInstance.Get();
 }

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "StepVr.h"
+#include "CoreMinimal.h"
 
 #define STEPVR_FRAME	StepVrGlobal::Get()->GetStepVrManager()
 #define STEPVR_SERVER	StepVrGlobal::Get()->GetStepVrServer()
@@ -17,32 +18,19 @@ public:
 
 	/** Check whether the pointer is valid before use. */
 	/** Return true you can use macro STEPVR_SERVER */
-	FORCEINLINE bool ServerIsValid() { return StepVrServer.IsValid(); }
+	bool ServerIsValid() { return StepVrServer.IsValid(); }
 
 	/** Return true you can use macro STEPVR_FRAME */
-	FORCEINLINE bool SDKIsValid() { return StepVrManager.IsValid(); }
+	bool SDKIsValid() { return StepVrManager.IsValid(); }
 
-	FORCEINLINE StepVR::Manager* GetStepVrManager() 
-	{
-		return StepVrManager.IsValid() ? StepVrManager.Get() : nullptr;
-	}
-	FORCEINLINE FStepVrServer* GetStepVrServer()
-	{
-		return StepVrServer.IsValid() ? StepVrServer.Get() : nullptr;
-	}
+	StepVR::Manager* GetStepVrManager();
+	FStepVrServer* GetStepVrServer();
 
 public:
 	/** Deal Singleton Instance Method */
 	static void CreateInstance();
 	static void Shutdown();
-	static FORCEINLINE StepVrGlobal* Get()
-	{
-		if (!SingletonInstance.IsValid())
-		{ 
-			return nullptr; 
-		}
-		return SingletonInstance.Get();
-	}
+	static StepVrGlobal* Get();
 	
 	static bool ServerIsRun();
 
@@ -51,10 +39,7 @@ public:
 
 	/** Custom Set Replicate DevicesID */
 	void SetReplicatedDevices(TArray<int32> Devices);
-	FORCEINLINE TArray<int32>&	GetReplicatedDevices()
-	{
-		return ReplicateDevicesID;
-	}
+	TArray<int32> GetReplicatedDevices();
 
 private:
 	void LoadServer();

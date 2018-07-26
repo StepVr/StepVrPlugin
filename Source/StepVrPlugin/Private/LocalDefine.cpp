@@ -1,4 +1,4 @@
-#include "LocalDefine.h"
+﻿#include "LocalDefine.h"
 
 DEFINE_LOG_CATEGORY(LogStepVrPlugin);
 

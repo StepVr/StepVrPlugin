@@ -2,15 +2,12 @@
 
 #pragma once
 
-#if !!(AFTER_ENGINEVERSION_413)
 #include "CoreMinimal.h"
-#endif
-
 #include "GenericPlatform/GenericApplicationMessageHandler.h"
 #include "Features/IModularFeatures.h"
-#include "Features/IModularFeature.h"
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
+#include "Features/IModularFeature.h"
 
 #define STEPVR_SERVER_MODULE_NAME	TEXT("StepVrServer")
 class FStepVrServer;

@@ -1,4 +1,4 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 using System.IO;
 using UnrealBuildTool;
 
@@ -9,7 +9,7 @@ public class StepVrGlove : ModuleRules
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         bFasterWithoutUnity = true;
 
-        //Íâ²¿Á´½ÓÍ·ÎÄ¼şÄ¿Â¼
+        //å¤–éƒ¨é“¾æ¥å¤´æ–‡ä»¶ç›®å½•
         PublicIncludePaths.AddRange(
 			new string[] {
 				"StepVrGlove/Public",
@@ -18,7 +18,7 @@ public class StepVrGlove : ModuleRules
 			);
 				
 		
-        //±¾Ä£¿éÁ¬½ÓÍ·ÎÄ¼şÂ·¾¶
+        //æœ¬æ¨¡å—è¿æ¥å¤´æ–‡ä»¶è·¯å¾„
 		PrivateIncludePaths.AddRange(
 			new string[] {
 				"StepVrGlove/Private",

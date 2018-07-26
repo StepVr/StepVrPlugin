@@ -1,4 +1,4 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 #include "../Launch/Resources/Version.h"
 #include "InputCoreTypes.h"
@@ -67,7 +67,7 @@ namespace StepVrDeviceID {
 }
 
 /**
-*   ÊÖÌ×
+*   æ‰‹å¥—
 */
 enum EStepVRGloveType
 {
@@ -88,8 +88,8 @@ enum EStepVRGloveType
 	MAX,
 };
 
-//±ê×¼¼þ
+//æ ‡å‡†ä»¶
 extern TMap<int32, FTransform>	S_mStepVrDeviceState;
 
-//ÊÖÌ×
+//æ‰‹å¥—
 extern TMap<int32, FQuat>	S_mStepVrGloveState;

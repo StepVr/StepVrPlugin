@@ -4,11 +4,13 @@
 #include "StepVr.h"
 #include "CoreMinimal.h"
 
-#define STEPVR_FRAME	StepVrGlobal::Get()->GetStepVrManager()
-#define STEPVR_SERVER	StepVrGlobal::Get()->GetStepVrServer()
+#define STEPVR_FRAME	StepVrGlobal::GetInstance()->GetStepVrManager()
+#define STEPVR_SERVER	StepVrGlobal::GetInstance()->GetStepVrServer()
+
+#define STEPVR_FRAME_IsValid	StepVrGlobal::GetInstance()->SDKIsValid()
+#define STEPVR_SERVER_IsValid	StepVrGlobal::GetInstance()->ServerIsValid()
 
 class FStepVrServer;
-
 
 class STEPVRPLUGIN_API StepVrGlobal
 {
@@ -16,43 +18,27 @@ public:
 	StepVrGlobal();
 	~StepVrGlobal();
 
-	/** Check whether the pointer is valid before use. */
-	/** Return true you can use macro STEPVR_SERVER */
-	bool ServerIsValid() { return StepVrServer.IsValid(); }
-
-	/** Return true you can use macro STEPVR_FRAME */
-	bool SDKIsValid() { return StepVrManager.IsValid(); }
-
-	StepVR::Manager* GetStepVrManager();
-	FStepVrServer* GetStepVrServer();
-
-public:
-	/** Deal Singleton Instance Method */
-	static void CreateInstance();
+	static StepVrGlobal* GetInstance();
 	static void Shutdown();
-	static StepVrGlobal* Get();
-	
-	static bool ServerIsRun();
 
-	/** Clear */
-	void CloseSDK();
+	void StartSDK();
 
-	/** Custom Set Replicate DevicesID */
-	void SetReplicatedDevices(TArray<int32> Devices);
-	TArray<int32> GetReplicatedDevices();
+	bool ServerIsValid();
+	bool SDKIsValid();
+
+	StepVR::Manager*	GetStepVrManager();
+	FStepVrServer*		GetStepVrServer();
 
 private:
 	void LoadServer();
 	void LoadSDK();
+	void CloseSDK();
 
 private:
 	static TSharedPtr<StepVrGlobal>	SingletonInstance;
 
-	/** Server */
 	TSharedPtr<FStepVrServer>	StepVrServer;
-	TArray<int32> ReplicateDevicesID;
-
-	/** StepVr SDK */
 	TSharedPtr<StepVR::Manager>	StepVrManager;
+
 	void*	DllHandle;
 };

@@ -1,45 +1,41 @@
+
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "StepVrCameraComponent.h"
-#include "Runtime/Engine/Classes/GameFramework/Pawn.h"
+#include "Engine.h"
+
 #include "StepVrBPLibrary.h"
 #include "StepVrGlobal.h"
 #include "LocalDefine.h"
 
-
-
+UStepVrCameraComponent::UStepVrCameraComponent(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+}
 void UStepVrCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& DesiredView)
 {
 	Super::GetCameraView(DeltaTime, DesiredView);
 
-	if (StepVrGlobal::Get()->SDKIsValid())
+	if (IsLocalControlled && STEPVR_FRAME_IsValid)
 	{
 		RecaclCameraData(DeltaTime, DesiredView);
 	}
 }
+void UStepVrCameraComponent::BeginPlay()
+{
+	Super::BeginPlay();
 
+	APawn* _pawn = Cast<APawn>(GetOwner());
+	if (IsValid(_pawn))
+	{
+		IsLocalControlled = _pawn->IsLocallyControlled();
+	}
+}
 void UStepVrCameraComponent::RecaclCameraData(float DeltaTime, FMinimalViewInfo& DesiredView)
 {
-	auto _pawn = Cast<APawn>(GetOwner());
-	if (!IsValid(_pawn)) { return; }
-	if (!_pawn->IsLocallyControlled()) { return; }
-
-	/** Get HeadTransform */
 	FTransform _StepvrHead;
-	StepVR::Frame tmp = STEPVR_FRAME->GetFrame();
-	UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DHead, _StepvrHead);
+	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
+	UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DHead, _StepvrHead);
 
 	SetRelativeLocation(_StepvrHead.GetLocation());
-	FTransform BaseCamToWorld = GetComponentToWorld();
-	if (bUseAdditiveOffset)
-	{
-		FTransform OffsetCamToBaseCam = AdditiveOffset;
-		FTransform OffsetCamToWorld = OffsetCamToBaseCam * BaseCamToWorld;
-		DesiredView.Location = OffsetCamToWorld.GetLocation();
-	}
-	else
-	{
-		DesiredView.Location = BaseCamToWorld.GetLocation();
-	}
-
-	DesiredView.Rotation = _StepvrHead.GetRotation().Rotator();
+	DesiredView.Location = GetComponentToWorld().GetLocation();
 }

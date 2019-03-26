@@ -1,20 +1,24 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "StepVrPlugin.h"
-#include "StepVrServerModule.h"
 #include "StepVrInput.h"
 #include "StepVrGlobal.h"
 
 
-TSharedPtr< class IInputDevice > FStepVrPluginModule::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
+void FStepVrPluginModule::StartupModule()
 {
-	StepVrGlobal::CreateInstance();
+	IInputDeviceModule::StartupModule();
 
-	return TSharedRef<class IInputDevice>(new FStepVrInput(InMessageHandler));
+	StepVrGlobal::GetInstance()->StartSDK();
 }
-	
-IMPLEMENT_MODULE(FStepVrPluginModule, StepVrPlugin)
 
 void FStepVrPluginModule::ShutdownModule()
 {
 	StepVrGlobal::Shutdown();
 }
+
+TSharedPtr< class IInputDevice > FStepVrPluginModule::CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
+{
+	return TSharedRef<class IInputDevice>(new FStepVrInput(InMessageHandler));
+}
+
+IMPLEMENT_MODULE(FStepVrPluginModule, StepVrPlugin)

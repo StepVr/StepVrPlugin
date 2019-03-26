@@ -1,62 +1,76 @@
 #include "StepVrGlobal.h"
-#include "StepVrPlugin.h"
+#include "Engine.h"
+
 #include "StepVrServerModule.h"
 #include "LocalDefine.h"
-
-#include "IPluginManager.h"
-#include "Misc/MessageDialog.h"
+#include "StepVrPlugin.h"
 
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 
 StepVrGlobal::StepVrGlobal()
 {
-	UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrGlobal Start"));
-
-	/** Default DeviceID */
-	ReplicateDevicesID.Add(StepVrDeviceID::DHead);
-	ReplicateDevicesID.Add(StepVrDeviceID::DGun);
-
-	//加载本地SDK
-	LoadSDK();
-
-	//加载Server
-	LoadServer();	
 }
 
 StepVrGlobal::~StepVrGlobal()
 {
 	CloseSDK();
-	UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrGlobal END"));
 }
 
-bool StepVrGlobal::ServerIsRun()
+
+StepVrGlobal* StepVrGlobal::GetInstance()
 {
-	if (!SingletonInstance.IsValid())
+	if (SingletonInstance.IsValid())
 	{
-		return false;
+		return SingletonInstance.Get();
 	}
 
-	return SingletonInstance->ServerIsValid();
+	SingletonInstance = MakeShareable(new StepVrGlobal());
+	return SingletonInstance.Get();
+}
+void StepVrGlobal::Shutdown()
+{
+	if (SingletonInstance.IsValid())
+	{
+		SingletonInstance.Reset();
+	}
+}
+
+void StepVrGlobal::StartSDK()
+{
+	//加载本地SDK
+	LoadSDK();
+
+	//加载Server
+	LoadServer();
+}
+
+bool StepVrGlobal::ServerIsValid()
+{
+	return StepVrServer.IsValid();
+}
+
+
+bool StepVrGlobal::SDKIsValid()
+{
+	return StepVrManager.IsValid();
 }
 
 void StepVrGlobal::LoadServer()
 {
-	IModularFeatures& _ModularFeatures = IModularFeatures::Get();
+	IStepvrServerModule* _Server = static_cast<IStepvrServerModule*>(FModuleManager::Get().GetModule(IStepvrServerModule::GetModularFeatureName()));
 
-	TArray<IStepvrServerModule*> _Servers = _ModularFeatures.GetModularFeatureImplementations<IStepvrServerModule>(IStepvrServerModule::GetModularFeatureName());
-
-	if (_Servers.IsValidIndex(0))
+	if (_Server)
 	{
-		StepVrServer = _Servers[0]->CreateServer();
+		StepVrServer = _Server->CreateServer();
 
 		if (StepVrServer.IsValid())
 		{ 
-			/** Add Replicate Device */
-			StepVrServer->SetReplciatedDeviceID(ReplicateDevicesID);
-			UE_LOG(LogStepVrPlugin, Warning, TEXT("Load Server Success")); 
+			UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrServer Start Success"));
 		}
 		else 
-		{ UE_LOG(LogStepVrPlugin, Error, TEXT("Load Server Faild")); }	
+		{ 
+			UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrServer Start Faild"));
+		}	
 	}
 }
 
@@ -64,13 +78,12 @@ void StepVrGlobal::LoadSDK()
 {
 	bool Success = false;
 	FString Message;
+
 	do
 	{
-		/** Load Dll */
 		FString Platform = PLATFORM_WIN64 ? "x64" : "x32";
 		FName   PluginName = FStepVrPluginModule::GetModularFeatureName();
-		FString SDllPath = IPluginManager::Get().
-			FindPlugin(*PluginName.ToString())->GetBaseDir() + "/ThirdParty/lib/" + Platform;
+		FString SDllPath = FPaths::ProjectPluginsDir() + TEXT("StepVrPlugin/ThirdParty/lib/") + Platform;
 
 		FPlatformProcess::PushDllDirectory(*SDllPath);
 		DllHandle = FPlatformProcess::GetDllHandle(*(SDllPath + "/StepVR.dll"));
@@ -82,12 +95,9 @@ void StepVrGlobal::LoadSDK()
 			break;
 		}
 
-
-		/** Create StepVrManager */
 		StepVrManager = MakeShareable(new StepVR::Manager());
 
-		//SDK Start
-		bool Flag = false; //StepVrManager->Start() == 0;
+		bool Flag = (StepVrManager->Start() == 0);
 		if (!Flag)
 		{
 			Message = "Failed to connect server";
@@ -102,43 +112,25 @@ void StepVrGlobal::LoadSDK()
 
 	if (Success)
 	{
-		UE_LOG(LogStepVrPlugin, Warning, TEXT("StepvrSDK Run Success"));
+		UE_LOG(LogStepVrPlugin, Warning, TEXT("StepvrSDK Satrt Success"));
 	}
 	else
 	{
 		CloseSDK();
 
-		UE_LOG(LogStepVrPlugin, Error, TEXT("StepvrSDK Open Failed,Message:%s"), *Message);
+		UE_LOG(LogStepVrPlugin, Warning, TEXT("StepvrSDK Satrt Failed,Message:%s"), *Message);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(NSLOCTEXT("StepVR", "StepVR", "{0}"), FText::FromString(Message)));
 	}
 }
 
 void StepVrGlobal::CloseSDK()
 {
-	if (DllHandle!=nullptr)
+	if (DllHandle != nullptr)
 	{
 		FPlatformProcess::FreeDllHandle(DllHandle);
 		DllHandle = nullptr;
 	}
-
-	StepVrManager.Reset();
 }
-
-
-void StepVrGlobal::SetReplicatedDevices(TArray<int32> Devices)
-{
-	ReplicateDevicesID.Empty();
-	ReplicateDevicesID = Devices;
-
-	if (!StepVrServer.IsValid()) { return; }
-	StepVrServer->SetReplciatedDeviceID(Devices);
-}
-
-TArray<int32> StepVrGlobal::GetReplicatedDevices()
-{
-	return ReplicateDevicesID;
-}
-
 
 StepVR::Manager* StepVrGlobal::GetStepVrManager()
 {
@@ -151,29 +143,4 @@ FStepVrServer* StepVrGlobal::GetStepVrServer()
 	return StepVrServer.IsValid() ? StepVrServer.Get() : nullptr;
 }
 
-void StepVrGlobal::CreateInstance()
-{
-	if (SingletonInstance.IsValid()) 
-	{ 
-		return; 
-	}
 
-	SingletonInstance = MakeShareable(new StepVrGlobal());
-}
-
-void StepVrGlobal::Shutdown()
-{
-	if (SingletonInstance.IsValid())
-	{
-		SingletonInstance.Reset();
-	}		
-}
-
-StepVrGlobal * StepVrGlobal::Get()
-{
-	if (!SingletonInstance.IsValid())
-	{
-		return nullptr;
-	}
-	return SingletonInstance.Get();
-}

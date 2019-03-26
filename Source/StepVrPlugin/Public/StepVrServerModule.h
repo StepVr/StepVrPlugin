@@ -5,28 +5,33 @@
 #include "CoreMinimal.h"
 #include "GenericPlatform/GenericApplicationMessageHandler.h"
 #include "Features/IModularFeatures.h"
+#include "Features/IModularFeature.h"
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
-#include "Features/IModularFeature.h"
 
 #define STEPVR_SERVER_MODULE_NAME	TEXT("StepVrServer")
 class FStepVrServer;
 
-
+enum EGameModeType
+{
+	EInValid,
+	EClient,
+	EServer,
+};
 
 /**
  * 数据
  */
 struct IKinemaReplicateData
 {
+	float				Scale;
 	uint32				PlayerID;
-	//double				ReplicateTime;
 	TArray<int32>		SkeletionIDs;
 	TArray<FTransform>	SkeletonInfos;
 	IKinemaReplicateData()
 	{
+		Scale = 1.f;
 		PlayerID = 0;
-		//ReplicateTime = 0;
 		SkeletionIDs = {};
 		SkeletonInfos = {};
 	}
@@ -34,15 +39,67 @@ struct IKinemaReplicateData
 
 FORCEINLINE FArchive& operator<<(FArchive& Ar, IKinemaReplicateData& ArData)
 {
+	Ar << ArData.Scale;
 	Ar << ArData.PlayerID;
-	//Ar << ArData.ReplicateTime;
 	Ar << ArData.SkeletionIDs;
 	Ar << ArData.SkeletonInfos;
 	return Ar;
 }
+struct PlayerDeviceInfo
+{
+	uint32					PlayerAddr;
 
+	TMap<int32, FTransform>	StepVrDeviceInfo;
 
-class IStepvrServerModule : public IModuleInterface, public IModularFeature
+	IKinemaReplicateData	IkinemaInfo;
+
+	PlayerDeviceInfo()
+	{
+		PlayerAddr = 0;
+		StepVrDeviceInfo.Empty();
+	}
+};
+
+FORCEINLINE FArchive& operator<<(FArchive& Ar, PlayerDeviceInfo& ArData)
+{
+	Ar << ArData.PlayerAddr;
+	Ar << ArData.StepVrDeviceInfo;
+	Ar << ArData.IkinemaInfo;
+	return Ar;
+}
+
+typedef TMap<uint32, PlayerDeviceInfo> AllPlayerData;
+
+struct SocketSendInfo
+{
+	//EGameModeType
+	int32					FromWhere;
+
+	uint64					FrameCounts;
+
+	AllPlayerData			AllPlayerDatas;
+
+	SocketSendInfo()
+	{
+		FromWhere = EGameModeType::EInValid;
+		FrameCounts = 0;
+		AllPlayerDatas.Empty();
+	}
+};
+
+FORCEINLINE FArchive& operator<<(FArchive& Ar, SocketSendInfo& ArData)
+{
+	Ar << ArData.FromWhere;
+	Ar << ArData.FrameCounts;
+	Ar << ArData.AllPlayerDatas;
+	return Ar;
+}
+
+//所有玩家
+extern STEPVRPLUGIN_API AllPlayerData LocalAllPlayerData;
+extern STEPVRPLUGIN_API PlayerDeviceInfo LocalPlayerData;
+
+class STEPVRPLUGIN_API IStepvrServerModule : public IModuleInterface, public IModularFeature
 {
 public:
 	static FName GetModularFeatureName()
@@ -63,7 +120,7 @@ public:
 
 	static inline bool IsAvailable()
 	{
-		
+
 		return FModuleManager::Get().IsModuleLoaded(STEPVR_SERVER_MODULE_NAME);
 	}
 
@@ -71,38 +128,25 @@ public:
 };
 
 
-
-
-
-typedef TMap<int32, FTransform> StepVRRemoteData;
-class ReplciateComponment
-{
-public:
-	virtual ~ReplciateComponment() {}
-	virtual void ReceiveRemoteData(TMap<int32, FTransform>&	DeviceInfo);
-
-protected:
-	virtual void GetRemoteData(int32 DeviceID,FTransform& data);
-	float LastReplicateTime;
-
-	StepVRRemoteData	RemoteData;
-};
-
-
-
-
-//Server
-class FStepVrServer
+class STEPVRPLUGIN_API FStepVrServer
 {
 public:
 	virtual ~FStepVrServer() {}
 
-	//StepVR设备同步
-	virtual void SetReplciatedDeviceID(TArray<int32> Devices) {}
-	virtual void RegistDelegate(int32 Playerid, ReplciateComponment* delegate, bool IsLocal) {}
-	virtual void UnRegistDelegate(int32 Playerid, ReplciateComponment* delegate, bool IsLocal) {}
+	uint32 GetLocalAddress();
 
-	//IKinema 同步
-	virtual void IkinemaSendData(const IKinemaReplicateData& InData) {}
-	virtual void IkinemaGetData(uint32 InPlayerID , IKinemaReplicateData& InData) {}
+	//IKinema
+	void IkinemaSendData(const IKinemaReplicateData& InData);
+	void IkinemaGetData(uint32 InPlayerAddr, IKinemaReplicateData& OutData);
+
+	//StepVr
+	void StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InData);
+	void StepVrGetData(uint32 InPlayerAddr, TMap<int32, FTransform>& OutData);
+	
+
+	AllPlayerData& LockAllPlayerData();
+	void UnLockAllPlayerData();
+
+private:
+	FCriticalSection Section_AllPlayerData;
 };

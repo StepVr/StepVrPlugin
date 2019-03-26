@@ -27,49 +27,19 @@
 #else
 #define STEPVR_API __declspec(dllimport) 
 #endif
-#pragma warning(disable:4091)
+
+/**
+* Spring glove
+**/
+typedef unsigned char U8;
+typedef void(*SpringVR_tcb_procFd)(U8* pFd_i, U8 comNum_i);
+extern "C" STEPVR_API void StepVR_initSpring(SpringVR_tcb_procFd pcb_procFd_i);
+extern "C" STEPVR_API void SendSpringCmd(U8 *cmd);
 
 namespace StepVR {
 	class Manager;
 	class Frame;
 	class SingleNode;
-
-
-	//spring data
-	STEPVR_API struct SpringData
-	{
-		float left_thumb_2_w, left_thumb_2_x, left_thumb_2_y, left_thumb_2_z;
-		float left_index_2_w, left_index_2_x, left_index_2_y, left_index_2_z;
-		float left_middle_2_w, left_middle_2_x, left_middle_2_y, left_middle_2_z;
-		float left_ring_2_w, left_ring_2_x, left_ring_2_y, left_ring_2_z;
-		float left_pinky_2_w, left_pinky_2_x, left_pinky_2_y, left_pinky_2_z;
-		float left_thumb_3_w, left_thumb_3_x, left_thumb_3_y, left_thumb_3_z;
-
-		float right_thumb_2_w, right_thumb_2_x, right_thumb_2_y, right_thumb_2_z;
-		float right_index_2_w, right_index_2_x, right_index_2_y, right_index_2_z;
-		float right_middle_2_w, right_middle_2_x, right_middle_2_y, right_middle_2_z;
-		float right_ring_2_w, right_ring_2_x, right_ring_2_y, right_ring_2_z;
-		float right_pinky_2_w, right_pinky_2_x, right_pinky_2_y, right_pinky_2_z;
-		float right_thumb_3_w, right_thumb_3_x, right_thumb_3_y, right_thumb_3_z;
-		SpringData()
-		{
-			//memset((void*)this, 0, sizeof(SpringData));
-			left_thumb_2_w = 1.0f; left_thumb_2_x = left_thumb_2_y = left_thumb_2_z = 0.0f;
-			left_index_2_w = 1.0f; left_index_2_x = left_index_2_y = left_index_2_z = 0.0f;
-			left_middle_2_w = 1.0f; left_middle_2_x= left_middle_2_y= left_middle_2_z=0.0f;
-			left_ring_2_w = 1.0f; left_ring_2_x = left_ring_2_y = left_ring_2_z = 0.0f;
-			left_pinky_2_w = 1.0f; left_pinky_2_x = left_pinky_2_y = left_pinky_2_z = 0.0f;
-			left_thumb_3_w = 1.0f; left_thumb_3_x = left_thumb_3_y = left_thumb_3_z=0.0f;
-
-			right_thumb_2_w = 1.0f; right_thumb_2_x= right_thumb_2_y= right_thumb_2_z=0.0f;
-			right_index_2_w = 1.0f; right_index_2_x = right_index_2_y = right_index_2_z = 0.0f;
-			right_middle_2_w = 1.0f; right_middle_2_x = right_middle_2_y = right_middle_2_z = 0.0f;
-			right_ring_2_w = 1.0f; right_ring_2_x = right_ring_2_y = right_ring_2_z = 0.0f;
-			right_pinky_2_w = 1.0f; right_pinky_2_x = right_pinky_2_y = right_pinky_2_z = 0.0f;
-			right_thumb_3_w = 1.0f; right_thumb_3_x = right_thumb_3_y = right_thumb_3_z = 0.0f;
-		}
-
-	};
 
 	/**
 	* Enumerates the names of Engine.
@@ -168,6 +138,10 @@ namespace StepVR {
 			KeyB,
 			KeyC,
 			KeyD,
+			KeyE,
+			KeyF,
+			KeyG,
+			KeyH,
 			MAX_KEY
 		};
 		
@@ -255,8 +229,13 @@ namespace StepVR {
 		STEPVR_API bool IsHardWareLink(NODEID _nodeid);
 		STEPVR_API bool IsHardWareLink(NodeID _nodeid);
 
-		STEPVR_API float GetJoyStickPosX();
-		STEPVR_API float GetJoyStickPosY();
+		/**
+		* Get joystick position X Y
+		*
+		*@ return pos_x and pos_y.
+		**/
+		STEPVR_API float GetJoyStickPosX(NODEID _nodeid);
+		STEPVR_API float GetJoyStickPosY(NODEID _nodeid);
 
 		/**
 		* Check standard parts link or not.
@@ -266,7 +245,35 @@ namespace StepVR {
 		STEPVR_API float GetElectricity(NODEID _nodeid);
 		STEPVR_API float GetElectricity(NodeID _nodeid);
 
-		
+	
+		/**
+		* Get valve of every node.
+		*
+		* @return valve
+		*/
+		STEPVR_API unsigned short GetValve(NODEID _nodeid);
+
+		/**
+		* Get time stamp of every node.
+		*
+		* @return valve
+		*/
+		STEPVR_API float GetTimeStamp(NODEID _nodeid);
+
+		/**
+		* justify data valid or not
+		*
+		* @return data valid
+		*/
+		STEPVR_API int GetDataValid(NODEID _nodeid);
+
+
+		/**
+		* Get north angle.
+		*
+		* @return angle
+		*/
+		STEPVR_API float GetNorthAngle(NODEID _nodeid);
 
 	};
 
@@ -302,9 +309,6 @@ namespace StepVR {
 		**/
 		STEPVR_API SingleNode GetSingleNode();
 
-		STEPVR_API unsigned short GetValve();
-		//spring 手套数据返回值是48个float类型的数据
-		STEPVR_API SpringData GetSpringData();
 	};
 
 
@@ -386,7 +390,15 @@ namespace StepVR {
 		**/
 		STEPVR_API void SendVibrate(int nodeid, int vibrateTime);
 		
+		/**
+		* Send special command.
+		* reset time stamp
+		*
+		**/
+		STEPVR_API void SendStampZeroCmd(const unsigned char* cmd);
+
 	};
+
 
 	//this class just for Unreal develop
 	STEPVR_API enum EulerOrd{
@@ -397,7 +409,6 @@ namespace StepVR {
 		EulerOrder_YZX,
 		EulerOrder_ZXY
 	};
-
 
 	STEPVR_API class StepVR_EnginAdaptor
 	{

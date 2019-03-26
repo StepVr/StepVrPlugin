@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "ModuleManager.h"
 #include "IInputDeviceModule.h"
 
 
 #define STEPVR_PLUGIN_MODULE_NAME	TEXT("StepVrPlugin")
+
 class FStepVrPluginModule : public IInputDeviceModule
 {
 public:
@@ -26,7 +26,8 @@ public:
 		return FeatureName;
 	}
 
-	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler);
+	virtual TSharedPtr< class IInputDevice > CreateInputDevice(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler) override;
 
+	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 };

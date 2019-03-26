@@ -1,8 +1,7 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-#include "StepVr.h"
-#include "StepVrPlugin/Private/LocalDefine.h"
+#include "../ThirdParty/include/StepVr.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "StepVrBPLibrary.generated.h"
 
@@ -26,6 +25,7 @@
 */
 
 
+class Frame;
 /**
 * 
 * received Date class Need inherit StepVrServerInterface
@@ -35,21 +35,18 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = StepvrLibrary)
-	static bool SVStepVRIsValid();
-
 	/**
-	*	ÏÈÈ·±£PlayerControllerÓĞĞ§
-	* @param: GameIdºÍ×Ô¶¨ÒåµÄIDÆ¥Åä	
+	*	å…ˆç¡®ä¿PlayerControlleræœ‰æ•ˆ
+	* @param: GameIdå’Œè‡ªå®šä¹‰çš„IDåŒ¹é…	
 	*/
 	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
 	static bool SVCheckGameLic(FString gameId);
 
-	//»ñÈ¡±ê×¼¼şÊı¾İ
-	static bool SVGetDeviceStateWithID(StepVR::Frame* Frame,int32 DeviceID, FTransform& Transform);
+	//è·å–æ ‡å‡†ä»¶æ•°æ®
+	static bool SVGetDeviceStateWithID(StepVR::SingleNode* InSingleNode,int32 DeviceID, FTransform& Transform);
+	
 	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	static bool SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
 
-	//»ñÈ¡ÊÖÌ×
-	static void SVGetGloveState(StepVR::SpringData* InSpringData, EStepVRGloveType InType, FQuat& InQuat);
+	static void ConvertCoordinateToUE(FTransform& InOutData);
 };

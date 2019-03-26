@@ -1,7 +1,7 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+﻿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-#include "StepVrServerModule.h"
+
 #include "Components/ActorComponent.h"
 #include "StepVrComponent.generated.h"
 
@@ -9,103 +9,126 @@
 #define StepvrClassGroup
 
 
-/**
-*   标准件
-*/
 USTRUCT(BlueprintType)
 struct FStepVRNode
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FTransform FHeadForOculus;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FTransform FHead;
 	 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FTransform FGun;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FTransform FDLeftController;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FTransform FRightController;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	FTransform FDLeftFoot;
 
-	UPROPERTY(BlueprintReadOnly)
-	FTransform FLeftHand;
-
-	UPROPERTY(BlueprintReadOnly)
-	FTransform FRightHand;
-
-	UPROPERTY(BlueprintReadOnly)
-	FTransform FLeftFoot;
-
-	UPROPERTY(BlueprintReadOnly)
-	FTransform FRighFoot;
-
-	UPROPERTY(BlueprintReadOnly)
-	FTransform FBack;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	FTransform FRightFoot;
 };
 
-
-UCLASS(BlueprintType,meta = (BlueprintSpawnableComponent), ClassGroup = StepvrClassGroup)
-class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent ,public ReplciateComponment
+UENUM()
+enum class FResetHMDType : uint8
 {
-	GENERATED_BODY()
+	ResetHMD_RealTime,
+	ResetHMD_BeginPlay
+};
+
+UENUM()
+enum class FGameUseType : uint8
+{
+	UseType_Normal,
+	UseType_Mocap
+};
+
+UCLASS(ClassGroup = StepvrClassGroup, editinlinenew, meta = (BlueprintSpawnableComponent))
+class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent
+{
+	GENERATED_UCLASS_BODY()
 
 public:
-	UStepVrComponent();
-
-	//手动重置Oculus角度
+	//手动重置头显
 	UFUNCTION(BlueprintCallable,Category = StepvrLibrary)
-	void ResetHMDForStepVr();
+	void ResetHMD();
+	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
+	void ToggleResetType();
 
-	//手套是否链接
-	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
-	bool GetGloveIsConnect();
+	//头显重置类型
+	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
+	FResetHMDType	ResetHMDType = FResetHMDType::ResetHMD_BeginPlay;
 
-	//标准件定位数据
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
+	FGameUseType	GameUseType = FGameUseType::UseType_Normal;
+
+
+	UPROPERTY(AdvancedDisplay, EditAnywhere,BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
 
-	////手套定位数据
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	//TMap<int32, FRotator> StepVRGloveNode;
-	//
-	////获取手指定位数据
-	//UFUNCTION(BlueprintPure, Category = StepvrLibrary)
-	//void GetFingerRotator(EStepVRGloveType InType,FRotator& OutRotator);
-
 protected:
-	void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 
+	virtual void InitializeComponent() override;
+
+	void OwnerBeginPlay();
+	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-private:
-	bool IsInitOwner();
+	void RegistInputComponent();
 
 	//重置Oculus的角度
-	bool ResetControllPawnRotation();
-	bool ResetOculusRif();
+	void ResetControllPawnRotation();
+	void ResetOculusRif();
+	void ResetHMDRealTime();
+	void ResetHMDAuto();
 
-	//模拟远端
+	//void UpdateTimer();
+
 	void TickSimulate();
-
-	//本地模拟
 	void TickLocal();
 
-	//更新手套
-	//void UpdateGlove(StepVR::Frame* InFrame);
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SetPlayerAddrOnServer(const uint32 InAddr);
+
+	UPROPERTY(Replicated)
+	uint32  PlayerAddr = 0;
+
+	bool IsValidPlayerAddr();
+
+	//return bool是否有效
+	bool IsLocalControlled();
 
 private:
-	int32	PlayerID;
-	bool	bIsReset = false;
+	static  bool bGlobleIsReset;
+	
+	//是不是本地角色
 	bool	bIsLocalControll = false;
-	bool	bIsInitOwner = false;
+	//检测是否为本地角色
+	bool    bIsCheckLoal = false;
 
-	//手套是否连接
-	bool	GloveIsConnect = false;
+	float ResetYaw;
 
-	static bool s_bIsResetOculus;
+	//Auto Reset
+	#define Yawn  45
+	float HMDYaw[Yawn];
+	float IMUYaw[Yawn];
+	float HMDrate[Yawn - 1];
+	float HMDPitch;
+	int Tnum;
+	float Cnum;
+
+	bool bIsReset = true;
+	bool bIsStart = false;
+	bool bIsCorrect = false;
+	bool s_bIsResetOculus = true;
+
+	float NewYaw;
 };

@@ -1,41 +1,23 @@
-{
-  "CanContainContent": false,
-  "Category": "Virtual Reality",
-  "CreatedBy": "StepVR",
-  "CreatedByURL": "",
-  "Description": "Support for the StepVR API",
-  "DocsURL": "",
-  "EnabledByDefault": true,
+﻿{
   "FileVersion": 3,
-  "FriendlyName": "StepVrPlugin",
-  "Installed": false,
-  "EnabledByDefault" : true,
-  "IsBetaVersion": false,
-  "MarketplaceURL": "",
-  "SupportURL": "",
   "Version": 1,
   "VersionName": "1.0",
+  "FriendlyName": "StepVrPlugin",
+  "Description": "Support Step Deveices",
+  "Category": "StepVr",
+  "CreatedBy": "StepVr",
+  "CreatedByURL": "",
+  "DocsURL": "",
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "CanContainContent": true,
+  "IsBetaVersion": false,
+  "Installed": true,
   "Modules": [
     {
       "Name": "StepVrPlugin",
       "Type": "RunTime",
-      "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [
-        "Win64"
-      ]
-    },
-    {
-      "Name": "StepVrGlove",
-      "Type": "RunTime",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [
-        "Win64"
-      ]
-    },
-    {
-      "Name": "StepVrEditor",
-      "Type": "Developer",
-      "LoadingPhase": "PreDefault",
       "WhitelistPlatforms": [
         "Win64"
       ]

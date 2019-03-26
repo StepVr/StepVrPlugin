@@ -1,22 +1,15 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "StepVrBPLibrary.h"
-#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
-#include "Runtime/Engine/Classes/Engine/World.h"
-#include "MessageDialog.h"
-#include "License/SDKLic.h"
-#include "StepVrGlobal.h"
+#include "Engine.h"
 
+#include "License/SDKLic.h"
+#include "LocalDefine.h"
 
 
 UStepVrBPLibrary::UStepVrBPLibrary(const FObjectInitializer& ObjectInitializer)
 : Super(ObjectInitializer)
 {
 
-}
-
-bool UStepVrBPLibrary::SVStepVRIsValid()
-{
-	return StepVrGlobal::Get()->SDKIsValid();
 }
 
 bool UStepVrBPLibrary::SVCheckGameLic(FString gameId){
@@ -36,10 +29,15 @@ bool UStepVrBPLibrary::SVCheckGameLic(FString gameId){
 	}
 	return true;
 }
-bool UStepVrBPLibrary::SVGetDeviceStateWithID(StepVR::Frame* Frame, int32 EquipId, FTransform& Transform)
+bool UStepVrBPLibrary::SVGetDeviceStateWithID(StepVR::SingleNode* InSingleNode, int32 EquipId, FTransform& Transform)
 {
+	if (!InSingleNode->IsHardWareLink(EquipId))
+	{
+		return false;
+	}
+
 	static StepVR::Vector3f vec3;
-	vec3 = Frame->GetSingleNode().GetPosition(SDKNODEID(EquipId));
+	vec3 = InSingleNode->GetPosition(SDKNODEID(EquipId));
 	vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
 	if (FMath::Abs(vec3.x) < 50 &&
 		FMath::Abs(vec3.y) < 50 &&
@@ -54,9 +52,17 @@ bool UStepVrBPLibrary::SVGetDeviceStateWithID(StepVR::Frame* Frame, int32 EquipI
 
 
 	static StepVR::Vector4f vec4;
-	vec4= Frame->GetSingleNode().GetQuaternion(SDKNODEID(EquipId));
-	vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
-	Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
+	vec4= InSingleNode->GetQuaternion(SDKNODEID(EquipId));
+	if (EquipId == 6)
+	{
+		vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
+		Transform.SetRotation(FQuat(vec4.y*-1, vec4.x, vec4.z, vec4.w));
+	}
+	else
+	{
+		vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
+		Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
+	}
 
 	S_mStepVrDeviceState.FindOrAdd(EquipId) = Transform;
 	return true;
@@ -74,89 +80,16 @@ bool UStepVrBPLibrary::SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transf
 
 	return false;
 }
-
-void UStepVrBPLibrary::SVGetGloveState(StepVR::SpringData* InSpringData, EStepVRGloveType InType, FQuat& InQuat)
+void UStepVrBPLibrary::ConvertCoordinateToUE(FTransform& InOutData)
 {
-	if (InSpringData == nullptr)
-	{
-		return;
-	}
+	FVector TempLocation = InOutData.GetLocation();
+	FQuat TempRotation = InOutData.GetRotation();
 
-	switch (InType)
-	{
-	case EStepVRGloveType::Left_Thumb_Up: 
-	{
-		FQuat TempQuat(InSpringData->left_thumb_2_x, InSpringData->left_thumb_2_y, InSpringData->left_thumb_2_z, InSpringData->left_thumb_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Left_Thumb_Down:
-	{
-		FQuat TempQuat(InSpringData->left_thumb_3_x, InSpringData->left_thumb_3_y, InSpringData->left_thumb_3_z, InSpringData->left_thumb_3_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Left_Index:
-	{
-		FQuat TempQuat(InSpringData->left_index_2_x, InSpringData->left_index_2_y, InSpringData->left_index_2_z, InSpringData->left_index_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Left_Middle:
-	{
-		FQuat TempQuat(InSpringData->left_middle_2_x, InSpringData->left_middle_2_y, InSpringData->left_middle_2_z, InSpringData->left_middle_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Left_Ring:
-	{
-		FQuat TempQuat(InSpringData->left_ring_2_x, InSpringData->left_ring_2_y, InSpringData->left_ring_2_z, InSpringData->left_ring_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Left_Pinky:
-	{
-		FQuat TempQuat(InSpringData->left_pinky_2_x, InSpringData->left_pinky_2_y, InSpringData->left_pinky_2_z, InSpringData->left_pinky_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Right_Thumb_Up:
-	{
-		FQuat TempQuat(InSpringData->right_thumb_2_x, InSpringData->right_thumb_2_y, InSpringData->right_thumb_2_z, InSpringData->right_thumb_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Right_Thumb_Down:
-	{
-		FQuat TempQuat(InSpringData->right_thumb_3_x, InSpringData->right_thumb_3_y, InSpringData->right_thumb_3_z, InSpringData->right_thumb_3_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Right_Index:
-	{
-		FQuat TempQuat(InSpringData->right_index_2_x, InSpringData->right_index_2_y, InSpringData->right_index_2_z, InSpringData->right_index_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Right_Middle:
-	{
-		FQuat TempQuat(InSpringData->right_middle_2_x, InSpringData->right_middle_2_y, InSpringData->right_middle_2_z, InSpringData->right_middle_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Right_Ring:
-	{
-		FQuat TempQuat(InSpringData->right_ring_2_x, InSpringData->right_ring_2_y, InSpringData->right_ring_2_z, InSpringData->right_ring_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	case EStepVRGloveType::Right_Pinky:
-	{
-		FQuat TempQuat(InSpringData->right_pinky_2_x, InSpringData->right_pinky_2_y, InSpringData->right_pinky_2_z, InSpringData->right_pinky_2_w);
-		InQuat = TempQuat;
-	}
-		break;
-	}
+	StepVR::Vector3f vec3(TempLocation.X, TempLocation.Y, TempLocation.Z);
+	StepVR::Vector4f vec4(TempRotation.W, TempRotation.X, TempRotation.Y, TempRotation.Z);
+	vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
+	vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
 
-	S_mStepVrGloveState.FindOrAdd(int32(InType)) = InQuat;
+	//InOutData.SetLocation(FVector(vec3.x, vec3.y, vec3.z));
+	//InOutData.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
 }

@@ -1,8 +1,9 @@
 ﻿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
+#include "../ThirdParty/include/StepVr.h"
 #include "../Launch/Resources/Version.h"
 #include "InputCoreTypes.h"
-#include "StepVr.h"
+
 
 
 #define StepVrPluginName	"StepVrPlugin"

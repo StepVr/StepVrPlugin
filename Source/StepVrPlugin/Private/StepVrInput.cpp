@@ -1,6 +1,5 @@
 #include "StepVrInput.h"
 #include "Features/IModularFeatures.h"
-#include "IPluginManager.h"
 #include "StepVrBPLibrary.h"
 #include "StepVrGlobal.h"
 
@@ -72,12 +71,17 @@ void FStepVrInput::RegisterMotionPair()
 
 void FStepVrInput::SendControllerEvents()
 {
-	if (!StepVrGlobal::Get()->SDKIsValid()) { return; }
+	if (!STEPVR_FRAME_IsValid)
+	{ 
+		return; 
+	}
 
 	uint8 flag = 0x0;
 	FString ButtonName = TEXT("ABCDEF");
 	StepVR::Frame tmp = STEPVR_FRAME->GetFrame();
+
 	const double CurrentTime = FPlatformTime::Seconds();
+
 	for (int32 i = 0; i < (int32)EStepVrDeviceId::DTotalCount; i++)
 	{
 		FStepVrDeviceState& device = ButtonState.Devices[i];
@@ -146,16 +150,20 @@ void FStepVrInput::SetChannelValues(int32 ControllerId, const FForceFeedbackValu
 
 bool FStepVrInput::GetOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const
 {
-	if (!StepVrGlobal::Get()->SDKIsValid()) { return false; }
-
 	bool _flag = false;
+
+	if (!STEPVR_FRAME_IsValid) 
+	{ 
+		return _flag;
+	}
+
 	auto _deviceID = m_MotionPair.Find((uint8)DeviceHand);
 	if (_deviceID != nullptr)
 	{
-		StepVR::Frame tmp = STEPVR_FRAME->GetFrame();
+		StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
 
 		FTransform Transform;
-		UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, *_deviceID, Transform);
+		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, *_deviceID, Transform);
 
 		OutOrientation = Transform.Rotator();
 		OutPosition = Transform.GetLocation();

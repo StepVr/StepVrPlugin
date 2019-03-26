@@ -1,7 +1,7 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "License/SDKLic.h"
 #include "Runtime/Core/Public/Misc/Paths.h"
-#include "IPluginManager.h"
+//#include "IPluginManager.h"
 #include "LocalDefine.h"
 
 
@@ -19,7 +19,8 @@ bool FSDKLic::CheckLicIsValid(FString gameID)
 
 	/** Load DLL */
 	FString _platform = PLATFORM_WIN64 ? "x64" : "x32";
-	FString _dllPath = IPluginManager::Get().FindPlugin(StepVrPluginName)->GetBaseDir() + "/ThirdParty/lib/" + _platform;
+	FString _dllPath = FPaths::ProjectPluginsDir() + TEXT("StepVrPlugin/ThirdParty/lib/") + _platform;
+	//FString _dllPath = IPluginManager::Get().FindPlugin(StepVrPluginName)->GetBaseDir() + "/ThirdParty/lib/" + _platform;
 	FPlatformProcess::PushDllDirectory(*_dllPath);
 	DllHandle = FPlatformProcess::GetDllHandle(*(_dllPath + "/license.dll"));
 

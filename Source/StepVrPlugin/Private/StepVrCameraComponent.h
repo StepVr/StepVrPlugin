@@ -9,10 +9,14 @@
 UCLASS(meta = (BlueprintSpawnableComponent), ClassGroup = (StepVR,Camera))
 class STEPVRPLUGIN_API UStepVrCameraComponent : public UCameraComponent
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 		
 public:
 	virtual void GetCameraView(float DeltaTime, FMinimalViewInfo& DesiredView) override;
-private:
+
+protected:
+	virtual void BeginPlay() override;
 	void RecaclCameraData(float DeltaTime, FMinimalViewInfo& DesiredView);
+
+	bool IsLocalControlled = false;
 };

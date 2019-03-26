@@ -1,4 +1,4 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 using System.IO;
 using UnrealBuildTool;
 
@@ -14,10 +14,12 @@ public class StepVrPlugin : ModuleRules
     }
     public StepVrPlugin(ReadOnlyTargetRules Target) : base(Target)
     {
-        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bFasterWithoutUnity = true;
+        MinFilesUsingPrecompiledHeaderOverride = 1;
 
-        //Íâ²¿Á´½ÓÍ·ÎÄ¼şÄ¿Â¼
+        bEnableUndefinedIdentifierWarnings = false;
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
+        //å¤–éƒ¨é“¾æ¥å¤´æ–‡ä»¶ç›®å½•
         PublicIncludePaths.AddRange(
 			new string[] {
 				"StepVrPlugin/Public",
@@ -26,7 +28,7 @@ public class StepVrPlugin : ModuleRules
 			);
 				
 		
-        //±¾Ä£¿éÁ¬½ÓÍ·ÎÄ¼şÂ·¾¶
+        //æœ¬æ¨¡å—è¿æ¥å¤´æ–‡ä»¶è·¯å¾„
 		PrivateIncludePaths.AddRange(
 			new string[] {
 				"StepVrPlugin/Private",
@@ -54,7 +56,7 @@ public class StepVrPlugin : ModuleRules
                 "InputDevice",
                 "HeadMountedDisplay",
                 "Sockets",
-                "Networking",
+                "Slate"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -85,6 +87,8 @@ public class StepVrPlugin : ModuleRules
             RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "StepVR.dll")));
             RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "license.dll")));
             RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "libcurl.dll")));
+            RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "StepVr.lib")));
+            RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "license.lib")));
         }
 
         if (IsLibrarySupport)

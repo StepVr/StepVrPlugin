@@ -1,4 +1,4 @@
-#include "StepVrGlobal.h"
+﻿#include "StepVrGlobal.h"
 #include "Engine.h"
 
 #include "StepVrServerModule.h"
@@ -81,15 +81,24 @@ void StepVrGlobal::LoadSDK()
 
 	do
 	{
+		TArray<FString> DllPaths;
 		FString Platform = PLATFORM_WIN64 ? "x64" : "x32";
-		FName   PluginName = FStepVrPluginModule::GetModularFeatureName();
-		FString SDllPath = FPaths::ProjectPluginsDir() + TEXT("StepVrPlugin/ThirdParty/lib/") + Platform;
+		DllPaths.Add(FPaths::ProjectPluginsDir() + TEXT("StepVrPlugin/ThirdParty/lib/") + Platform);
+		DllPaths.Add(FPaths::EnginePluginsDir() + TEXT("StepVrPlugin/ThirdParty/lib/") + Platform);
+		DllPaths.Add(FPaths::EnginePluginsDir() + TEXT("Runtime/StepVrPlugin/ThirdParty/lib/") + Platform);
 
-		FPlatformProcess::PushDllDirectory(*SDllPath);
-		DllHandle = FPlatformProcess::GetDllHandle(*(SDllPath + "/StepVR.dll"));
-		FPlatformProcess::PopDllDirectory(*SDllPath);
+		for (int32 i = 0; i < DllPaths.Num(); i++)
+		{
+			FPlatformProcess::PushDllDirectory(*DllPaths[i]);
+			DllHandle = FPlatformProcess::GetDllHandle(*(DllPaths[i] + "/StepVR.dll"));
+			FPlatformProcess::PopDllDirectory(*DllPaths[i]);
+			if (DllHandle != nullptr)
+			{
+				break;
+			}
+		}
 
-		if (!DllHandle)
+		if (DllHandle == nullptr)
 		{
 			Message = "Load Dll Fail";
 			break;

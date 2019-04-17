@@ -450,7 +450,7 @@ bool UStepVrComponent::IsLocalControlled()
 		return bIsCheckLoal;
 	}
 
-	do 
+	do
 	{
 		APawn* Pawn = Cast<APawn>(GetOwner());
 		if (Pawn == nullptr)
@@ -458,19 +458,13 @@ bool UStepVrComponent::IsLocalControlled()
 			break;
 		}
 
-		AController* Controller = Pawn->GetController();
-		if (Controller == nullptr)
+		APawn* LocalPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+		if (LocalPawn == nullptr)
 		{
 			break;
 		}
 
-		AController* ControllerLocal = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-		if (ControllerLocal == nullptr)
-		{
-			break;
-		}
-
-		bIsLocalControll = ControllerLocal == Controller;
+		bIsLocalControll = Pawn == LocalPawn;
 		bIsCheckLoal = true;
 
 	} while (0);

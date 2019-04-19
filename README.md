@@ -1,5 +1,5 @@
 # StepVrPlugin
-StepVr 对接 Unreal 插件
+StepVr 对接 Unreal 的基础定位插件
 
 注意：
 

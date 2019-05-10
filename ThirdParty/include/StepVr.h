@@ -397,10 +397,6 @@ namespace StepVR {
 		**/
 		STEPVR_API void SendStampZeroCmd(const unsigned char* cmd);
 
-		/**
-		* Get the version of mmap service.
-		*/
-		STEPVR_API float GetVersion();
 	};
 
 

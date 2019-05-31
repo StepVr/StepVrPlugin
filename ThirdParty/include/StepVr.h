@@ -28,6 +28,8 @@
 #define STEPVR_API __declspec(dllimport) 
 #endif
 
+#include <string>
+
 /**
 * Spring glove
 **/
@@ -275,6 +277,14 @@ namespace StepVR {
 		*/
 		STEPVR_API float GetNorthAngle(NODEID _nodeid);
 
+
+		STEPVR_API int GetPowerVol(NODEID _nodeid);
+		STEPVR_API int GetFpgaVersion(NODEID _nodeid);
+		STEPVR_API int GetSTVersion(NODEID _nodeid);
+		STEPVR_API int GetHWVersion(NODEID _nodeid);
+		STEPVR_API int GetProductNo(NODEID _nodeid);
+		STEPVR_API int GetSerialNo(NODEID _nodeid);
+
 	};
 
 	/**
@@ -309,6 +319,10 @@ namespace StepVR {
 		**/
 		STEPVR_API SingleNode GetSingleNode();
 
+		//得到同步板的延迟的时间间隔
+		STEPVR_API float GetTimeInterval();
+
+		
 	};
 
 
@@ -397,6 +411,11 @@ namespace StepVR {
 		**/
 		STEPVR_API void SendStampZeroCmd(const unsigned char* cmd);
 
+		STEPVR_API std::string GetVersion();
+
+		STEPVR_API void RecordOneMinuter();
+
+		STEPVR_API bool IsServerAlive();
 	};
 
 

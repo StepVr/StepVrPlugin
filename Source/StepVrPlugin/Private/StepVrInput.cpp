@@ -5,7 +5,13 @@
 
 
 
-#define LOCTEXT_NAMESPACE "StepVrPlugin"
+#define LOCTEXT_NAMESPACE "StepVrInput"
+
+#define StepVRCategory				"StepVRSubCategory"
+#define StepVRCategoryName			"StepVR"
+#define StepVRCategoryFriendlyName	"StepVR"
+
+
 
 FStepVrInput::FStepVrInput(const TSharedRef<FGenericApplicationMessageHandler>& InMessageHandler):
 	MessageHandler(InMessageHandler),
@@ -72,50 +78,71 @@ void FStepVrInput::RegisterMotionPair()
 void FStepVrInput::SendControllerEvents()
 {
 	if (!STEPVR_FRAME_IsValid)
-	{ 
-		return; 
+	{
+		return;
 	}
 
 	uint8 flag = 0x0;
-	FString ButtonName = TEXT("ABCDEF");
-	StepVR::Frame tmp = STEPVR_FRAME->GetFrame();
+	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
 
 	const double CurrentTime = FPlatformTime::Seconds();
 
-	for (int32 i = 0; i < (int32)EStepVrDeviceId::DTotalCount; i++)
+	for (int32 i = 0; i < StateController.Devices.Num(); i++)
 	{
-		FStepVrDeviceState& device = ButtonState.Devices[i];
-		for (int32 j = 0; j < device.TBtnKey.Num(); j++)
+		FStepVrButtonState& ButtonState = StateController.Devices[i];
+
+		int32 DeviceID = ButtonState.DeviceID;
+		if (!Node.IsHardWareLink(SDKKEYID(DeviceID)))
 		{
-			FStepVrButtonState& btnState = device.TBtnKey[j];
+			continue;
+		}
+
+		switch (ButtonState.ActionState)
+		{
+		case EStepActionState::State_Button:
+		{
 			flag = 0x0;
-			flag = (tmp.GetSingleNode().GetKeyUp(device.EquipId, SDKKEYID(j + 1)) ? SButton_Release : 0x0) | flag;
-			flag = (tmp.GetSingleNode().GetKeyDown(device.EquipId, SDKKEYID(j + 1)) ? SButton_Press : 0x0) | flag;
-			flag = (tmp.GetSingleNode().GetKey(device.EquipId, SDKKEYID(j + 1)) ? SButton_Repeat : 0x0) | flag;
-	
-			if (flag != btnState.PressedState)
+			flag = (Node.GetKeyUp(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Release : 0x0) | flag;
+			flag = (Node.GetKeyDown(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Press : 0x0) | flag;
+			flag = (Node.GetKey(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Repeat : 0x0) | flag;
+
+			if (flag != ButtonState.PressedState)
 			{
-				btnState.PressedState = flag;
-				if (btnState.PressedState == SButton_Release)
+				ButtonState.PressedState = flag;
+				if (ButtonState.PressedState == SButton_Release)
 				{
-					UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,Button%c Relese!"),(int32)device.EquipId,ButtonName.GetCharArray()[j]);
-					MessageHandler->OnControllerButtonReleased(btnState.key, 0, false);
+					UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Relese!"), DeviceID, *ButtonState.key.ToString());
+					MessageHandler->OnControllerButtonReleased(ButtonState.key, 0, false);
 				}
-				if (btnState.PressedState == SButton_Press)
+				if (ButtonState.PressedState == SButton_Press)
 				{
-					UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,Button%c Press!"), (int32)device.EquipId, ButtonName.GetCharArray()[j]);
-					MessageHandler->OnControllerButtonPressed(btnState.key, 0, false);
-					btnState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
+					UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Press!"), DeviceID, *ButtonState.key.ToString());
+					MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
+					ButtonState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
 				}
 			}
-			if (btnState.PressedState == SButton_Repeat && btnState.NextRepeatTime <= CurrentTime)
+			if (ButtonState.PressedState == SButton_Repeat && ButtonState.NextRepeatTime <= CurrentTime)
 			{
-				UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,Button%c Repeat!"), (int32)device.EquipId, ButtonName.GetCharArray()[j]);
-				MessageHandler->OnControllerButtonPressed(btnState.key, 0, false);
-				btnState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
+				UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Repeat!"), DeviceID, *ButtonState.key.ToString());
+				MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
+				ButtonState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
 			}
 		}
-	}	
+		break;
+		case EStepActionState::State_ValueX:
+		{
+			MessageHandler->OnControllerAnalog(ButtonState.key, 0, Node.GetJoyStickPosX(DeviceID));
+		}
+		break;
+		case EStepActionState::State_ValueY:
+		{
+			MessageHandler->OnControllerAnalog(ButtonState.key, 0, Node.GetJoyStickPosY(DeviceID));
+		}
+		break;
+		}
+
+
+	}
 }
 
 void FStepVrInput::SetMessageHandler(const TSharedRef< FGenericApplicationMessageHandler >& InMessageHandler)
@@ -210,23 +237,75 @@ bool FStepVrInput::GetControllerOrientationAndPosition(const int32 ControllerInd
 //	return 1.0f;
 //}
 
-bool FStepVrInput::RegisterDeviceKey()
+void FStepVrInput::RegisterDeviceKey()
 {
 	/**
 	* add key binding
 	*/
-	EKeys::AddKey(FKeyDetails(ButtonState.MyKey.StepVR_GunBtn_A_Trigger, LOCTEXT("StepVR_GunBtn_A_Trigger", "StepVR_GunBtn_A_Trigger"), FKeyDetails::GamepadKey));
-	EKeys::AddKey(FKeyDetails(ButtonState.MyKey.StepVR_GunBtn_B_Trigger, LOCTEXT("StepVR_GunBtn_B_Trigger", "StepVR_GunBtn_B_Trigger"), FKeyDetails::GamepadKey));
-	EKeys::AddKey(FKeyDetails(ButtonState.MyKey.StepVR_GunBtn_C_Trigger, LOCTEXT("StepVR_GunBtn_C_Trigger", "StepVR_GunBtn_C_Trigger"), FKeyDetails::GamepadKey));
+	EKeys::AddMenuCategoryDisplayInfo(StepVRCategoryName,
+		LOCTEXT(StepVRCategory, StepVRCategoryFriendlyName),
+		TEXT("GraphEditor.PadEvent_16x"));
 
-	EKeys::AddKey(FKeyDetails(ButtonState.MyKey.StepVR_LeftBtn_A_Trigger, LOCTEXT("StepVR_LeftBtn_A_Trigger", "StepVR_LeftBtn_A_Trigger"), FKeyDetails::GamepadKey));
-	EKeys::AddKey(FKeyDetails(ButtonState.MyKey.StepVR_LeftBtn_B_Trigger, LOCTEXT("StepVR_LeftBtn_B_Trigger", "StepVR_LeftBtn_B_Trigger"), FKeyDetails::GamepadKey));
-	EKeys::AddKey(FKeyDetails(ButtonState.MyKey.StepVR_LeftBtn_C_Trigger, LOCTEXT("StepVR_LeftBtn_C_Trigger", "StepVR_LeftBtn_C_Trigger"), FKeyDetails::GamepadKey));
+	/**
+	 * 枪按键
+	 */
+	FStepVRCapacitiveKey CapacitiveKey;
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunBtn_A_Trigger, 
+		LOCTEXT("StepVR_1", "StepVR_GunBtn_A_Trigger"),
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunBtn_B_Trigger, 
+		LOCTEXT("StepVR_2", "StepVR_GunBtn_B_Trigger"), 
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunBtn_C_Trigger, 
+		LOCTEXT("StepVR_3", "StepVR_GunBtn_C_Trigger"), 
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunBtn_D_Trigger, 
+		LOCTEXT("StepVR_4", "StepVR_GunBtn_D_Trigger"), 
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunJoystick_ValueX, 
+		LOCTEXT("StepVR_5", "StepVR_GunJoystick_ValueX"), 
+		FKeyDetails::FloatAxis,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunJoystick_ValueY, 
+		LOCTEXT("StepVR_6", "StepVR_GunJoystick_ValueY"), 
+		FKeyDetails::FloatAxis,
+		StepVRCategoryName));
 
-	EKeys::AddKey(FKeyDetails(ButtonState.MyKey.StepVR_RightBtn_A_Trigger, LOCTEXT("StepVR_RightBtn_A_Trigger", "StepVR_RightBtn_A_Trigger"), FKeyDetails::GamepadKey));
-	EKeys::AddKey(FKeyDetails(ButtonState.MyKey.StepVR_RightBtn_B_Trigger, LOCTEXT("StepVR_RightBtn_B_Trigger", "StepVR_RightBtn_B_Trigger"), FKeyDetails::GamepadKey));
-	EKeys::AddKey(FKeyDetails(ButtonState.MyKey.StepVR_RightBtn_C_Trigger, LOCTEXT("StepVR_RightBtn_C_Trigger", "StepVR_RightBtn_C_Trigger"), FKeyDetails::GamepadKey));
-	return true;
+	/**
+	 * 左手按键
+	 */
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_LeftBtn_A_Trigger, 
+		LOCTEXT("StepVR_10", "StepVR_LeftBtn_A_Trigger"), 
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_LeftBtn_B_Trigger, 
+		LOCTEXT("StepVR_11", "StepVR_LeftBtn_B_Trigger"), 
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_LeftBtn_C_Trigger, 
+		LOCTEXT("StepVR_12", "StepVR_LeftBtn_C_Trigger"), 
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+
+	/**
+	 * 右手按键
+	 */
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_RightBtn_A_Trigger, 
+		LOCTEXT("StepVR_20", "StepVR_RightBtn_A_Trigger"), 
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_RightBtn_B_Trigger, 
+		LOCTEXT("StepVR_21", "StepVR_RightBtn_B_Trigger"), 
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_RightBtn_C_Trigger, 
+		LOCTEXT("StepVR_22", "StepVR_RightBtn_C_Trigger"), 
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
 }
 
 #undef LOCTEXT_NAMESPACE

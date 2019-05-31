@@ -56,36 +56,36 @@ class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent
 	GENERATED_UCLASS_BODY()
 
 public:
-	//手动重置头显
+	//手动校准HMD
 	UFUNCTION(BlueprintCallable,Category = StepvrLibrary)
 	void ResetHMD();
 	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
 	void ToggleResetType();
 
-	//头显重置类型
+	//HMD校准方式
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
 	FResetHMDType	ResetHMDType = FResetHMDType::ResetHMD_BeginPlay;
 
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
 	FGameUseType	GameUseType = FGameUseType::UseType_Normal;
 
-
 	UPROPERTY(AdvancedDisplay, EditAnywhere,BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
 
 protected:
+	/**
+	 * Delegate
+	 */
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
-
 	virtual void InitializeComponent() override;
-
-	void OwnerBeginPlay();
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	//R
 	void RegistInputComponent();
 
-	//重置Oculus的角度
-	void ResetControllPawnRotation();
+	//Reset HMD
+	void ResetHMDDirection();
 	void ResetOculusRif();
 	void ResetHMDRealTime();
 	void ResetHMDAuto();
@@ -103,20 +103,22 @@ protected:
 
 	bool IsValidPlayerAddr();
 
-	//return bool是否有效
-	bool IsLocalControlled();
+	/**
+	 *	@return 是否初始化
+	 */
+	bool InitializeLocalControlled();
+	void AfterinitializeLocalControlled();
 
 private:
-	static  bool bGlobleIsReset;
-	
-	//是不是本地角色
 	bool	bIsLocalControll = false;
-	//检测是否为本地角色
-	bool    bIsCheckLoal = false;
+	bool    bInitializeLocal = false;
 
+	//差值
 	float ResetYaw;
 
-	//Auto Reset
+	/************************************************************************/
+	/* 时时校准															   */
+	/************************************************************************/
 	#define Yawn  45
 	float HMDYaw[Yawn];
 	float IMUYaw[Yawn];
@@ -131,4 +133,7 @@ private:
 	bool s_bIsResetOculus = true;
 
 	float NewYaw;
+	/************************************************************************/
+	/* Auto Reset                                                           */
+	/************************************************************************/
 };

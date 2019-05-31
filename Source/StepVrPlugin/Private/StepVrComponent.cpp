@@ -13,7 +13,8 @@
 #include "Net/UnrealNetwork.h"
 
 
-bool UStepVrComponent::bGlobleIsReset = false;
+
+static bool GIsResetOculus = false;
 UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	:Super(ObjectInitializer)
 {
@@ -21,14 +22,11 @@ UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	bWantsInitializeComponent = true;
 	bAutoActivate = true;
 	bReplicates = true;
-
-	bIsLocalControll = false;
-	bIsCheckLoal = false;
 }
 
 void UStepVrComponent::ResetHMD()
 {
-	bGlobleIsReset = false;
+	GIsResetOculus = false;
 	ResetHMDAuto();
 }
 void UStepVrComponent::ToggleResetType()
@@ -48,13 +46,8 @@ void UStepVrComponent::ToggleResetType()
 			break;
 	}
 }
-void UStepVrComponent::ResetControllPawnRotation()
+void UStepVrComponent::ResetHMDDirection()
 {
-	if (bGlobleIsReset)
-	{
-		return;
-	}
-
 	APawn* Pawn = Cast<APawn>(GetOwner());
 	if (Pawn == nullptr)
 	{
@@ -63,16 +56,29 @@ void UStepVrComponent::ResetControllPawnRotation()
 
 	Pawn->SetActorRotation(FRotator::ZeroRotator);
 
-	ResetOculusRif();
+	if (GEngine->XRSystem.IsValid())
+	{
+		FName HMDName = GEngine->XRSystem->GetSystemName();
 
-	bGlobleIsReset = true;
+		FName Oculus = TEXT("OculusHMD");
+		FName Windows = TEXT("WindowsMixedRealityHMD");
+		if (HMDName.IsEqual(Oculus))
+		{
+			ResetOculusRif();
+		}
+		else if(HMDName.IsEqual(Windows))
+		{
+
+		}
+	}
+	
+
+	GIsResetOculus = true;
 }
 
 void UStepVrComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	OwnerBeginPlay();
 }
 
 void UStepVrComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -94,19 +100,13 @@ void UStepVrComponent::RegistInputComponent()
 		Pawn->InputComponent->BindKey(EKeys::R, EInputEvent::IE_Pressed, this, &UStepVrComponent::ResetHMD);
 		Pawn->InputComponent->BindKey(EKeys::T, EInputEvent::IE_Pressed, this, &UStepVrComponent::ToggleResetType);
 	}
-	else
-	{
-		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UStepVrComponent::RegistInputComponent, 0.2f, false);
-	}
 }
 
 void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	//是否初始化contrller
-	if (!IsLocalControlled())
+	if (!InitializeLocalControlled())
 	{
 		return;
 	}
@@ -127,14 +127,8 @@ void UStepVrComponent::InitializeComponent()
 	ResetYaw = GameUseType == FGameUseType::UseType_Normal ? 90.f : -90.f;
 }
 
-void UStepVrComponent::OwnerBeginPlay()
+void UStepVrComponent::AfterinitializeLocalControlled()
 {
-	if (!IsLocalControlled())
-	{
-		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UStepVrComponent::OwnerBeginPlay, 0.5f, false);
-	}
-
 	if (!bIsLocalControll)
 	{
 		return;
@@ -150,14 +144,18 @@ void UStepVrComponent::OwnerBeginPlay()
 		SetPlayerAddrOnServer(1);
 	}
 
-	if (ResetHMDType == FResetHMDType::ResetHMD_BeginPlay)
+	//编辑器模式重新校准
+	if (GetWorld()->IsEditorWorld())
 	{
-		ResetHMDAuto();
+		GIsResetOculus = false;
 	}
 
+	//if (ResetHMDType == FResetHMDType::ResetHMD_BeginPlay)
+	//{
+	//	ResetHMDAuto();
+	//}
+	ResetHMDAuto();
 	RegistInputComponent();
-
-
 }
 
 void UStepVrComponent::ResetOculusRif()
@@ -168,6 +166,8 @@ void UStepVrComponent::ResetOculusRif()
 	float TempYaw = CurrentNodeState.FHead.Rotator().Yaw + ResetYaw;
 
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(TempYaw);
+
+	UE_LOG(LogStepVrPlugin,Log,TEXT("Reset HMD Yaw : %f"), TempYaw);
 }
 
 
@@ -264,7 +264,7 @@ void UStepVrComponent::ResetHMDRealTime()
 			float TempIMUYaw = Yaw + ResetYaw;
 			TempIMUYaw = TempIMUYaw > 180 ? TempIMUYaw - 360 : TempIMUYaw;
 
-			DevYaw = TempIMUYaw - HMDYaw[2];
+			DevYaw = TempIMUYaw - HMDYaw[0];
 			DevYaw = DevYaw > 180 ? DevYaw - 360 : DevYaw;
 			DevYaw = DevYaw < -180 ? DevYaw + 360 : DevYaw;
 			if (!bIsCorrect && Cnum < 200)
@@ -292,7 +292,7 @@ void UStepVrComponent::ResetHMDRealTime()
 			FQuat BaseOrientation;
 			BaseOrientation = (NewYaw != 0.0f) ? FRotator(0, -NewYaw, 0).Quaternion() : FQuat::Identity;
 			GEngine->XRSystem->SetBaseOrientation(BaseOrientation);
-			UE_LOG(LogStepVrPlugin, Warning, TEXT("Stepvr ResetHMD Yaw:%f,%f,%f"), Yaw, HMDYaw[0], NewYaw);
+			//UE_LOG(LogStepVrPlugin, Warning, TEXT("Stepvr ResetHMD Yaw:%f,%f,%f"), Yaw, HMDYaw[0], NewYaw);
 
 			s_bIsResetOculus = true;
 		}
@@ -302,19 +302,15 @@ void UStepVrComponent::ResetHMDRealTime()
 
 void UStepVrComponent::ResetHMDAuto()
 {
+	if (GIsResetOculus)
+	{
+		return;
+	}
+
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected() &&
 		UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
-		if (GetWorld()->IsEditorWorld())
-		{
-			bGlobleIsReset = false;
-		}
-		ResetControllPawnRotation();
-	}
-	else
-	{
-		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &UStepVrComponent::ResetHMDAuto, 0.2f, false);
+		ResetHMDDirection();
 	}
 }
 
@@ -443,23 +439,11 @@ bool UStepVrComponent::IsValidPlayerAddr()
 	return PlayerAddr > 1;
 }
 
-bool UStepVrComponent::IsLocalControlled()
+bool UStepVrComponent::InitializeLocalControlled()
 {
-	if (bIsCheckLoal)
-	{
-		return bIsCheckLoal;
-	}
-
 	do 
 	{
-		APawn* Pawn = Cast<APawn>(GetOwner());
-		if (Pawn == nullptr)
-		{
-			break;
-		}
-
-		AController* Controller = Pawn->GetController();
-		if (Controller == nullptr)
+		if (bInitializeLocal)
 		{
 			break;
 		}
@@ -470,12 +454,27 @@ bool UStepVrComponent::IsLocalControlled()
 			break;
 		}
 
-		bIsLocalControll = ControllerLocal == Controller;
-		bIsCheckLoal = true;
+		APawn* LocalPawn = ControllerLocal->GetPawn();
+		if (LocalPawn == nullptr)
+		{
+			break;
+		}
 
+		APawn* Pawn = Cast<APawn>(GetOwner());
+		if (Pawn == nullptr)
+		{
+			//基类非Pawn下的组件无效
+			bInitializeLocal = true;
+			break;
+		}
+
+		bIsLocalControll = LocalPawn == Pawn;
+		bInitializeLocal = true;
+
+		AfterinitializeLocalControlled();
 	} while (0);
 
-	return bIsCheckLoal;
+	return bInitializeLocal;
 }
 
 void UStepVrComponent::SetPlayerAddrOnServer_Implementation(const uint32 InAddr)

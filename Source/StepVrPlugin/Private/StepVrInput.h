@@ -77,12 +77,12 @@ public:
 	*/
 	//virtual float GetHapticAmplitudeScale() const override;
 private:
-	bool RegisterDeviceKey();
+	void RegisterDeviceKey();
 	void RegisterMotionPair();
 protected:
 	TSharedRef<FGenericApplicationMessageHandler> MessageHandler;
 
-	FStepVrStateController	ButtonState;
+	FStepVrStateController	StateController;
 
 	double					m_fBtnRepeatTime;
 

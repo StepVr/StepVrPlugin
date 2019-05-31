@@ -1,12 +1,12 @@
-﻿{
-  "FileVersion": 3,
-  "Version": 1,
-  "VersionName": "1.0",
-  "FriendlyName": "Step Vr Plugin",
+{
+  "FileVersion": 1,
+  "Version": 4,
+  "VersionName": "4.001",
+  "FriendlyName": "StepVrPlugin",
   "Description": "Support Step Deveices",
   "Category": "Step",
-  "CreatedBy": "JCW",
-  "CreatedByURL": "",
+  "CreatedBy": "Step",
+  "CreatedByURL": "http://www.g-wearables.com/",
   "DocsURL": "",
   "MarketplaceURL": "",
   "SupportURL": "",
@@ -16,7 +16,7 @@
   "Modules": [
     {
       "Name": "StepVrPlugin",
-      "Type": "RunTime",
+      "Type": "Runtime",
       "LoadingPhase": "Default",
       "WhitelistPlatforms": [
         "Win64"

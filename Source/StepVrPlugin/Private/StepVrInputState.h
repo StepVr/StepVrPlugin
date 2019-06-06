@@ -32,8 +32,8 @@ struct FStepVRCapacitiveKey
 	FKey StepVR_GunBtn_B_Trigger;
 	FKey StepVR_GunBtn_C_Trigger;
 	FKey StepVR_GunBtn_D_Trigger;
-	FKey StepVR_GunJoystick_ValueX;
-	FKey StepVR_GunJoystick_ValueY;
+	FKey StepVR_Gun_ValueX;
+	FKey StepVR_Gun_ValueY;
 
 	/**
 	 * 左手
@@ -49,19 +49,34 @@ struct FStepVRCapacitiveKey
 	FKey StepVR_RightBtn_B_Trigger;
 	FKey StepVR_RightBtn_C_Trigger;
 
+	/**
+	 * 导演监视器
+	 */
+	FKey StepVR_DirMon_A_Trigger;
+	FKey StepVR_DirMon_B_Trigger;
+	FKey StepVR_DirMon_C_Trigger;
+	FKey StepVR_DirMon_ValueX;
+	FKey StepVR_DirMon_ValueY;
+
+
 	FStepVRCapacitiveKey() :
 		StepVR_GunBtn_A_Trigger("StepVR_GunBtnA_Press"),
 		StepVR_GunBtn_B_Trigger("StepVR_GunBtnB_Press"),
 		StepVR_GunBtn_C_Trigger("StepVR_GunBtnC_Press"),
 		StepVR_GunBtn_D_Trigger("StepVR_GunBtnD_Press"),
-		StepVR_GunJoystick_ValueX("StepVR_GunJoystick_X"),
-		StepVR_GunJoystick_ValueY("StepVR_GunJoystick_Y"),
+		StepVR_Gun_ValueX("StepVR_Gun_ValueX"),
+		StepVR_Gun_ValueY("StepVR_Gun_ValueY"),
 		StepVR_LeftBtn_A_Trigger("StepVR_LeftA_Press"),
 		StepVR_LeftBtn_B_Trigger("StepVR_LeftB_Press"),
 		StepVR_LeftBtn_C_Trigger("StepVR_LeftC_Press"),
 		StepVR_RightBtn_A_Trigger("StepVR_RightA_Press"),
 		StepVR_RightBtn_B_Trigger("StepVR_RightB_Press"),
-		StepVR_RightBtn_C_Trigger("StepVR_RightC_Press")
+		StepVR_RightBtn_C_Trigger("StepVR_RightC_Press"),
+		StepVR_DirMon_A_Trigger("StepVR_DirMon_A_Trigger"),
+		StepVR_DirMon_B_Trigger("StepVR_DirMon_B_Trigger"),
+		StepVR_DirMon_C_Trigger("StepVR_DirMon_C_Trigger"),
+		StepVR_DirMon_ValueX("StepVR_DirMon_ValueX"),
+		StepVR_DirMon_ValueY("StepVR_DirMon_ValueY")
 	{
 
 	}
@@ -161,13 +176,35 @@ struct FStepVrStateController
 				CapacitiveKey.StepVR_GunBtn_D_Trigger.GetFName(),
 				StepVrDeviceID::DGun);
 			AddActions(StepVR::SingleNode::MAX_KEY,
-				CapacitiveKey.StepVR_GunJoystick_ValueX.GetFName(),
+				CapacitiveKey.StepVR_Gun_ValueX.GetFName(),
 				StepVrDeviceID::DGun,
 				EStepActionState::State_ValueX);
 			AddActions(StepVR::SingleNode::MAX_KEY,
-				CapacitiveKey.StepVR_GunJoystick_ValueY.GetFName(),
+				CapacitiveKey.StepVR_Gun_ValueY.GetFName(),
 				StepVrDeviceID::DGun,
 				EStepActionState::State_ValueY);
+		}
+		
+		/**
+		 * 导演监视器 ID：8
+		 */
+		{
+			AddActions(StepVR::SingleNode::KeyA,
+				CapacitiveKey.StepVR_DirMon_A_Trigger.GetFName(),
+				StepVrDeviceID::DDirMon);
+			AddActions(StepVR::SingleNode::KeyF,
+				CapacitiveKey.StepVR_DirMon_B_Trigger.GetFName(),
+				StepVrDeviceID::DDirMon);
+			AddActions(StepVR::SingleNode::KeyG,
+				CapacitiveKey.StepVR_DirMon_C_Trigger.GetFName(),
+				StepVrDeviceID::DDirMon);
+
+			AddActions(StepVR::SingleNode::MAX_KEY,
+				CapacitiveKey.StepVR_DirMon_ValueX.GetFName(),
+				StepVrDeviceID::DDirMon, EStepActionState::State_ValueX);
+			AddActions(StepVR::SingleNode::MAX_KEY,
+				CapacitiveKey.StepVR_DirMon_ValueY.GetFName(),
+				StepVrDeviceID::DDirMon, EStepActionState::State_ValueY);
 		}
 	}
 };

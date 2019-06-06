@@ -7,11 +7,10 @@
 
 /** get gameid */
 typedef bool(*_getGameID)(char *buff1, char *buff2,int len);
-/** get current cpuid */
-typedef bool(*_getCurrentCpuID)(char *buff, int len);
 /** get regist cpuid */
 typedef bool(*_getRegistCpuID)(char *buff1, char *buff2, int len);
-
+/** get Compare */
+typedef bool(*_getCompare)(char *buff1);
 
 bool FSDKLic::CheckLicIsValid(FString gameID)
 {
@@ -20,45 +19,54 @@ bool FSDKLic::CheckLicIsValid(FString gameID)
 	/** Load DLL */
 	FString _platform = PLATFORM_WIN64 ? "x64" : "x32";
 	FString _dllPath = FPaths::ProjectPluginsDir() + TEXT("StepVrPlugin/ThirdParty/lib/") + _platform;
-	//FString _dllPath = IPluginManager::Get().FindPlugin(StepVrPluginName)->GetBaseDir() + "/ThirdParty/lib/" + _platform;
 	FPlatformProcess::PushDllDirectory(*_dllPath);
 	DllHandle = FPlatformProcess::GetDllHandle(*(_dllPath + "/license.dll"));
 
 	do 
 	{
+		if (DllHandle == nullptr)
+		{
+			break;
+		}
+
 		/** Load DLL Method */
 		_getGameID _dllGetGameID = (_getGameID)FPlatformProcess::GetDllExport(DllHandle, TEXT("GetGameId"));
-		_getCurrentCpuID _dllGetCpuID = (_getCurrentCpuID)FPlatformProcess::GetDllExport(DllHandle, TEXT("GetId"));
+		_getCompare _dllGetCompare = (_getCompare)FPlatformProcess::GetDllExport(DllHandle, TEXT("Compare"));
 		_getRegistCpuID _dllGetRegistCpuID = (_getRegistCpuID)FPlatformProcess::GetDllExport(DllHandle, TEXT("GetPcId"));
 
 		char _registGamID[4];
-		char _registCPUID[128];
-		char _curCPUID[128];
 
+		//传bin路径
 		bool _f1 = _dllGetGameID(TCHAR_TO_ANSI(*FPaths::ProjectDir()), _registGamID, 4);
 		int32 _igameID = FCString::Atoi(ANSI_TO_TCHAR(_registGamID));
+
+		//传入GameID进行匹配
 		int32 _iregistGameID = FCString::Atoi(*gameID);
 		if (_igameID != _iregistGameID)
 		{
 			break;
 		}
 
-		if (_dllGetRegistCpuID(TCHAR_TO_ANSI(*FPaths::ProjectDir()),_registCPUID,128)&&
-			_dllGetCpuID(_curCPUID,128)&&
-			FString(ANSI_TO_TCHAR(_curCPUID)).Equals(FString(ANSI_TO_TCHAR(_registCPUID))))
+		char _registCPUID[128];
+		if (!_dllGetRegistCpuID(TCHAR_TO_ANSI(*FPaths::ProjectDir()), _registCPUID, 128))
 		{
-			UE_LOG(LogStepVrPlugin, Warning, TEXT("check Lic Success!"));
-		}
-		else
-		{
-			UE_LOG(LogStepVrPlugin, Warning, TEXT("Lic Invalid!"));
 			break;
 		}
 
+		if (!_dllGetCompare(_registCPUID))
+		{
+			UE_LOG(LogStepVrPlugin, Warning, TEXT("Lic Invalid!"));
+			break;
+			
+		}
+
+
+		UE_LOG(LogStepVrPlugin, Warning, TEXT("check Lic Success!"));
 		_flag = true;
 	} while (0);
 
 	UE_LOG(LogStepVrPlugin, Warning, TEXT("path = %s"), *FPaths::ProjectDir());
+	
 	/** Free DLL */
 	FPlatformProcess::PopDllDirectory(*_dllPath);
 	if (DllHandle)

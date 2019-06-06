@@ -1,29 +1,40 @@
 #ifndef cpuid_h__
 #define cpuid_h__
 
+#include <string>
+#include <map>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef LICENSE_EXPORTS
 #define LICENSE_API __declspec(dllexport)
 #else
 #define LICENSE_API __declspec(dllimport)
 #endif
 
-#include <string>
-#include <map>
+	LICENSE_API bool Compare(char *lpszid);
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-
-	//get id from pc
 	LICENSE_API bool GetId(char *lpszid, int len = 128);
+
+	LICENSE_API bool GetId_BD(char *lpszid, int len = 128);
+
+	LICENSE_API bool GetId_MK(char *lpszid, int len = 128);
+
+	LICENSE_API bool GetId_P(char *lpszid, int len = 128);
+
 	//get game id from gamelicense.bin file
 	LICENSE_API bool GetGameId(const char *lpszlicensefilepath, char *lpszgameid, int len = 4);
 	//get pc id from gamelicense.bin file
 	LICENSE_API bool GetPcId(const char *lpszlicensefilepath, char *lpszpcid, int len = 128);
-	//check game id is valid.
-	LICENSE_API bool CheckGameLicenseValid(char* lpszgameid);
+
+
 
 	LICENSE_API int CheckGameOrder(std::string strUserId, std::string strGameId, std::string strKeyId);
+
+	LICENSE_API int CheckGameOrderForCSharp(const char* strUserId, const char* strGameId, const char* strKeyId);
 
 	LICENSE_API int CheckSDKOrder(std::string strUserId, std::string strSdkId, std::string strSdkKeyId);
 
@@ -35,7 +46,11 @@ extern "C" {
 
 	LICENSE_API int CheckGameBindEnable(std::string strGameKeyId);
 
+	LICENSE_API int CheckGameBindEnableForCSharp(const char* strGameKeyId);
+
 	LICENSE_API int BindGameKeyWithPc(std::string strUserId, std::string strGameId, std::string strKeyId, std::string pcId);
+
+	LICENSE_API int BindGameKeyWithPcForCSharp(const char* strUserId, const char* strGameId, const char* strKeyId, const char* pcId);
 
 	LICENSE_API int BindSDKKeyWithPc(std::string strUserId, std::string strSdkId, std::string strSdkKeyId, std::string pcId);
 
@@ -51,8 +66,13 @@ extern "C" {
 
 	LICENSE_API int FetchAllSDK(std::map<std::string, std::string>& sdkVector);
 
+	//the follow function will be discard.
+	//LICENSE_API bool GetGameId(char *lpszgameid, int len = 4);
+
+	//LICENSE_API bool GetPcId(char *lpszpcid, int len = 128);
+
+
 #ifdef __cplusplus
 }
-#endif // __cplusplus
-
+#endif
 #endif // cpuid_h__

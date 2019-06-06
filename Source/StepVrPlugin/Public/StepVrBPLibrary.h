@@ -42,9 +42,12 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
 	static bool SVCheckGameLic(FString gameId);
 
-	//获取标准件数据
+	
 	static bool SVGetDeviceStateWithID(StepVR::SingleNode* InSingleNode,int32 DeviceID, FTransform& Transform);
 	
+	/**
+	 * 获取标准件数据
+	 */
 	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	static bool SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
 

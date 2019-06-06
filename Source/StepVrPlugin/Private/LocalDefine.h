@@ -43,20 +43,25 @@ DECLARE_LOG_CATEGORY_EXTERN(LogStepVrPlugin, Log, All);
 
 #define SAFE_DELETE_NULL(_Point_)	if (_Point_!=nullptr) { delete _Point_;_Point_ = nullptr; }
 #define CHECK_BREAK(_Flag_)			if(_Flag_){break;}
+
+
 /*----------------------------------------------------------------------------
 	Enum  & Struct
 ----------------------------------------------------------------------------*/
 UENUM()
 namespace StepVrDeviceID {
-
-	/**
-	*   standard component 
-	*/
 	enum Type {
 		DLeftController		= 0x01,
 		DRightController	= 0x02,
 		DGun				= 0x04,
+		//相机
+		DCamera				= 0x05,
 		DHead				= 0x06,
+		//景深
+		DDepth				= 0x07,
+		//导演监视器
+		DDirMon				= 0x08,
+
 		DBack				= 0x0a,
 		DLeftHand			= 0x0b,
 		DRightHand			= 0x0c,
@@ -67,30 +72,8 @@ namespace StepVrDeviceID {
 	};
 }
 
-/**
-*   手套
-*/
-enum EStepVRGloveType
-{
-	Left_Thumb_Up = 0,
-	Left_Thumb_Down,
-	Left_Index,
-	Left_Middle,
-	Left_Ring,
-	Left_Pinky,
-
-	Right_Thumb_Up,
-	Right_Thumb_Down,
-	Right_Index,
-	Right_Middle,
-	Right_Ring,
-	Right_Pinky,
-
-	MAX,
-};
-
 //标准件
 extern TMap<int32, FTransform>	S_mStepVrDeviceState;
 
-//手套
-extern TMap<int32, FQuat>	S_mStepVrGloveState;
+//需要获取定位的设备ID
+extern TArray<int32>	GNeedUpdateDevices;

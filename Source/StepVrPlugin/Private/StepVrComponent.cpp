@@ -22,6 +22,9 @@ UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	bWantsInitializeComponent = true;
 	bAutoActivate = true;
 	bReplicates = true;
+
+	NeedUpdateDevices.Add(StepVrDeviceID::DGun);
+	NeedUpdateDevices.Add(StepVrDeviceID::DHead);
 }
 
 void UStepVrComponent::ResetHMD()
@@ -134,6 +137,31 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 		return;
 	}
 
+	/**
+	 * 注册需要更新定位的标准件
+	 */
+	for (auto DevID : NeedUpdateDevices)
+	{
+		GNeedUpdateDevices.AddUnique(DevID);
+	}
+
+	/**
+	 * 编辑器模式重新校准
+	 */
+	if (GetWorld()->IsEditorWorld())
+	{
+		GIsResetOculus = false;
+	}
+
+	/**
+	 * 校准头盔，注册校准事件
+	 */
+	ResetHMDAuto();
+	RegistInputComponent();
+
+	/**
+	 * 同步定位数据
+	 */
 	if (STEPVR_SERVER_IsValid)
 	{
 		uint32 Addr = STEPVR_SERVER->GetLocalAddress();
@@ -143,19 +171,6 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	{
 		SetPlayerAddrOnServer(1);
 	}
-
-	//编辑器模式重新校准
-	if (GetWorld()->IsEditorWorld())
-	{
-		GIsResetOculus = false;
-	}
-
-	//if (ResetHMDType == FResetHMDType::ResetHMD_BeginPlay)
-	//{
-	//	ResetHMDAuto();
-	//}
-	ResetHMDAuto();
-	RegistInputComponent();
 }
 
 void UStepVrComponent::ResetOculusRif()
@@ -389,12 +404,12 @@ void UStepVrComponent::TickLocal()
 		//一帧数据
 		StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
 
-		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DHead, CurrentNodeState.FHead);
-		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DGun, CurrentNodeState.FGun);
-		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DLeftController, CurrentNodeState.FDLeftController);
-		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DRightController, CurrentNodeState.FRightController);
-		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DLeftFoot, CurrentNodeState.FDLeftFoot);
-		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DRightFoot, CurrentNodeState.FRightFoot);
+		for (auto DevID : GNeedUpdateDevices)
+		{
+			FTransform& TempPtr = GetDeviceDataPtr(DevID);
+			UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, DevID, TempPtr);
+		}
+
 
 		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
 		{
@@ -432,6 +447,40 @@ void UStepVrComponent::TickLocal()
 
 	//Reset RealTime
 	ResetHMDRealTime();
+}
+
+FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
+{
+	switch (DeviceID)
+	{
+	case StepVrDeviceID::DHead:
+	{
+		return CurrentNodeState.FHead;
+	}
+	case StepVrDeviceID::DGun:
+	{
+		return CurrentNodeState.FGun;
+	}
+	case StepVrDeviceID::DLeftController:
+	{
+		return CurrentNodeState.FDLeftController;
+	}
+	case StepVrDeviceID::DRightController:
+	{
+		return CurrentNodeState.FRightController;
+	}
+	case StepVrDeviceID::DLeftFoot:
+	{
+		return CurrentNodeState.FDLeftFoot;
+	}
+	case StepVrDeviceID::DRightFoot:
+	{
+		return CurrentNodeState.FRightFoot;
+	}
+	}
+
+	static FTransform GTransform;
+	return GTransform;
 }
 
 bool UStepVrComponent::IsValidPlayerAddr()

@@ -66,8 +66,18 @@ public:
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
 	FResetHMDType	ResetHMDType = FResetHMDType::ResetHMD_BeginPlay;
 
+	/**
+	 * UseType_Normal 单独HMD
+	 * UseType_Mocap  动捕链接HMD
+	 */
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
 	FGameUseType	GameUseType = FGameUseType::UseType_Normal;
+
+	/**
+	 * 需要更新定位的设备ID
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = StepvrLibrary)
+	TArray<int32>	NeedUpdateDevices;
 
 	UPROPERTY(AdvancedDisplay, EditAnywhere,BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
@@ -94,6 +104,7 @@ protected:
 
 	void TickSimulate();
 	void TickLocal();
+	FTransform& GetDeviceDataPtr(int32 DeviceID);
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void SetPlayerAddrOnServer(const uint32 InAddr);

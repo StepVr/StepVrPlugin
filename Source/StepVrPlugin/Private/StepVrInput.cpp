@@ -87,12 +87,20 @@ void FStepVrInput::SendControllerEvents()
 
 	const double CurrentTime = FPlatformTime::Seconds();
 
+	int32 PreDeviceID = 0;
+	bool  IsLink = false;
 	for (int32 i = 0; i < StateController.Devices.Num(); i++)
 	{
 		FStepVrButtonState& ButtonState = StateController.Devices[i];
 
 		int32 DeviceID = ButtonState.DeviceID;
-		if (!Node.IsHardWareLink(SDKKEYID(DeviceID)))
+		if (DeviceID != PreDeviceID)
+		{
+			PreDeviceID = DeviceID;
+			IsLink = Node.IsHardWareLink(SDKKEYID(DeviceID));
+		}
+
+		if (!IsLink)
 		{
 			continue;
 		}
@@ -140,8 +148,6 @@ void FStepVrInput::SendControllerEvents()
 		}
 		break;
 		}
-
-
 	}
 }
 
@@ -266,12 +272,12 @@ void FStepVrInput::RegisterDeviceKey()
 		LOCTEXT("StepVR_4", "StepVR_GunBtn_D_Trigger"), 
 		FKeyDetails::GamepadKey,
 		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunJoystick_ValueX, 
-		LOCTEXT("StepVR_5", "StepVR_GunJoystick_ValueX"), 
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_Gun_ValueX, 
+		LOCTEXT("StepVR_5", "StepVR_Gun_ValueX"), 
 		FKeyDetails::FloatAxis,
 		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunJoystick_ValueY, 
-		LOCTEXT("StepVR_6", "StepVR_GunJoystick_ValueY"), 
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_Gun_ValueY, 
+		LOCTEXT("StepVR_6", "StepVR_Gun_ValueY"), 
 		FKeyDetails::FloatAxis,
 		StepVRCategoryName));
 
@@ -305,6 +311,30 @@ void FStepVrInput::RegisterDeviceKey()
 	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_RightBtn_C_Trigger, 
 		LOCTEXT("StepVR_22", "StepVR_RightBtn_C_Trigger"), 
 		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+
+	/**
+	 * µ¼ÑÝ¼àÊÓÆ÷
+	 */
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_A_Trigger,
+		LOCTEXT("StepVR_31", "StepVR_DirMon_A_Trigger"),
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_B_Trigger,
+		LOCTEXT("StepVR_32", "StepVR_DirMon_B_Trigger"),
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_C_Trigger,
+		LOCTEXT("StepVR_33", "StepVR_DirMon_C_Trigger"),
+		FKeyDetails::GamepadKey,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_ValueX,
+		LOCTEXT("StepVR_34", "StepVR_DirMon_ValueX"),
+		FKeyDetails::FloatAxis,
+		StepVRCategoryName));
+	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_ValueY,
+		LOCTEXT("StepVR_35", "StepVR_DirMon_ValueY"),
+		FKeyDetails::FloatAxis,
 		StepVRCategoryName));
 }
 

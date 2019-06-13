@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Runtime/Core/Public/Containers/UnrealString.h"
 #include "cpuid.h"

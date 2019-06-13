@@ -1,4 +1,4 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "License/SDKLic.h"
 #include "Runtime/Core/Public/Misc/Paths.h"
 //#include "IPluginManager.h"
@@ -36,11 +36,11 @@ bool FSDKLic::CheckLicIsValid(FString gameID)
 
 		char _registGamID[4];
 
-		//´«binÂ·¾¶
+		//ä¼ binè·¯å¾„
 		bool _f1 = _dllGetGameID(TCHAR_TO_ANSI(*FPaths::ProjectDir()), _registGamID, 4);
 		int32 _igameID = FCString::Atoi(ANSI_TO_TCHAR(_registGamID));
 
-		//´«ÈëGameID½øĞĞÆ¥Åä
+		//ä¼ å…¥GameIDè¿›è¡ŒåŒ¹é…
 		int32 _iregistGameID = FCString::Atoi(*gameID);
 		if (_igameID != _iregistGameID)
 		{

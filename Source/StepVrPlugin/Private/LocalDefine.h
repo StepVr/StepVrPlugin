@@ -1,13 +1,16 @@
 ﻿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
-#include "../ThirdParty/include/StepVr.h"
-#include "../Launch/Resources/Version.h"
-#include "InputCoreTypes.h"
+#include "StepVr.h"
+
+#include "Launch/Resources/Version.h"
+#include "CoreMinimal.h"
+#include "Logging/LogMacros.h"
+
+#include "LocalDefine.generated.h"
 
 
 
 #define StepVrPluginName	"StepVrPlugin"
-
 
 /*----------------------------------------------------------------------------
 	Custom Version
@@ -68,12 +71,12 @@ namespace StepVrDeviceID {
 		DLeftFoot			= 0x0d,
 		DRightFoot			= 0x0e,
 
-		DOculusHead			= 0x1f,
+		DHMD			= 0x1f,
 	};
 }
 
 //标准件
-extern TMap<int32, FTransform>	S_mStepVrDeviceState;
+extern TMap<int32, FTransform>	GLocalDevicesRT;
 
 //需要获取定位的设备ID
 extern TArray<int32>	GNeedUpdateDevices;

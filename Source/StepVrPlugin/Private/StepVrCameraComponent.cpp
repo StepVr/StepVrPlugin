@@ -1,4 +1,4 @@
-
+﻿
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "StepVrCameraComponent.h"
 #include "Engine.h"
@@ -35,9 +35,7 @@ void UStepVrCameraComponent::RecaclCameraData(float DeltaTime, FMinimalViewInfo&
 	FTransform _StepvrHead;
 	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
 
-	if (UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DHead, _StepvrHead))
-	{
-		SetRelativeLocation(_StepvrHead.GetLocation());
-		DesiredView.Location = GetComponentToWorld().GetLocation();
-	}
+	UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DHead, _StepvrHead);
+	SetRelativeLocation(_StepvrHead.GetLocation());
+	DesiredView.Location = GetComponentToWorld().GetLocation();
 }

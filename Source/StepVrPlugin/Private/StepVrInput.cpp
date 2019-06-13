@@ -1,4 +1,4 @@
-#include "StepVrInput.h"
+ï»¿#include "StepVrInput.h"
 #include "Features/IModularFeatures.h"
 #include "StepVrBPLibrary.h"
 #include "StepVrGlobal.h"
@@ -25,10 +25,6 @@ FStepVrInput::FStepVrInput(const TSharedRef<FGenericApplicationMessageHandler>& 
 	RegisterMotionPair();
 
 	IModularFeatures::Get().RegisterModularFeature(GetModularFeatureName(), this);
-
-#if (!AFTER_ENGINEVERSION_411)
-	GEngine->MotionControllerDevices.AddUnique(this);
-#endif	
 }
 
 FStepVrInput::~FStepVrInput()
@@ -39,29 +35,27 @@ FStepVrInput::~FStepVrInput()
 
 void FStepVrInput::Tick(float DeltaTime)
 {
-	/** Clear other MotionController */
-	static bool IsUnregist = false;
-	static float DelayTime = 0.0f;
-
-	if (!IsUnregist)
+	/**
+	 * åˆå§‹åŒ–
+	 */
 	{
-		TArray<IMotionController*> _Arrays = IModularFeatures::Get().GetModularFeatureImplementations<IMotionController>(IMotionController::GetModularFeatureName());
-		if (_Arrays.Num()<=1)
+		static bool IsInitialize = false;
+		if (IsInitialize == false)
 		{
-			DelayTime += DeltaTime;
-			if (DelayTime > 10) { IsUnregist = true; }
-			return;
+			Initialize();
+			IsInitialize = true;
 		}
+	}
+	
 
-		for (int32 i = 0; i < _Arrays.Num(); i++)
-		{
-			if (_Arrays[i] != this)
-			{
-				IModularFeatures::Get().UnregisterModularFeature(IMotionController::GetModularFeatureName(), _Arrays[i]);
-			}
-		}
-
-		IsUnregist = true;
+	/**
+	 * æ›´æ–°å®šä½æ•°æ®
+	 */
+	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
+	for (auto DevID : GNeedUpdateDevices)
+	{
+		FTransform TempData;
+		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, DevID, TempData);
 	}
 }
 
@@ -73,6 +67,27 @@ void FStepVrInput::RegisterMotionPair()
 	m_MotionPair.Add((uint8)EControllerHand::Gun, (int32)StepVrDeviceID::DGun);
 #endif
 	
+}
+
+void FStepVrInput::Initialize()
+{
+	/**
+	* æ¸…é™¤å…¶ä»–Controllerï¼Œä»¥é˜²å†²çª
+	*/
+	{
+		TArray<IMotionController*> _Arrays = IModularFeatures::Get().GetModularFeatureImplementations<IMotionController>(IMotionController::GetModularFeatureName());
+		for (int32 i = 0; i < _Arrays.Num(); i++)
+		{
+			if (_Arrays[i] != this)
+			{
+				IModularFeatures::Get().UnregisterModularFeature(IMotionController::GetModularFeatureName(), _Arrays[i]);
+			}
+		}
+	}
+
+	/**
+	 * 
+	 */
 }
 
 void FStepVrInput::SendControllerEvents()
@@ -183,28 +198,19 @@ void FStepVrInput::SetChannelValues(int32 ControllerId, const FForceFeedbackValu
 
 bool FStepVrInput::GetOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const
 {
-	bool _flag = false;
-
-	if (!STEPVR_FRAME_IsValid) 
-	{ 
-		return _flag;
-	}
-
 	auto _deviceID = m_MotionPair.Find((uint8)DeviceHand);
-	if (_deviceID != nullptr)
+	if (_deviceID == nullptr)
 	{
-		StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
-
-		FTransform Transform;
-		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, *_deviceID, Transform);
-
-		OutOrientation = Transform.Rotator();
-		OutPosition = Transform.GetLocation();
-
-		_flag = true;
+		return false;
 	}
 	
-	return _flag;
+	FTransform Transform;
+	UStepVrBPLibrary::SVGetDeviceStateWithID(*_deviceID, Transform);
+
+	OutOrientation = Transform.Rotator();
+	OutPosition = Transform.GetLocation();
+
+	return true;
 }
 
 #if AFTER_ENGINEVERSION_416
@@ -253,7 +259,7 @@ void FStepVrInput::RegisterDeviceKey()
 		TEXT("GraphEditor.PadEvent_16x"));
 
 	/**
-	 * Ç¹°´¼ü
+	 * æªæŒ‰é”®
 	 */
 	FStepVRCapacitiveKey CapacitiveKey;
 	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunBtn_A_Trigger, 
@@ -282,7 +288,7 @@ void FStepVrInput::RegisterDeviceKey()
 		StepVRCategoryName));
 
 	/**
-	 * ×óÊÖ°´¼ü
+	 * å·¦æ‰‹æŒ‰é”®
 	 */
 	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_LeftBtn_A_Trigger, 
 		LOCTEXT("StepVR_10", "StepVR_LeftBtn_A_Trigger"), 
@@ -298,7 +304,7 @@ void FStepVrInput::RegisterDeviceKey()
 		StepVRCategoryName));
 
 	/**
-	 * ÓÒÊÖ°´¼ü
+	 * å³æ‰‹æŒ‰é”®
 	 */
 	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_RightBtn_A_Trigger, 
 		LOCTEXT("StepVR_20", "StepVR_RightBtn_A_Trigger"), 
@@ -314,7 +320,7 @@ void FStepVrInput::RegisterDeviceKey()
 		StepVRCategoryName));
 
 	/**
-	 * µ¼Ñİ¼àÊÓÆ÷
+	 * å¯¼æ¼”ç›‘è§†å™¨
 	 */
 	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_A_Trigger,
 		LOCTEXT("StepVR_31", "StepVR_DirMon_A_Trigger"),

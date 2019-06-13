@@ -14,9 +14,6 @@ public class StepVrPlugin : ModuleRules
     }
     public StepVrPlugin(ReadOnlyTargetRules Target) : base(Target)
     {
-        MinFilesUsingPrecompiledHeaderOverride = 1;
-
-        bEnableUndefinedIdentifierWarnings = false;
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         //外部链接头文件目录

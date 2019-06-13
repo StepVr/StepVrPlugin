@@ -23,8 +23,7 @@ UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	bAutoActivate = true;
 	bReplicates = true;
 
-	NeedUpdateDevices.Add(StepVrDeviceID::DGun);
-	NeedUpdateDevices.Add(StepVrDeviceID::DHead);
+	NeedUpdateDevices = GNeedUpdateDevices;
 }
 
 void UStepVrComponent::ResetHMD()
@@ -109,8 +108,9 @@ void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!InitializeLocalControlled())
+	if (!bInitializeLocal)
 	{
+		InitializeLocalControlled();
 		return;
 	}
 
@@ -175,14 +175,12 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 
 void UStepVrComponent::ResetOculusRif()
 {
-	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
-	UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DHead, CurrentNodeState.FHead);
-
-	float TempYaw = CurrentNodeState.FHead.Rotator().Yaw + ResetYaw;
+	FTransform TempData;
+	UStepVrBPLibrary::SVGetDeviceStateWithID(StepVrDeviceID::DHead, TempData);
+	float TempYaw = TempData.Rotator().Yaw + ResetYaw;
 
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(TempYaw);
-
-	UE_LOG(LogStepVrPlugin,Log,TEXT("Reset HMD Yaw : %f"), TempYaw);
+	UE_LOG(LogStepVrPlugin, Log, TEXT("Reset HMD Yaw : %f"), TempYaw);
 }
 
 
@@ -370,7 +368,7 @@ void UStepVrComponent::TickSimulate()
 	{
 		CurrentNodeState.FHead = *TempData;
 	}
-	TempData = GetData.Find(StepVrDeviceID::DOculusHead);
+	TempData = GetData.Find(StepVrDeviceID::DHMD);
 	if (TempData)
 	{
 		CurrentNodeState.FHeadForOculus = *TempData;
@@ -394,32 +392,17 @@ void UStepVrComponent::TickSimulate()
 
 void UStepVrComponent::TickLocal()
 {
-	if (!STEPVR_FRAME_IsValid) 
-	{ 
-		return; 
+	if (!STEPVR_FRAME_IsValid)
+	{
+		return;
 	}
 
 	//更新标准件
 	{
-		//一帧数据
-		StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
-
 		for (auto DevID : GNeedUpdateDevices)
 		{
 			FTransform& TempPtr = GetDeviceDataPtr(DevID);
-			UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, DevID, TempPtr);
-		}
-
-
-		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
-		{
-			FRotator	S_QTemp;
-			FVector		S_VTemp;
-			UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(S_QTemp, S_VTemp);
-
-			CurrentNodeState.FHeadForOculus.SetLocation(CurrentNodeState.FHead.GetLocation() - S_VTemp);
-			CurrentNodeState.FHeadForOculus.SetRotation(S_QTemp.Quaternion());
-			S_mStepVrDeviceState.FindOrAdd(StepVrDeviceID::DOculusHead) = CurrentNodeState.FHeadForOculus;
+			UStepVrBPLibrary::SVGetDeviceStateWithID(DevID, TempPtr);
 		}
 	}
 
@@ -437,7 +420,7 @@ void UStepVrComponent::TickLocal()
 			}
 			TMap<int32, FTransform> SendData;
 			SendData.Add(StepVrDeviceID::DHead, CurrentNodeState.FHead);
-			SendData.Add(StepVrDeviceID::DOculusHead, CurrentNodeState.FHeadForOculus);
+			SendData.Add(StepVrDeviceID::DHMD, CurrentNodeState.FHeadForOculus);
 			SendData.Add(StepVrDeviceID::DGun, CurrentNodeState.FGun);
 			SendData.Add(StepVrDeviceID::DLeftController, CurrentNodeState.FDLeftController);
 			SendData.Add(StepVrDeviceID::DRightController, CurrentNodeState.FRightController);
@@ -477,6 +460,10 @@ FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
 	{
 		return CurrentNodeState.FRightFoot;
 	}
+	case StepVrDeviceID::DHMD:
+	{
+		return CurrentNodeState.FHeadForOculus;
+	}
 	}
 
 	static FTransform GTransform;
@@ -492,11 +479,6 @@ bool UStepVrComponent::InitializeLocalControlled()
 {
 	do 
 	{
-		if (bInitializeLocal)
-		{
-			break;
-		}
-
 		AController* ControllerLocal = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 		if (ControllerLocal == nullptr)
 		{

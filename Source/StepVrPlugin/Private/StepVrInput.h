@@ -1,4 +1,4 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+﻿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 #include "IInputDevice.h"
 #include "XRMotionControllerBase.h"
@@ -13,14 +13,14 @@ class STEPVRPLUGIN_API FStepVrInput : public IInputDevice ,public FXRMotionContr
 public:
 	FStepVrInput(const TSharedRef<FGenericApplicationMessageHandler>& InMessageHandler);
 	~FStepVrInput();
+
 	virtual void Tick(float DeltaTime) override;
 
-#if (AFTER_ENGINEVERSION_411)
 	virtual bool IsGamepadAttached() const override
 	{
 		return true;
 	}
-#endif
+
 
 	/** Poll for controller state and send events if needed */
 	virtual void SendControllerEvents() override;
@@ -79,6 +79,12 @@ public:
 private:
 	void RegisterDeviceKey();
 	void RegisterMotionPair();
+
+	/**
+	 * 初始化数据
+	 */
+	void Initialize();
+
 protected:
 	TSharedRef<FGenericApplicationMessageHandler> MessageHandler;
 

@@ -1,7 +1,7 @@
-// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
 #include "LocalDefine.h"
-
+#include "InputCoreTypes.h "
 
 
 /** The Device Have Key */
@@ -26,7 +26,7 @@ enum class EStepActionState
 struct FStepVRCapacitiveKey
 {
 	/**
-	 * Ç¹
+	 * æª
 	 */
 	FKey StepVR_GunBtn_A_Trigger;
 	FKey StepVR_GunBtn_B_Trigger;
@@ -36,21 +36,21 @@ struct FStepVRCapacitiveKey
 	FKey StepVR_Gun_ValueY;
 
 	/**
-	 * ×óÊÖ
+	 * å·¦æ‰‹
 	 */
 	FKey StepVR_LeftBtn_A_Trigger;
 	FKey StepVR_LeftBtn_B_Trigger;
 	FKey StepVR_LeftBtn_C_Trigger;
 
 	/**
-	 * ÓÒÊÖ
+	 * å³æ‰‹
 	 */
 	FKey StepVR_RightBtn_A_Trigger;
 	FKey StepVR_RightBtn_B_Trigger;
 	FKey StepVR_RightBtn_C_Trigger;
 
 	/**
-	 * µ¼Ñİ¼àÊÓÆ÷
+	 * å¯¼æ¼”ç›‘è§†å™¨
 	 */
 	FKey StepVR_DirMon_A_Trigger;
 	FKey StepVR_DirMon_B_Trigger;
@@ -111,7 +111,7 @@ struct FStepVrDeviceState
 
 struct FStepVrStateController
 {
-	//Éè±¸×´Ì¬
+	//è®¾å¤‡çŠ¶æ€
 	TArray<FStepVrButtonState> Devices;
 
 	void AddActions(uint8 InKeyId, FName KeyName, int32 DeviceID, EStepActionState ActionState = EStepActionState::State_Button)
@@ -130,7 +130,7 @@ struct FStepVrStateController
 		FStepVRCapacitiveKey CapacitiveKey;
 		
 		/**
-		 * ×óÊÖ±ú : 1
+		 * å·¦æ‰‹æŸ„ : 1
 		 */
 		{
 			AddActions(StepVR::SingleNode::KeyA,
@@ -145,7 +145,7 @@ struct FStepVrStateController
 		}
 		
 		/**
-		 * ÓÒÊÖ±ú : 2
+		 * å³æ‰‹æŸ„ : 2
 		 */
 		{
 			AddActions(StepVR::SingleNode::KeyA,
@@ -160,7 +160,7 @@ struct FStepVrStateController
 		}
 		
 		/**
-		 * Ç¹ : 4
+		 * æª : 4
 		 */
 		{
 			AddActions(StepVR::SingleNode::KeyA,
@@ -186,7 +186,7 @@ struct FStepVrStateController
 		}
 		
 		/**
-		 * µ¼Ñİ¼àÊÓÆ÷ ID£º8
+		 * å¯¼æ¼”ç›‘è§†å™¨ IDï¼š8
 		 */
 		{
 			AddActions(StepVR::SingleNode::KeyA,

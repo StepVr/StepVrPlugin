@@ -1,7 +1,8 @@
 ﻿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
 #pragma once
-#include "../ThirdParty/include/StepVr.h"
+#include "StepVr.h"
+
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "StepVrBPLibrary.generated.h"
 
@@ -37,19 +38,24 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 
 	/**
 	*	先确保PlayerController有效
-	* @param: GameId和自定义的ID匹配	
+	*	@param: GameId和自定义的ID匹配	
 	*/
 	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
 	static bool SVCheckGameLic(FString gameId);
 
 	
-	static bool SVGetDeviceStateWithID(StepVR::SingleNode* InSingleNode,int32 DeviceID, FTransform& Transform);
+	static void SVGetDeviceStateWithID(StepVR::SingleNode* InSingleNode,int32 DeviceID, FTransform& Transform);
 	
 	/**
 	 * 获取标准件数据
 	 */
 	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
-	static bool SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
+	static void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
 
-	static void ConvertCoordinateToUE(FTransform& InOutData);
+	/**
+	 * 需要更新数据的DeviceID
+	 */
+	static void SVSetNeedUpdateDevicesID(TArray<int32>& InData);
+	static TArray<int32>& SVGetNeedUpdateDevicesID();
+	static TMap<int32, FTransform> SVGetAllDevicesData();
 };

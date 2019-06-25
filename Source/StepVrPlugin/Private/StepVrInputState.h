@@ -118,6 +118,7 @@ struct FStepVrStateController
 	{
 		FStepVrButtonState ButtonState;
 
+		ButtonState.PressedState = SButton_Release; 
 		ButtonState.DeviceID = DeviceID;
 		ButtonState.KeyID = InKeyId;
 		ButtonState.key = KeyName;

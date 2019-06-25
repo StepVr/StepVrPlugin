@@ -14,7 +14,7 @@ class FStepVrServer;
 
 enum EGameModeType
 {
-	EInValid,
+	EStandAlone,
 	EClient,
 	EServer,
 };
@@ -48,7 +48,7 @@ FORCEINLINE FArchive& operator<<(FArchive& Ar, IKinemaReplicateData& ArData)
 struct PlayerDeviceInfo
 {
 	uint32					PlayerAddr;
-
+	//uint32					
 	TMap<int32, FTransform>	StepVrDeviceInfo;
 
 	IKinemaReplicateData	IkinemaInfo;
@@ -81,7 +81,7 @@ struct SocketSendInfo
 
 	SocketSendInfo()
 	{
-		FromWhere = EGameModeType::EInValid;
+		FromWhere = EGameModeType::EStandAlone;
 		FrameCounts = 0;
 		AllPlayerDatas.Empty();
 	}
@@ -94,10 +94,6 @@ FORCEINLINE FArchive& operator<<(FArchive& Ar, SocketSendInfo& ArData)
 	Ar << ArData.AllPlayerDatas;
 	return Ar;
 }
-
-//所有玩家
-extern STEPVRPLUGIN_API AllPlayerData LocalAllPlayerData;
-extern STEPVRPLUGIN_API PlayerDeviceInfo LocalPlayerData;
 
 class STEPVRPLUGIN_API IStepvrServerModule : public IModuleInterface, public IModularFeature
 {
@@ -133,20 +129,44 @@ class STEPVRPLUGIN_API FStepVrServer
 public:
 	virtual ~FStepVrServer() {}
 
-	uint32 GetLocalAddress();
+	/**
+	 * 开始服务
+	 */
+	virtual void StartServer() = 0;
+
+	/**
+	 * 本机IP
+	 */
+	static uint32 GetLocalAddress();
+
+	/**
+	 * 更新服务器客户端状态
+	 */
+	EGameModeType GetGameModeType() { return GameModeType; }
+	void SetGameModeType(EGameModeType InGameModeType);
+	void UpdateServerState(TArray<FString>& InClientsIP);
+	void UpdateClientState(FString& InServerIP);
 
 	//IKinema
-	void IkinemaSendData(const IKinemaReplicateData& InData);
-	void IkinemaGetData(uint32 InPlayerAddr, IKinemaReplicateData& OutData);
+	//void IkinemaSendData(const IKinemaReplicateData& InData);
+	//void IkinemaGetData(uint32 InPlayerAddr, IKinemaReplicateData& OutData);
 
 	//StepVr
 	void StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InData);
 	void StepVrGetData(uint32 InPlayerAddr, TMap<int32, FTransform>& OutData);
-	
+	void SynchronizationStepVrData();
 
-	AllPlayerData& LockAllPlayerData();
-	void UnLockAllPlayerData();
-
-private:
+protected:
 	FCriticalSection Section_AllPlayerData;
+	FCriticalSection Section_GameModeType;
+
+	EGameModeType GameModeType = EGameModeType::EStandAlone;
+	TArray<FString> ClientsIP;
+	FString			ServerIP;
+
+	/**
+	 * 本机和远端数据 / Other Thread
+	 */
+	AllPlayerData		RemotePlayerData;
+	PlayerDeviceInfo	LocalPlayerData;
 };

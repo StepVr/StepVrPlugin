@@ -46,17 +46,6 @@ void FStepVrInput::Tick(float DeltaTime)
 			IsInitialize = true;
 		}
 	}
-	
-
-	/**
-	 * 更新定位数据
-	 */
-	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
-	for (auto DevID : GNeedUpdateDevices)
-	{
-		FTransform TempData;
-		UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, DevID, TempData);
-	}
 }
 
 void FStepVrInput::RegisterMotionPair()

@@ -2,6 +2,7 @@
 #include "Engine.h"
 
 #include "StepVrServerModule.h"
+#include "StepVrBPLibrary.h"
 #include "LocalDefine.h"
 #include "StepVrPlugin.h"
 
@@ -42,6 +43,13 @@ void StepVrGlobal::StartSDK()
 
 	//加载Server
 	LoadServer();
+
+	/**
+	 * 注册开始帧，刷新数据
+	 */
+	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this,&StepVrGlobal::EngineBeginFrame);
+	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &StepVrGlobal::PostLoadMapWithWorld);
+
 }
 
 bool StepVrGlobal::ServerIsValid()
@@ -134,11 +142,61 @@ void StepVrGlobal::LoadSDK()
 
 void StepVrGlobal::CloseSDK()
 {
+	CurUsingWorld = nullptr;
+	FCoreDelegates::OnBeginFrame.Remove(EngineBeginFrameHandle);
+	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
 	if (DllHandle != nullptr)
 	{
 		FPlatformProcess::FreeDllHandle(DllHandle);
 		DllHandle = nullptr;
 	}
+}
+
+void StepVrGlobal::EngineBeginFrame()
+{
+	/**
+	* 更新定位数据
+	*/
+	if (StepVrManager.IsValid())
+	{
+		StepVR::SingleNode Node = StepVrManager->GetFrame().GetSingleNode();
+
+		for (auto DevID : GNeedUpdateDevices)
+		{
+			FTransform TempData;
+			UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, DevID, TempData);
+		}
+	}
+
+	/**
+	 * 更新同步数据
+	 */
+	if (StepVrServer.IsValid())
+	{
+		StepVrServer->SynchronizationStepVrData();
+	}
+}
+
+void StepVrGlobal::PostLoadMapWithWorld(UWorld* UsingWorld)
+{
+	//CurUsingWorld = UsingWorld;
+	//UNetDriver* Driver = CurUsingWorld->GetNetDriver();
+	//if (Driver)
+	//{
+	//	ENetMode mode = Driver->GetNetMode();
+	//	UE_LOG(LogTemp, Log, TEXT("%d"), mode);
+	//}
+}
+
+UWorld* StepVrGlobal::GetWorld()
+{
+#if WITH_EDITOR
+	if (GIsEditor)
+	{
+		return GWorld;
+	}
+#endif // WITH_EDITOR
+	return GEngine->GetWorldContexts()[0].World();
 }
 
 StepVR::Manager* StepVrGlobal::GetStepVrManager()

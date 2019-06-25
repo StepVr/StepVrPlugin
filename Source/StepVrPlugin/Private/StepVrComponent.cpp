@@ -1,16 +1,18 @@
 ﻿#include "StepVrComponent.h"
-#include "Engine.h"
-
 #include "StepVrBPLibrary.h"
 #include "StepVrInput.h"
 #include "StepVrGlobal.h"
 #include "StepVrServerModule.h"
 
+#include "Kismet/GameplayStatics.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IHeadMountedDisplay.h"
 #include "IXRTrackingSystem.h"
 #include "IXRSystemAssets.h"
 #include "Net/UnrealNetwork.h"
+#include "Engine/Engine.h"
+#include "Engine/NetDriver.h"
+#include "Engine/NetConnection.h"
 
 
 
@@ -162,15 +164,8 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	/**
 	 * 同步定位数据
 	 */
-	if (STEPVR_SERVER_IsValid)
-	{
-		uint32 Addr = STEPVR_SERVER->GetLocalAddress();
-		SetPlayerAddrOnServer(Addr);
-	}
-	else
-	{
-		SetPlayerAddrOnServer(1);
-	}
+	uint32 Addr = FStepVrServer::GetLocalAddress();
+	SetPlayerAddrOnServer(Addr);
 }
 
 void UStepVrComponent::ResetOculusRif()
@@ -398,34 +393,68 @@ void UStepVrComponent::TickLocal()
 	}
 
 	//更新标准件
+	for (auto DevID : GNeedUpdateDevices)
 	{
-		for (auto DevID : GNeedUpdateDevices)
-		{
-			FTransform& TempPtr = GetDeviceDataPtr(DevID);
-			UStepVrBPLibrary::SVGetDeviceStateWithID(DevID, TempPtr);
-		}
+		FTransform& TempPtr = GetDeviceDataPtr(DevID);
+		UStepVrBPLibrary::SVGetDeviceStateWithID(DevID, TempPtr);
 	}
 
-	//同步数据
+	if (STEPVR_SERVER_IsValid)
 	{
+		/**
+		 * 更新连接状态
+		 */
 		do 
 		{
-			if (!STEPVR_SERVER_IsValid)
+			UWorld* CurWorld = GetWorld();
+			if (CurWorld == nullptr)
 			{
 				break;
 			}
-			if (!IsValidPlayerAddr())
+
+			UNetDriver* Driver = CurWorld->NetDriver;
+			if (Driver == nullptr)
 			{
+				STEPVR_SERVER->SetGameModeType(EStandAlone);
 				break;
 			}
-			TMap<int32, FTransform> SendData;
-			SendData.Add(StepVrDeviceID::DHead, CurrentNodeState.FHead);
-			SendData.Add(StepVrDeviceID::DHMD, CurrentNodeState.FHeadForOculus);
-			SendData.Add(StepVrDeviceID::DGun, CurrentNodeState.FGun);
-			SendData.Add(StepVrDeviceID::DLeftController, CurrentNodeState.FDLeftController);
-			SendData.Add(StepVrDeviceID::DRightController, CurrentNodeState.FRightController);
-			STEPVR_SERVER->StepVrSendData(PlayerAddr, SendData);
+
+			//客户端
+			UNetConnection* ServerConnection = Driver->ServerConnection;
+			if (ServerConnection && (!ServerIP.Equals(ServerConnection->URL.Host)))
+			{
+				ServerIP = ServerConnection->URL.Host;
+				STEPVR_SERVER->UpdateClientState(ServerIP);
+				break;
+			}
+
+			//服务器
+			TArray<class UNetConnection*> ClientConnections = Driver->ClientConnections;
+			if (RemotAddrIP.Num() != ClientConnections.Num())
+			{
+				RemotAddrIP.Empty(ClientConnections.Num());
+				for (UNetConnection* Temp : ClientConnections)
+				{
+					if (Temp)
+					{
+						RemotAddrIP.Add(Temp->URL.Host);
+					}
+				}
+
+				STEPVR_SERVER->UpdateServerState(RemotAddrIP);
+			}
 		} while (0);
+		
+		/**
+		 * 同步定位数据
+		 */
+		TMap<int32, FTransform> SendData;
+		SendData.Add(StepVrDeviceID::DHead, CurrentNodeState.FHead);
+		SendData.Add(StepVrDeviceID::DHMD, CurrentNodeState.FHeadForOculus);
+		SendData.Add(StepVrDeviceID::DGun, CurrentNodeState.FGun);
+		SendData.Add(StepVrDeviceID::DLeftController, CurrentNodeState.FDLeftController);
+		SendData.Add(StepVrDeviceID::DRightController, CurrentNodeState.FRightController);
+		STEPVR_SERVER->StepVrSendData(PlayerAddr, SendData);
 	}
 
 	//Reset RealTime

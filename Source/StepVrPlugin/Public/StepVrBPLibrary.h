@@ -53,6 +53,12 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	static void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
 
 	/**
+	 * 激光系定位转UE系
+	 */
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	static FTransform Convert2UETransform(float Vx, float Vy, float Vz, float Qw, float Qx, float Qy, float Qz);
+
+	/**
 	 * 需要更新数据的DeviceID
 	 */
 	static void SVSetNeedUpdateDevicesID(TArray<int32>& InData);

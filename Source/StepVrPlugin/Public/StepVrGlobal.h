@@ -33,7 +33,11 @@ private:
 	void LoadServer();
 	void LoadSDK();
 	void CloseSDK();
+	
+	void EngineBeginFrame();
+	void PostLoadMapWithWorld(UWorld* UsingWorld);
 
+	UWorld* GetWorld();
 private:
 	static TSharedPtr<StepVrGlobal>	SingletonInstance;
 
@@ -41,4 +45,9 @@ private:
 	TSharedPtr<StepVR::Manager>	StepVrManager;
 
 	void*	DllHandle;
+
+	FDelegateHandle EngineBeginFrameHandle;
+	FDelegateHandle PostLoadMapHandle;
+
+	UWorld* CurUsingWorld = nullptr;
 };

@@ -7,9 +7,9 @@
 //#include "IPAddress.h"
 
 AllPlayerData LocalAllPlayerData = {};
-PlayerDeviceInfo LocalPlayerData;
 
-
+//所有玩家
+static AllPlayerData GAllPlayerData;
 uint32 FStepVrServer::GetLocalAddress()
 {
 	bool CanBind = false;
@@ -24,51 +24,71 @@ uint32 FStepVrServer::GetLocalAddress()
 	return GetTypeHash(Addr);
 }
 
-void FStepVrServer::IkinemaSendData(const IKinemaReplicateData& InData)
+void FStepVrServer::SetGameModeType(EGameModeType InGameModeType)
 {
-	LocalPlayerData.PlayerAddr = InData.PlayerID;
-	LocalPlayerData.IkinemaInfo = InData;
+	if (GameModeType != InGameModeType)
+	{
+		FScopeLock Lock(&Section_GameModeType);
+		GameModeType = InGameModeType;
+	}
 }
 
-
-void FStepVrServer::IkinemaGetData(uint32 InPlayerAddr, IKinemaReplicateData& InData)
+void FStepVrServer::UpdateServerState(TArray<FString>& InClientsIP)
 {
-	PlayerDeviceInfo* Tempplayer = LocalAllPlayerData.Find(InPlayerAddr);
-	if (Tempplayer == nullptr)
-	{
-		return;
-	}
+	FScopeLock Lock(&Section_GameModeType);
+	GameModeType = InClientsIP.Num() > 0 ? EServer : EStandAlone;
+	ClientsIP = InClientsIP;
+}
 
-	InData.SkeletionIDs.Empty(Tempplayer->IkinemaInfo.SkeletionIDs.Num());
-	InData.SkeletonInfos.Empty(Tempplayer->IkinemaInfo.SkeletonInfos.Num());
-	InData = Tempplayer->IkinemaInfo;
+void FStepVrServer::UpdateClientState(FString& InServerIP)
+{
+	FScopeLock Lock(&Section_GameModeType);
+	GameModeType = InServerIP.IsEmpty() ? EStandAlone : EClient;
+	ServerIP = InServerIP;
+}
+
+//void FStepVrServer::IkinemaSendData(const IKinemaReplicateData& InData)
+//{
+//	LocalPlayerData.PlayerAddr = InData.PlayerID;
+//	LocalPlayerData.IkinemaInfo = InData;
+//}
+//
+//
+//void FStepVrServer::IkinemaGetData(uint32 InPlayerAddr, IKinemaReplicateData& InData)
+//{
+//	PlayerDeviceInfo* Tempplayer = LocalAllPlayerData.Find(InPlayerAddr);
+//	if (Tempplayer == nullptr)
+//	{
+//		return;
+//	}
+//
+//	InData.SkeletionIDs.Empty(Tempplayer->IkinemaInfo.SkeletionIDs.Num());
+//	InData.SkeletonInfos.Empty(Tempplayer->IkinemaInfo.SkeletonInfos.Num());
+//	InData = Tempplayer->IkinemaInfo;
+//}
+
+void FStepVrServer::SynchronizationStepVrData()
+{
+	FScopeLock Lock(&Section_AllPlayerData);
+
+	GAllPlayerData = RemotePlayerData;
 }
 
 void FStepVrServer::StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InData)
 {
+	//数据覆盖无需加锁
 	LocalPlayerData.PlayerAddr = InPlayerAddr;
 	LocalPlayerData.StepVrDeviceInfo = InData;
 }
 
 void FStepVrServer::StepVrGetData(uint32 InPlayerAddr, TMap<int32, FTransform>& OutData)
 {
-	PlayerDeviceInfo* Tempplayer = LocalAllPlayerData.Find(InPlayerAddr);
+	//只能在Game线程调用，无需加锁
+	PlayerDeviceInfo* Tempplayer = GAllPlayerData.Find(InPlayerAddr);
 	if (Tempplayer == nullptr)
 	{
 		return;
 	}
 
 	OutData = Tempplayer->StepVrDeviceInfo;
-}
-
-AllPlayerData& FStepVrServer::LockAllPlayerData()
-{
-	Section_AllPlayerData.Lock();
-
-	return LocalAllPlayerData;
-}
-
-void FStepVrServer::UnLockAllPlayerData()
-{
-	Section_AllPlayerData.Unlock();
 }

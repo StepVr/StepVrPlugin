@@ -79,6 +79,27 @@ void UStepVrBPLibrary::SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transf
 	}
 }
 
+FTransform UStepVrBPLibrary::Convert2UETransform(float Vx, float Vy, float Vz, float Qw, float Qx, float Qy, float Qz)
+{
+	FTransform Transform;
+	StepVR::Vector3f vec3;
+	vec3.x = Vx;
+	vec3.y = Vy;
+	vec3.z = Vz;
+	vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
+	Transform.SetLocation(FVector(vec3.x * 100, vec3.y * 100, vec3.z * 100));
+
+	StepVR::Vector4f vec4;
+	vec4.w = Qw;
+	vec4.x = Qx;
+	vec4.y = Qy;
+	vec4.z = Qz;
+	vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
+	Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
+
+	return Transform;
+}
+
 void UStepVrBPLibrary::SVSetNeedUpdateDevicesID(TArray<int32>& InData)
 {
 	GNeedUpdateDevices = InData;

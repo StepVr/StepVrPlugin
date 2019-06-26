@@ -76,7 +76,7 @@ void FStepVrServer::SynchronizationStepVrData()
 
 void FStepVrServer::StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InData)
 {
-	//数据覆盖无需加锁
+	FScopeLock Lock(&Section_AllPlayerData);
 	LocalPlayerData.PlayerAddr = InPlayerAddr;
 	LocalPlayerData.StepVrDeviceInfo = InData;
 }

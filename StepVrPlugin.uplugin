@@ -1,7 +1,7 @@
-{
+﻿{
   "FileVersion": 1,
   "Version": 4,
-  "VersionName": "4.001",
+  "VersionName": "4.0.0.2",
   "FriendlyName": "StepVrPlugin",
   "Description": "Support Step Deveices",
   "Category": "Step",

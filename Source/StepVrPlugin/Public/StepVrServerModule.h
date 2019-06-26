@@ -157,7 +157,13 @@ public:
 	void SynchronizationStepVrData();
 
 protected:
+	/**
+	 * 锁冲突次数：GameFrame / ReciveData / SendData
+	 */
 	FCriticalSection Section_AllPlayerData;
+	/**
+	 * 锁冲突次数: Game人数变化
+	 */
 	FCriticalSection Section_GameModeType;
 
 	EGameModeType GameModeType = EGameModeType::EStandAlone;

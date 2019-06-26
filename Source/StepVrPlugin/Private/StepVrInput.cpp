@@ -48,14 +48,21 @@ void FStepVrInput::Tick(float DeltaTime)
 	}
 }
 
+bool FStepVrInput::IsGamepadAttached() const
+{
+	return true;
+}
+
+ETrackingStatus FStepVrInput::GetControllerTrackingStatus(const int32 ControllerIndex, const EControllerHand DeviceHand) const
+{
+	return ETrackingStatus::Tracked;
+}
+
 void FStepVrInput::RegisterMotionPair()
 {
 	m_MotionPair.Add((uint8)EControllerHand::Left, (int32)StepVrDeviceID::DLeftController);
 	m_MotionPair.Add((uint8)EControllerHand::Right, (int32)StepVrDeviceID::DRightController);
-#if AFTER_ENGINEVERSION_414
 	m_MotionPair.Add((uint8)EControllerHand::Gun, (int32)StepVrDeviceID::DGun);
-#endif
-	
 }
 
 void FStepVrInput::Initialize()
@@ -202,25 +209,17 @@ bool FStepVrInput::GetOrientationAndPosition(const int32 ControllerIndex, const 
 	return true;
 }
 
-#if AFTER_ENGINEVERSION_416
-FName FStepVrInput::S_DeviceTypeName(TEXT("StepVrController"));
 FName FStepVrInput::GetMotionControllerDeviceTypeName() const
 {
-	return S_DeviceTypeName;
+	static FName GDeviceTypeName(TEXT("StepVrController"));
+	return GDeviceTypeName;
 }
-#endif
 
-#if AFTER_ENGINEVERSION_415
+
 bool FStepVrInput::GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition, float WorldToMetersScale) const
-{
-	return GetOrientationAndPosition(ControllerIndex,DeviceHand,OutOrientation,OutPosition);
-}
-#else
-bool FStepVrInput::GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition) const
 {
 	return GetOrientationAndPosition(ControllerIndex, DeviceHand, OutOrientation, OutPosition);
 }
-#endif
 
 //void FStepVrInput::SetHapticFeedbackValues(int32 ControllerId, int32 Hand, const FHapticFeedbackValues& Values)
 //{

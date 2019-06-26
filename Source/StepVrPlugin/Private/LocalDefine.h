@@ -2,27 +2,13 @@
 #pragma once
 #include "StepVr.h"
 
-#include "Launch/Resources/Version.h"
 #include "CoreMinimal.h"
 #include "Logging/LogMacros.h"
 
 #include "LocalDefine.generated.h"
 
-
-
 #define StepVrPluginName	"StepVrPlugin"
 
-/*----------------------------------------------------------------------------
-	Custom Version
-----------------------------------------------------------------------------*/
-#define AFTER_ENGINEVERSION_410 ((ENGINE_MAJOR_VERSION==4)&&(ENGINE_MINOR_VERSION>10))
-#define AFTER_ENGINEVERSION_411 ((ENGINE_MAJOR_VERSION==4)&&(ENGINE_MINOR_VERSION>11))
-#define AFTER_ENGINEVERSION_412 ((ENGINE_MAJOR_VERSION==4)&&(ENGINE_MINOR_VERSION>12))
-#define AFTER_ENGINEVERSION_413 ((ENGINE_MAJOR_VERSION==4)&&(ENGINE_MINOR_VERSION>13))
-#define AFTER_ENGINEVERSION_414 ((ENGINE_MAJOR_VERSION==4)&&(ENGINE_MINOR_VERSION>14))
-#define AFTER_ENGINEVERSION_415 ((ENGINE_MAJOR_VERSION==4)&&(ENGINE_MINOR_VERSION>15))
-#define AFTER_ENGINEVERSION_416 ((ENGINE_MAJOR_VERSION>=4)&&(ENGINE_MINOR_VERSION>16))
-#define AFTER_ENGINEVERSION_417 ((ENGINE_MAJOR_VERSION>=4)&&(ENGINE_MINOR_VERSION>17))
 
 /*----------------------------------------------------------------------------
 	StepVr Node Convert

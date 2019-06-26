@@ -1,6 +1,9 @@
-﻿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
+﻿using System;
 using System.IO;
 using UnrealBuildTool;
+
+
+
 
 public class StepVrPlugin : ModuleRules
 {
@@ -12,15 +15,33 @@ public class StepVrPlugin : ModuleRules
     {
         get { return Path.GetFullPath(Path.Combine(ModulePath, "../../ThirdParty")); }
     }
+
+    public string GetLibFullPath()
+    {
+        string PlatformString = (Target.Platform == UnrealTargetPlatform.Win64) ? "x64" : "x32";
+        string LibrariesPath = Path.Combine(LibPath, "lib", PlatformString);
+        return LibrariesPath;
+    }
+
+    public void ReferenceDlls()
+    {
+        string Path = GetLibFullPath();
+        var DllFiles = Directory.GetFiles(Path, "*.dll");
+        foreach (var file in DllFiles)
+        {
+            RuntimeDependencies.Add(file);
+            Console.WriteLine(file);
+        }
+    }
     public StepVrPlugin(ReadOnlyTargetRules Target) : base(Target)
     {
-        OptimizeCode = CodeOptimization.InShippingBuildsOnly;
+        //OptimizeCode = CodeOptimization.InShippingBuildsOnly;
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         //外部链接头文件目录
         PublicIncludePaths.AddRange(
 			new string[] {
-				"StepVrPlugin/Public",
+                Path.Combine(ModulePath, "Public"),
 				// ... add public include paths required here ...
 			}
 			);
@@ -29,7 +50,8 @@ public class StepVrPlugin : ModuleRules
         //本模块连接头文件路径
 		PrivateIncludePaths.AddRange(
 			new string[] {
-				"StepVrPlugin/Private",
+                "StepVrPlugin/Public",
+                "StepVrPlugin/Private",
 				// ... add other private include paths required here ...
 			}
 			);
@@ -58,41 +80,26 @@ public class StepVrPlugin : ModuleRules
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
-		
-		
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-			);
 
-        bool IsLibrarySupport = false;
-        string LibrariesPath;
-
+        //配置DLL
         if (Target.Platform == UnrealTargetPlatform.Win64)
-        {
-            IsLibrarySupport = true;
-
-            string PlatformString = (Target.Platform == UnrealTargetPlatform.Win64) ? "x64" : "x32";
-            LibrariesPath = Path.Combine(LibPath, "lib", PlatformString);
-
-            PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "StepVr.lib"));
-            PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "license.lib"));
-
-            PublicDelayLoadDLLs.Add("StepVR.dll");
-            PublicDelayLoadDLLs.Add("license.dll");
-            RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "StepVR.dll")));
-            RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "license.dll")));
-            RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "libcurl.dll")));
-            RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "StepVr.lib")));
-            RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(LibrariesPath, "license.lib")));
-        }
-
-        if (IsLibrarySupport)
         {
             PrivateIncludePaths.Add(Path.Combine(LibPath, "include"));
             PublicIncludePaths.Add(Path.Combine(LibPath, "Include"));
+
+            //DLL路径
+            string LibrariesPath = GetLibFullPath();
+
+            PublicDelayLoadDLLs.Add("StepVR.dll");
+            PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "StepVr.lib"));
+
+            PublicDelayLoadDLLs.Add("license.dll");
+            PublicAdditionalLibraries.Add(Path.Combine(LibrariesPath, "license.lib"));
+
+            //依赖DLL
+            ReferenceDlls();
         }
     }
+
+
 }

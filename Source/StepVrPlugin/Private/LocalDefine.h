@@ -66,3 +66,6 @@ extern TMap<int32, FTransform>	GLocalDevicesRT;
 
 //需要获取定位的设备ID
 extern TArray<int32>	GNeedUpdateDevices;
+
+//公用设备ID
+extern TArray<int32>	GNeedUpdateGlobalDevices;

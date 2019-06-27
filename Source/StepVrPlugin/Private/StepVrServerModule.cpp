@@ -74,11 +74,11 @@ void FStepVrServer::SynchronizationStepVrData()
 	GAllPlayerData = RemotePlayerData;
 }
 
-void FStepVrServer::StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InData)
+void FStepVrServer::StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InPlayerData, TMap<int32, FTransform>& InGlobalData)
 {
 	FScopeLock Lock(&Section_AllPlayerData);
 	LocalPlayerData.PlayerAddr = InPlayerAddr;
-	LocalPlayerData.StepVrDeviceInfo = InData;
+	LocalPlayerData.StepVrDeviceInfo = InPlayerData;
 }
 
 void FStepVrServer::StepVrGetData(uint32 InPlayerAddr, TMap<int32, FTransform>& OutData)

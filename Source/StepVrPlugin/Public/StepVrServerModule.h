@@ -69,6 +69,7 @@ FORCEINLINE FArchive& operator<<(FArchive& Ar, PlayerDeviceInfo& ArData)
 }
 
 typedef TMap<uint32, PlayerDeviceInfo> AllPlayerData;
+typedef TMap<uint32, FTransform> AllGlobalDevice;
 
 struct SocketSendInfo
 {
@@ -77,13 +78,20 @@ struct SocketSendInfo
 
 	uint64					FrameCounts;
 
+	/**
+	 * 每个玩家拥有的Device
+	 */
 	AllPlayerData			AllPlayerDatas;
+
+	/**
+	 * 整个游戏公用Device
+	 */
+	AllGlobalDevice			AllGlobalDevices;
 
 	SocketSendInfo()
 	{
 		FromWhere = EGameModeType::EStandAlone;
 		FrameCounts = 0;
-		AllPlayerDatas.Empty();
 	}
 };
 
@@ -92,6 +100,7 @@ FORCEINLINE FArchive& operator<<(FArchive& Ar, SocketSendInfo& ArData)
 	Ar << ArData.FromWhere;
 	Ar << ArData.FrameCounts;
 	Ar << ArData.AllPlayerDatas;
+	Ar << ArData.AllGlobalDevices;
 	return Ar;
 }
 
@@ -151,8 +160,11 @@ public:
 	//void IkinemaSendData(const IKinemaReplicateData& InData);
 	//void IkinemaGetData(uint32 InPlayerAddr, IKinemaReplicateData& OutData);
 
-	//StepVr
-	void StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InData);
+	/**
+	 * InPlayerData : 每个玩家拥有的Devices
+	 * InGlobalData : 公用的Devices
+	 */
+	void StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InPlayerData, TMap<int32, FTransform>& InGlobalData);
 	void StepVrGetData(uint32 InPlayerAddr, TMap<int32, FTransform>& OutData);
 	void SynchronizationStepVrData();
 

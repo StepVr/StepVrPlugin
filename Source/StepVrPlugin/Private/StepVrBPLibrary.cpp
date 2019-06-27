@@ -99,18 +99,3 @@ FTransform UStepVrBPLibrary::Convert2UETransform(float Vx, float Vy, float Vz, f
 
 	return Transform;
 }
-
-void UStepVrBPLibrary::SVSetNeedUpdateDevicesID(TArray<int32>& InData)
-{
-	GNeedUpdateDevices = InData;
-}
-
-TArray<int32>& UStepVrBPLibrary::SVGetNeedUpdateDevicesID()
-{
-	return GNeedUpdateDevices;
-}
-
-TMap<int32, FTransform> UStepVrBPLibrary::SVGetAllDevicesData()
-{
-	return GLocalDevicesRT;
-}

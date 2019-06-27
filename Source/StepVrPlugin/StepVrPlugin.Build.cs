@@ -35,7 +35,7 @@ public class StepVrPlugin : ModuleRules
     }
     public StepVrPlugin(ReadOnlyTargetRules Target) : base(Target)
     {
-        //OptimizeCode = CodeOptimization.InShippingBuildsOnly;
+        OptimizeCode = CodeOptimization.InShippingBuildsOnly;
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         //外部链接头文件目录

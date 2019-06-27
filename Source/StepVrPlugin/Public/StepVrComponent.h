@@ -14,26 +14,25 @@ struct FStepVRNode
 {
 	GENERATED_USTRUCT_BODY()
 
+	//6号键Location + HMD的Rotator
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FTransform FHeadForOculus;
+	FTransform FHeadForHMD;
 
+	//ID ：6
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FTransform FHead;
 	 
+	//ID ：4
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FTransform FGun;
 
+	//ID ：1
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FTransform FDLeftController;
 
+	//ID ：2
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
 	FTransform FRightController;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FTransform FDLeftFoot;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	FTransform FRightFoot;
 };
 
 UENUM()
@@ -74,11 +73,9 @@ public:
 	FGameUseType	GameUseType = FGameUseType::UseType_Normal;
 
 	/**
-	 * 需要更新定位的设备ID
+	 * 本机/远端 定位信息
+	 * 支持联网，PS：StepVrServer
 	 */
-	UPROPERTY(EditDefaultsOnly, Category = StepvrLibrary)
-	TArray<int32>	NeedUpdateDevices;
-
 	UPROPERTY(AdvancedDisplay, EditAnywhere,BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
 
@@ -137,6 +134,8 @@ private:
 	 */
 	FString ServerIP;
 
+	//组件更新节点
+	TArray<int32>	NeedUpdateDevices;
 
 	/************************************************************************/
 	/* 时时校准															   */

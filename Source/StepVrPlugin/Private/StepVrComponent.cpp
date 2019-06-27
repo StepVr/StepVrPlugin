@@ -24,8 +24,6 @@ UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	bWantsInitializeComponent = true;
 	bAutoActivate = true;
 	bReplicates = true;
-
-	NeedUpdateDevices = GNeedUpdateDevices;
 }
 
 void UStepVrComponent::ResetHMD()
@@ -50,6 +48,7 @@ void UStepVrComponent::ToggleResetType()
 			break;
 	}
 }
+
 void UStepVrComponent::ResetHMDDirection()
 {
 	APawn* Pawn = Cast<APawn>(GetOwner());
@@ -72,7 +71,7 @@ void UStepVrComponent::ResetHMDDirection()
 		}
 		else if(HMDName.IsEqual(Windows))
 		{
-
+			ResetOculusRif();
 		}
 	}
 	
@@ -83,6 +82,12 @@ void UStepVrComponent::ResetHMDDirection()
 void UStepVrComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	NeedUpdateDevices.Add(StepVrDeviceID::DLeftController);
+	NeedUpdateDevices.Add(StepVrDeviceID::DRightController);
+	NeedUpdateDevices.Add(StepVrDeviceID::DGun);
+	NeedUpdateDevices.Add(StepVrDeviceID::DHead);
+	NeedUpdateDevices.Add(StepVrDeviceID::DHMD);
 }
 
 void UStepVrComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -140,11 +145,14 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	}
 
 	/**
-	 * 注册需要更新定位的标准件
-	 */
+	* 注册需要更新定位的标准件
+	*/
 	for (auto DevID : NeedUpdateDevices)
 	{
-		GNeedUpdateDevices.AddUnique(DevID);
+		if (DevID != StepVrDeviceID::DHMD)
+		{
+			GNeedUpdateDevices.AddUnique(DevID);
+		}
 	}
 
 	/**
@@ -315,33 +323,11 @@ void UStepVrComponent::ResetHMDAuto()
 		return;
 	}
 
-	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected() &&
-		UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 	{
 		ResetHMDDirection();
 	}
 }
-
-
-//void UStepVrComponent::UpdateTimer()
-//{
-//	StepVR::Frame tmp = STEPVR_FRAME->GetFrame();
-//
-//	UStepVrBPLibrary::SVGetDeviceStateWithID(&tmp, StepVrDeviceID::DHead, CurrentNodeState.FHead);
-//
-//	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
-//	{
-//		FRotator	S_QTemp;
-//		FVector		S_VTemp;
-//		UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(S_QTemp, S_VTemp);
-//
-//		CurrentNodeState.FHeadForOculus.SetLocation(CurrentNodeState.FHead.GetLocation() - S_VTemp);
-//		CurrentNodeState.FHeadForOculus.SetRotation(S_QTemp.Quaternion());
-//
-//		SetRelativeLocation(CurrentNodeState.FHeadForOculus.GetLocation());
-//		MarkRenderTransformDirty();
-//	}
-//}
 
 void UStepVrComponent::TickSimulate()
 {
@@ -358,30 +344,15 @@ void UStepVrComponent::TickSimulate()
 	TMap<int32, FTransform> GetData;
 	STEPVR_SERVER->StepVrGetData(PlayerAddr, GetData);
 
-	FTransform* TempData = GetData.Find(StepVrDeviceID::DHead);
-	if (TempData)
+	//更新每个玩家的Device
+	for (auto DevID : NeedUpdateDevices)
 	{
-		CurrentNodeState.FHead = *TempData;
-	}
-	TempData = GetData.Find(StepVrDeviceID::DHMD);
-	if (TempData)
-	{
-		CurrentNodeState.FHeadForOculus = *TempData;
-	}
-	TempData = GetData.Find(StepVrDeviceID::DGun);
-	if (TempData)
-	{
-		CurrentNodeState.FGun = *TempData;
-	}
-	TempData = GetData.Find(StepVrDeviceID::DLeftController);
-	if (TempData)
-	{
-		CurrentNodeState.FDLeftController = *TempData;
-	}
-	TempData = GetData.Find(StepVrDeviceID::DRightController);
-	if (TempData)
-	{
-		CurrentNodeState.FRightController = *TempData;
+		FTransform& TempPtr = GetDeviceDataPtr(DevID);
+		FTransform* TempData = GetData.Find(DevID);
+		if (TempData)
+		{
+			TempPtr = *TempData;
+		}
 	}
 }
 
@@ -392,15 +363,27 @@ void UStepVrComponent::TickLocal()
 		return;
 	}
 
-	//更新标准件
-	for (auto DevID : GNeedUpdateDevices)
+	//更新每个玩家的Device
+	for (auto DevID : NeedUpdateDevices)
 	{
 		FTransform& TempPtr = GetDeviceDataPtr(DevID);
 		UStepVrBPLibrary::SVGetDeviceStateWithID(DevID, TempPtr);
 	}
 
+
 	if (STEPVR_SERVER_IsValid)
 	{
+		/**
+		* 更新公用Device
+		*/
+		TMap<int32, FTransform> GlobalDevices;
+		for (auto DevID : GNeedUpdateGlobalDevices)
+		{
+			FTransform TempData;
+			UStepVrBPLibrary::SVGetDeviceStateWithID(DevID, TempData);
+			GlobalDevices.Add(DevID, TempData);
+		}
+
 		/**
 		 * 更新连接状态
 		 */
@@ -449,12 +432,12 @@ void UStepVrComponent::TickLocal()
 		 * 同步定位数据
 		 */
 		TMap<int32, FTransform> SendData;
-		SendData.Add(StepVrDeviceID::DHead, CurrentNodeState.FHead);
-		SendData.Add(StepVrDeviceID::DHMD, CurrentNodeState.FHeadForOculus);
-		SendData.Add(StepVrDeviceID::DGun, CurrentNodeState.FGun);
-		SendData.Add(StepVrDeviceID::DLeftController, CurrentNodeState.FDLeftController);
-		SendData.Add(StepVrDeviceID::DRightController, CurrentNodeState.FRightController);
-		STEPVR_SERVER->StepVrSendData(PlayerAddr, SendData);
+		for (auto DevID : NeedUpdateDevices)
+		{
+			FTransform& TempPtr = GetDeviceDataPtr(DevID);
+			SendData.Add(DevID, TempPtr);
+		}
+		STEPVR_SERVER->StepVrSendData(PlayerAddr, SendData, GlobalDevices);
 	}
 
 	//Reset RealTime
@@ -465,34 +448,26 @@ FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
 {
 	switch (DeviceID)
 	{
-	case StepVrDeviceID::DHead:
-	{
-		return CurrentNodeState.FHead;
-	}
-	case StepVrDeviceID::DGun:
-	{
-		return CurrentNodeState.FGun;
-	}
-	case StepVrDeviceID::DLeftController:
-	{
-		return CurrentNodeState.FDLeftController;
-	}
-	case StepVrDeviceID::DRightController:
-	{
-		return CurrentNodeState.FRightController;
-	}
-	case StepVrDeviceID::DLeftFoot:
-	{
-		return CurrentNodeState.FDLeftFoot;
-	}
-	case StepVrDeviceID::DRightFoot:
-	{
-		return CurrentNodeState.FRightFoot;
-	}
-	case StepVrDeviceID::DHMD:
-	{
-		return CurrentNodeState.FHeadForOculus;
-	}
+		case StepVrDeviceID::DHead:
+		{
+			return CurrentNodeState.FHead;
+		}
+		case StepVrDeviceID::DGun:
+		{
+			return CurrentNodeState.FGun;
+		}
+		case StepVrDeviceID::DLeftController:
+		{
+			return CurrentNodeState.FDLeftController;
+		}
+		case StepVrDeviceID::DRightController:
+		{
+			return CurrentNodeState.FRightController;
+		}
+		case StepVrDeviceID::DHMD:
+		{
+			return CurrentNodeState.FHeadForHMD;
+		}
 	}
 
 	static FTransform GTransform;

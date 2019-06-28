@@ -35,6 +35,13 @@ struct FStepVRNode
 	FTransform FRightController;
 };
 
+enum class FHMDType : uint8
+{
+	HMD_Oculus,
+	HMD_Windows,
+	HMD_InValid,
+};
+
 UENUM()
 enum class FResetHMDType : uint8
 {
@@ -79,6 +86,13 @@ public:
 	UPROPERTY(AdvancedDisplay, EditAnywhere,BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
 
+	///**
+	// * 共享设备ID，该设备ID所有玩家只存在一个
+	// * 只用于联机，游戏共享设备姿态
+	// */
+	//UPROPERTY(AdvancedDisplay, EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
+	//FStepVRNode CurrentNodeState;
+
 protected:
 	/**
 	 * Delegate
@@ -94,7 +108,7 @@ protected:
 	//Reset HMD
 	void ResetHMDDirection();
 	void ResetOculusRif();
-	void ResetHMDRealTime();
+	void ResetOculusRealTime();
 	void ResetHMDAuto();
 
 	//void UpdateTimer();
@@ -121,7 +135,7 @@ private:
 	bool	bIsLocalControll = false;
 	bool    bInitializeLocal = false;
 
-	//差值
+	//插值
 	float ResetYaw;
 
 	/**
@@ -136,6 +150,8 @@ private:
 
 	//组件更新节点
 	TArray<int32>	NeedUpdateDevices;
+
+	FHMDType HMDType = FHMDType::HMD_InValid;
 
 	/************************************************************************/
 	/* 时时校准															   */

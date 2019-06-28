@@ -59,22 +59,18 @@ void UStepVrComponent::ResetHMDDirection()
 
 	Pawn->SetActorRotation(FRotator::ZeroRotator);
 
-	if (GEngine->XRSystem.IsValid())
+	switch (HMDType)
 	{
-		FName HMDName = GEngine->XRSystem->GetSystemName();
-
-		FName Oculus = TEXT("OculusHMD");
-		FName Windows = TEXT("WindowsMixedRealityHMD");
-		if (HMDName.IsEqual(Oculus))
-		{
-			ResetOculusRif();
-		}
-		else if(HMDName.IsEqual(Windows))
-		{
-			ResetOculusRif();
-		}
+	case FHMDType::HMD_Oculus:
+	{
+		ResetOculusRif();
 	}
-	
+		break;
+	case FHMDType::HMD_Windows:
+		break;
+	case FHMDType::HMD_InValid:
+		break;
+	}
 
 	GIsResetOculus = true;
 }
@@ -156,6 +152,30 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	}
 
 	/**
+	 * 检测头盔
+	 */
+	do 
+	{
+		if (!GEngine->XRSystem.IsValid())
+		{
+			break;
+		}
+
+		FName HMDName = GEngine->XRSystem->GetSystemName();
+		if (HMDName.IsEqual("OculusHMD"))
+		{
+			HMDType = FHMDType::HMD_Oculus;
+			break;
+		}
+
+		if (HMDName.IsEqual("WindowsMixedRealityHMD"))
+		{
+			HMDType = FHMDType::HMD_Windows;
+			break;
+		}
+	} while (0);
+	
+	/**
 	 * 编辑器模式重新校准
 	 */
 	if (GetWorld()->IsEditorWorld())
@@ -187,13 +207,8 @@ void UStepVrComponent::ResetOculusRif()
 }
 
 
-void UStepVrComponent::ResetHMDRealTime()
+void UStepVrComponent::ResetOculusRealTime()
 {
-	if (ResetHMDType != FResetHMDType::ResetHMD_RealTime)
-	{
-		return;
-	}
-
 	FRotator	S_QTemp;
 	FVector		S_VTemp;
 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(S_QTemp, S_VTemp);
@@ -440,8 +455,26 @@ void UStepVrComponent::TickLocal()
 		STEPVR_SERVER->StepVrSendData(PlayerAddr, SendData, GlobalDevices);
 	}
 
-	//Reset RealTime
-	ResetHMDRealTime();
+	/**
+	 * 实时校准
+	 */
+	if (ResetHMDType == FResetHMDType::ResetHMD_RealTime)
+	{
+		switch (HMDType)
+		{
+		case  FHMDType::HMD_Oculus:
+		{
+			ResetOculusRealTime();
+		}
+		break;
+		case  FHMDType::HMD_Windows:
+		{
+
+		}
+		break;
+		}
+	}
+	
 }
 
 FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)

@@ -11,6 +11,8 @@
 #define STEPVR_SERVER_IsValid	StepVrGlobal::GetInstance()->ServerIsValid()
 
 class FStepVrServer;
+class UStepSetting;
+
 
 class STEPVRPLUGIN_API StepVrGlobal
 {
@@ -28,7 +30,7 @@ public:
 
 	StepVR::Manager*	GetStepVrManager();
 	FStepVrServer*		GetStepVrServer();
-
+	UStepSetting*		GetStepSetting();
 private:
 	void LoadServer();
 	void LoadSDK();
@@ -43,11 +45,10 @@ private:
 
 	TSharedPtr<FStepVrServer>	StepVrServer;
 	TSharedPtr<StepVR::Manager>	StepVrManager;
+	TSharedPtr<UStepSetting>	StepSetting;
 
 	void*	DllHandle;
 
 	FDelegateHandle EngineBeginFrameHandle;
-	FDelegateHandle PostLoadMapHandle;
-
-	UWorld* CurUsingWorld = nullptr;
+	//FDelegateHandle PostLoadMapHandle;
 };

@@ -6,6 +6,7 @@
 
 void FStepVrPluginModule::StartupModule()
 {
+	
 	IInputDeviceModule::StartupModule();
 
 	StepVrGlobal::GetInstance()->StartSDK();

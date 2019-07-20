@@ -5,6 +5,7 @@
 #include "StepVrBPLibrary.h"
 #include "LocalDefine.h"
 #include "StepVrPlugin.h"
+#include "StepVrConfig.h"
 
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 
@@ -38,6 +39,12 @@ void StepVrGlobal::Shutdown()
 
 void StepVrGlobal::StartSDK()
 {
+	//加载Config
+	{
+		StepSetting = MakeShareable(NewObject<UStepSetting>());
+		StepSetting->ReLoadConfig();
+	}
+
 	//加载本地SDK
 	LoadSDK();
 
@@ -47,8 +54,8 @@ void StepVrGlobal::StartSDK()
 	/**
 	 * 注册开始帧，刷新数据
 	 */
-	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this,&StepVrGlobal::EngineBeginFrame);
-	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &StepVrGlobal::PostLoadMapWithWorld);
+	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this, &StepVrGlobal::EngineBeginFrame);
+	//PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &StepVrGlobal::PostLoadMapWithWorld);
 
 }
 
@@ -142,9 +149,8 @@ void StepVrGlobal::LoadSDK()
 
 void StepVrGlobal::CloseSDK()
 {
-	CurUsingWorld = nullptr;
 	FCoreDelegates::OnBeginFrame.Remove(EngineBeginFrameHandle);
-	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
+	//FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
 	if (DllHandle != nullptr)
 	{
 		FPlatformProcess::FreeDllHandle(DllHandle);
@@ -210,4 +216,28 @@ FStepVrServer* StepVrGlobal::GetStepVrServer()
 	return StepVrServer.IsValid() ? StepVrServer.Get() : nullptr;
 }
 
+UStepSetting* StepVrGlobal::GetStepSetting()
+{
+	return StepSetting.IsValid() ? StepSetting.Get() : nullptr;
+}
 
+
+//void FStepConfig::LoadConfig()
+//{
+//	if (GConfig)
+//	{
+//		StepConfigPath = FPaths::ProjectPluginsDir() + TEXT("StepVrPlugin/Config/StepDevices.ini");
+//		GConfig->LoadFile(StepConfigPath);
+//
+//		FConfigFile* StepConfig = GConfig->FindConfigFile(StepConfigPath);
+//		TArray<FString> ReplicateIDs;
+//		if (StepConfig)
+//		{
+//			StepConfig->GetArray(TEXT("InputKeys"), TEXT("Key"), ReplicateIDs);
+//			for (int32 i = 0; i < ReplicateIDs.Num(); i++)
+//			{
+//				UE_LOG(LogTemp, Warning, TEXT("%s"), *ReplicateIDs[i]);
+//			}
+//		}
+//	}
+//}

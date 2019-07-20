@@ -2,7 +2,8 @@
 #pragma once
 #include "LocalDefine.h"
 #include "InputCoreTypes.h "
-
+#include "CoreGlobals.h"
+#include "ConfigCacheIni.h"
 
 /** The Device Have Key */
 enum class EStepVrDeviceId
@@ -130,7 +131,22 @@ struct FStepVrStateController
 	{
 		FStepVRCapacitiveKey CapacitiveKey;
 		
-		/**
+		//if (GConfig)
+		//{
+		//	FConfigFile* StepConfig = GConfig->FindConfigFile(GStepConfigPath);
+		//	TArray<FString> ReplicateIDs;
+		//	if (StepConfig)
+		//	{
+		//		StepConfig->GetArray(TEXT("ReplicateDeviceID"), TEXT("DeviceID"), ReplicateIDs);
+		//		for (int32 i = 0; i < ReplicateIDs.Num(); i++)
+		//		{
+		//			UE_LOG(LogTemp, Warning, TEXT("%s"), *ReplicateIDs[i]);
+		//		}
+		//	}
+
+		//	//GConfig->GetArray("/Script/StepDevices.WorldInfo")
+		//}
+		/**848
 		 * 左手柄 : 1
 		 */
 		{

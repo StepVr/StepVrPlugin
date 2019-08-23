@@ -1,27 +1,48 @@
 ﻿#include "StepVrServerModule.h"
-#include "Engine.h"
-#include "SocketSubsystem.h"
-#include "IPAddress.h"
-//#include "UnrealNetwork.h"
-//#include "SocketSubsystem.h"
-//#include "IPAddress.h"
+#include "StepVrGlobal.h"
 
-AllPlayerData LocalAllPlayerData = {};
+#include "Engine.h"
+#include "IPAddress.h"
+#include "SocketSubsystem.h"
+
 
 //所有玩家
-static AllPlayerData GAllPlayerData;
+static FString GLocaclIP = "";
 uint32 FStepVrServer::GetLocalAddress()
 {
-	bool CanBind = false;
-	TSharedRef<FInternetAddr> LocalIp = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, CanBind);
-	if (!LocalIp->IsValid())
+	if (GLocaclIP.IsEmpty())
 	{
-		return 0;
+		bool CanBind = false;
+		TSharedRef<FInternetAddr> LocalIp = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, CanBind);
+		if (!LocalIp->IsValid())
+		{
+			return 0;
+		}
+
+		GLocaclIP = LocalIp->ToString(false);
 	}
+	return GetTypeHash(GLocaclIP);
+}
 
-	FString Addr = LocalIp->ToString(false);
+FString FStepVrServer::GetLocalAddressStr()
+{
+	if (GLocaclIP.IsEmpty())
+	{
+		bool CanBind = false;
+		TSharedRef<FInternetAddr> LocalIp = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, CanBind);
+		if (!LocalIp->IsValid())
+		{
+			return FString();
+		}
 
-	return GetTypeHash(Addr);
+		GLocaclIP = LocalIp->ToString(false);
+	}
+	return GLocaclIP;
+}
+
+EGameModeType FStepVrServer::GetGameModeType()
+{
+	return GameModeType;
 }
 
 void FStepVrServer::SetGameModeType(EGameModeType InGameModeType)
@@ -33,62 +54,34 @@ void FStepVrServer::SetGameModeType(EGameModeType InGameModeType)
 	}
 }
 
-void FStepVrServer::UpdateServerState(TArray<FString>& InClientsIP)
+void FStepVrServer::UpdateServerIP(const FString& InServerIP)
 {
 	FScopeLock Lock(&Section_GameModeType);
-	GameModeType = InClientsIP.Num() > 0 ? EServer : EStandAlone;
-	ClientsIP = InClientsIP;
-}
-
-void FStepVrServer::UpdateClientState(FString& InServerIP)
-{
-	FScopeLock Lock(&Section_GameModeType);
-	GameModeType = InServerIP.IsEmpty() ? EStandAlone : EClient;
 	ServerIP = InServerIP;
 }
-
-//void FStepVrServer::IkinemaSendData(const IKinemaReplicateData& InData)
-//{
-//	LocalPlayerData.PlayerAddr = InData.PlayerID;
-//	LocalPlayerData.IkinemaInfo = InData;
-//}
-//
-//
-//void FStepVrServer::IkinemaGetData(uint32 InPlayerAddr, IKinemaReplicateData& InData)
-//{
-//	PlayerDeviceInfo* Tempplayer = LocalAllPlayerData.Find(InPlayerAddr);
-//	if (Tempplayer == nullptr)
-//	{
-//		return;
-//	}
-//
-//	InData.SkeletionIDs.Empty(Tempplayer->IkinemaInfo.SkeletionIDs.Num());
-//	InData.SkeletonInfos.Empty(Tempplayer->IkinemaInfo.SkeletonInfos.Num());
-//	InData = Tempplayer->IkinemaInfo;
-//}
 
 void FStepVrServer::SynchronizationStepVrData()
 {
 	FScopeLock Lock(&Section_AllPlayerData);
+	FScopeLock Lock1(&GReplicateSkeletonCS);
 
-	GAllPlayerData = RemotePlayerData;
+	for (auto& Pair : RemotePlayerData)
+	{
+		GReplicateDevicesRT.FindOrAdd(Pair.Key) = Pair.Value.StepVrDeviceInfo;
+		GReplicateSkeletonRT.FindOrAdd(Pair.Key) = Pair.Value.StepMocapInfo;
+		GUpdateReplicateSkeleton = GUpdateReplicateSkeleton + 1;
+	}
 }
 
-void FStepVrServer::StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InPlayerData, TMap<int32, FTransform>& InGlobalData)
+void FStepVrServer::StepMocapSendData(const TArray<FTransform>& InMocapData)
+{
+	FScopeLock Lock(&Section_AllPlayerData);
+	LocalPlayerData.StepMocapInfo = InMocapData;
+}
+
+void FStepVrServer::StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InPlayerData)
 {
 	FScopeLock Lock(&Section_AllPlayerData);
 	LocalPlayerData.PlayerAddr = InPlayerAddr;
 	LocalPlayerData.StepVrDeviceInfo = InPlayerData;
-}
-
-void FStepVrServer::StepVrGetData(uint32 InPlayerAddr, TMap<int32, FTransform>& OutData)
-{
-	//只能在Game线程调用，无需加锁
-	PlayerDeviceInfo* Tempplayer = GAllPlayerData.Find(InPlayerAddr);
-	if (Tempplayer == nullptr)
-	{
-		return;
-	}
-
-	OutData = Tempplayer->StepVrDeviceInfo;
 }

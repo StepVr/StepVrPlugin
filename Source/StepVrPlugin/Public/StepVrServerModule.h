@@ -12,6 +12,7 @@
 #define STEPVR_SERVER_MODULE_NAME	TEXT("StepVrServer")
 class FStepVrServer;
 
+
 enum EGameModeType
 {
 	EStandAlone,
@@ -19,44 +20,23 @@ enum EGameModeType
 	EServer,
 };
 
-/**
- * 数据
- */
-struct IKinemaReplicateData
-{
-	float				Scale;
-	uint32				PlayerID;
-	TArray<int32>		SkeletionIDs;
-	TArray<FTransform>	SkeletonInfos;
-	IKinemaReplicateData()
-	{
-		Scale = 1.f;
-		PlayerID = 0;
-		SkeletionIDs = {};
-		SkeletonInfos = {};
-	}
-};
 
-FORCEINLINE FArchive& operator<<(FArchive& Ar, IKinemaReplicateData& ArData)
-{
-	Ar << ArData.Scale;
-	Ar << ArData.PlayerID;
-	Ar << ArData.SkeletionIDs;
-	Ar << ArData.SkeletonInfos;
-	return Ar;
-}
+/***************************定位数据************************************/
 struct PlayerDeviceInfo
 {
 	uint32					PlayerAddr;
-	//uint32					
+
+	//定位建数据
 	TMap<int32, FTransform>	StepVrDeviceInfo;
 
-	IKinemaReplicateData	IkinemaInfo;
+	//动捕数据
+	TArray<FTransform>		StepMocapInfo;
 
 	PlayerDeviceInfo()
 	{
 		PlayerAddr = 0;
 		StepVrDeviceInfo.Empty();
+		StepMocapInfo.Empty();
 	}
 };
 
@@ -64,13 +44,15 @@ FORCEINLINE FArchive& operator<<(FArchive& Ar, PlayerDeviceInfo& ArData)
 {
 	Ar << ArData.PlayerAddr;
 	Ar << ArData.StepVrDeviceInfo;
-	Ar << ArData.IkinemaInfo;
+	Ar << ArData.StepMocapInfo;
 	return Ar;
 }
 
 typedef TMap<uint32, PlayerDeviceInfo> AllPlayerData;
-typedef TMap<uint32, FTransform> AllGlobalDevice;
+/************************************************************************/
 
+
+/**************************传输数据************************************/
 struct SocketSendInfo
 {
 	//EGameModeType
@@ -78,15 +60,7 @@ struct SocketSendInfo
 
 	uint64					FrameCounts;
 
-	/**
-	 * 每个玩家拥有的Device
-	 */
 	AllPlayerData			AllPlayerDatas;
-
-	/**
-	 * 整个游戏公用Device
-	 */
-	AllGlobalDevice			AllGlobalDevices;
 
 	SocketSendInfo()
 	{
@@ -100,9 +74,11 @@ FORCEINLINE FArchive& operator<<(FArchive& Ar, SocketSendInfo& ArData)
 	Ar << ArData.FromWhere;
 	Ar << ArData.FrameCounts;
 	Ar << ArData.AllPlayerDatas;
-	Ar << ArData.AllGlobalDevices;
 	return Ar;
 }
+/************************************************************************/
+
+
 
 class STEPVRPLUGIN_API IStepvrServerModule : public IModuleInterface, public IModularFeature
 {
@@ -138,34 +114,22 @@ class STEPVRPLUGIN_API FStepVrServer
 public:
 	virtual ~FStepVrServer() {}
 
-	/**
-	 * 开始服务
-	 */
+	//开始服务
 	virtual void StartServer() = 0;
 
-	/**
-	 * 本机IP
-	 */
+	//本机IP
 	static uint32 GetLocalAddress();
-
-	/**
-	 * 更新服务器客户端状态
-	 */
-	EGameModeType GetGameModeType() { return GameModeType; }
+	static FString GetLocalAddressStr();
+	
+	//更新联机状态
+	EGameModeType GetGameModeType();
 	void SetGameModeType(EGameModeType InGameModeType);
-	void UpdateServerState(TArray<FString>& InClientsIP);
-	void UpdateClientState(FString& InServerIP);
+    void UpdateServerIP(const FString& InServerIP);
 
-	//IKinema
-	//void IkinemaSendData(const IKinemaReplicateData& InData);
-	//void IkinemaGetData(uint32 InPlayerAddr, IKinemaReplicateData& OutData);
+	//StepPlugin/StepMocap
+	void StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InPlayerData);
+	void StepMocapSendData(const TArray<FTransform>& InMocapData);
 
-	/**
-	 * InPlayerData : 每个玩家拥有的Devices
-	 * InGlobalData : 公用的Devices
-	 */
-	void StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InPlayerData, TMap<int32, FTransform>& InGlobalData);
-	void StepVrGetData(uint32 InPlayerAddr, TMap<int32, FTransform>& OutData);
 	void SynchronizationStepVrData();
 
 protected:
@@ -178,9 +142,9 @@ protected:
 	 */
 	FCriticalSection Section_GameModeType;
 
+	//游戏状态
 	EGameModeType GameModeType = EGameModeType::EStandAlone;
-	TArray<FString> ClientsIP;
-	FString			ServerIP;
+	FString		  ServerIP;
 
 	/**
 	 * 本机和远端数据 / Other Thread

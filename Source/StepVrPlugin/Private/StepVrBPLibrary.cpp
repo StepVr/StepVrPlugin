@@ -2,6 +2,7 @@
 #include "StepVrBPLibrary.h"
 #include "License/SDKLic.h"
 #include "LocalDefine.h"
+#include "StepVrGlobal.h"
 
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IHeadMountedDisplay.h"

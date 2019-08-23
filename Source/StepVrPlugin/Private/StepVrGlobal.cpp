@@ -7,8 +7,24 @@
 #include "StepVrPlugin.h"
 #include "StepVrConfig.h"
 
+
+/************************************************************************/
+/* Global Data                                                                     */
+/************************************************************************/
+AllDevicesTrans	GLocalDevicesRT;
+TMap<uint32, AllDevicesTrans> GReplicateDevicesRT;
+FCriticalSection GReplicateSkeletonCS;
+TAtomic<uint64> GUpdateReplicateSkeleton = 0;
+TMap<uint32, AllSkeletonData> GReplicateSkeletonRT;
+
+TArray<int32>	GNeedUpdateDevices = { StepVrDeviceID::DHead };
+
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 
+
+/************************************************************************/
+/* Global Class                                                                     */
+/************************************************************************/
 StepVrGlobal::StepVrGlobal()
 {
 }
@@ -41,7 +57,7 @@ void StepVrGlobal::StartSDK()
 {
 	//加载Config
 	{
-		StepSetting = MakeShareable(NewObject<UStepSetting>());
+		StepSetting = UStepSetting::StaticClass()->GetDefaultObject<UStepSetting>();
 		StepSetting->ReLoadConfig();
 	}
 
@@ -56,7 +72,6 @@ void StepVrGlobal::StartSDK()
 	 */
 	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this, &StepVrGlobal::EngineBeginFrame);
 	//PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &StepVrGlobal::PostLoadMapWithWorld);
-
 }
 
 bool StepVrGlobal::ServerIsValid()
@@ -160,6 +175,8 @@ void StepVrGlobal::CloseSDK()
 
 void StepVrGlobal::EngineBeginFrame()
 {
+	INC_DWORD_STAT(StepVrGlobal_EngineBeginFrame_Count);
+	SCOPE_CYCLE_COUNTER(StepVrGlobal_EngineBeginFrame_State);
 	/**
 	* 更新定位数据
 	*/
@@ -218,7 +235,7 @@ FStepVrServer* StepVrGlobal::GetStepVrServer()
 
 UStepSetting* StepVrGlobal::GetStepSetting()
 {
-	return StepSetting.IsValid() ? StepSetting.Get() : nullptr;
+	return StepSetting;
 }
 
 

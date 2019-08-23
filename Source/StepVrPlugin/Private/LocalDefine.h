@@ -9,6 +9,13 @@
 
 #define StepVrPluginName	"StepVrPlugin"
 
+//Stat stepvr
+DECLARE_STATS_GROUP(TEXT("stepvr"), STATGROUP_STEPVR, STATCAT_Advanced);
+DECLARE_DWORD_ACCUMULATOR_STAT(TEXT("StepVrGlobal_EngineBeginFrame_Count"), StepVrGlobal_EngineBeginFrame_Count, STATGROUP_STEPVR);
+DECLARE_DWORD_ACCUMULATOR_STAT(TEXT("StepVrComponent_TickComponent_Count"), StepVrComponent_TickComponent_Count, STATGROUP_STEPVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrComponent_TickComponent_State"), StepVrComponent_TickComponent_State, STATGROUP_STEPVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrGlobal_EngineBeginFrame_State"), StepVrGlobal_EngineBeginFrame_State, STATGROUP_STEPVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrInput_SendControllerEvents"), StepVrInput_SendControllerEvents, STATGROUP_STEPVR);
 
 /*----------------------------------------------------------------------------
 	StepVr Node Convert
@@ -61,11 +68,3 @@ namespace StepVrDeviceID {
 	};
 }
 
-//标准件
-extern TMap<int32, FTransform>	GLocalDevicesRT;
-
-//需要获取定位的设备ID
-extern TArray<int32>	GNeedUpdateDevices;
-
-//公用设备ID
-extern TArray<int32>	GNeedUpdateGlobalDevices;

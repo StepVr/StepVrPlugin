@@ -54,6 +54,7 @@ class UStepSetting : public UObject
 	GENERATED_BODY()
 public:
 	UStepSetting();
+	~UStepSetting();
 
 	UPROPERTY(Config, VisibleAnywhere, Category = StepConfig)
 	TArray<int32> ReplicateDeviceID;

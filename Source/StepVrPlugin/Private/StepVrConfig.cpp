@@ -7,6 +7,11 @@ UStepSetting::UStepSetting()
 
 }
 
+UStepSetting::~UStepSetting()
+{
+
+}
+
 void UStepSetting::ReLoadConfig()
 {
 	FString StepConfigPath = FPaths::ProjectPluginsDir() + TEXT("StepVrPlugin/Config/StepConfig.ini");

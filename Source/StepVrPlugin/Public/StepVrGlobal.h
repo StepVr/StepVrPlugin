@@ -4,11 +4,11 @@
 #include "StepVr.h"
 #include "CoreMinimal.h"
 
-#define STEPVR_FRAME	StepVrGlobal::GetInstance()->GetStepVrManager()
-#define STEPVR_SERVER	StepVrGlobal::GetInstance()->GetStepVrServer()
+#define STEPVR_FRAME	(StepVrGlobal::GetInstance()->GetStepVrManager())
+#define STEPVR_SERVER	(StepVrGlobal::GetInstance()->GetStepVrServer())
 
-#define STEPVR_FRAME_IsValid	StepVrGlobal::GetInstance()->SDKIsValid()
-#define STEPVR_SERVER_IsValid	StepVrGlobal::GetInstance()->ServerIsValid()
+#define STEPVR_FRAME_IsValid	(StepVrGlobal::GetInstance()->SDKIsValid())
+#define STEPVR_SERVER_IsValid	(StepVrGlobal::GetInstance()->ServerIsValid())
 
 class FStepVrServer;
 class UStepSetting;
@@ -45,10 +45,30 @@ private:
 
 	TSharedPtr<FStepVrServer>	StepVrServer;
 	TSharedPtr<StepVR::Manager>	StepVrManager;
-	TSharedPtr<UStepSetting>	StepSetting;
+
+	UStepSetting* StepSetting;
 
 	void*	DllHandle;
 
 	FDelegateHandle EngineBeginFrameHandle;
 	//FDelegateHandle PostLoadMapHandle;
 };
+
+
+
+/************************* Global Data ***************************************/
+typedef TMap<int32, FTransform> AllDevicesTrans;
+typedef TArray<FTransform>      AllSkeletonData;
+
+//本机定位数据
+extern AllDevicesTrans	GLocalDevicesRT;
+
+//同步数据
+extern TMap<uint32, AllDevicesTrans> GReplicateDevicesRT;
+extern STEPVRPLUGIN_API FCriticalSection GReplicateSkeletonCS;
+extern STEPVRPLUGIN_API TAtomic<uint64> GUpdateReplicateSkeleton;
+extern STEPVRPLUGIN_API TMap<uint32, AllSkeletonData> GReplicateSkeletonRT;
+
+//需要获取定位的设备ID
+extern TArray<int32>	GNeedUpdateDevices;
+/************************************************************************/

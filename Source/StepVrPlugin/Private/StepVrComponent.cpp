@@ -410,45 +410,6 @@ void UStepVrComponent::TickLocal()
 	if (STEPVR_SERVER_IsValid)
 	{
 		/**
-		 * 更新连接状态
-		 */
-		do 
-		{
-			UWorld* CurWorld = GetWorld();
-			if (CurWorld == nullptr)
-			{
-				break;
-			}
-
-			UNetDriver* Driver = CurWorld->NetDriver;
-			if (Driver == nullptr)
-			{
-				STEPVR_SERVER->SetGameModeType(EStandAlone);
-				break;
-			}
-
-			//客户端 -> 设置服务器IP
-			UNetConnection* ServerConnection = Driver->ServerConnection;
-			if (ServerConnection)
-			{
-				if (!ServerIP.Equals(ServerConnection->URL.Host))
-				{
-					STEPVR_SERVER->SetGameModeType(EClient);
-					ServerIP = ServerConnection->URL.Host;
-					STEPVR_SERVER->UpdateServerIP(ServerIP);
-				}
-				break;
-			}
-
-			//服务器
-			TArray<class UNetConnection*> ClientConnections = Driver->ClientConnections;
-			if (ClientConnections.Num() > 0)
-			{
-				STEPVR_SERVER->SetGameModeType(EServer);
-			}
-		} while (0);
-		
-		/**
 		 * 同步定位数据
 		 */
 		TMap<int32, FTransform> SendData;

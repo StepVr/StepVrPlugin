@@ -79,11 +79,15 @@ public:
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
 	FGameUseType	GameUseType = FGameUseType::UseType_Normal;
 
+	//动捕联网 
+	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
+	bool bMocapReplicate = false;
+
 	/**
 	 * 本机/远端 定位信息
 	 * 支持联网，PS：StepVrServer
 	 */
-	UPROPERTY(AdvancedDisplay, EditAnywhere,BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(AdvancedDisplay,BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
 
 	/**
@@ -93,7 +97,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	void DeviceTransform(int32 DeviceID, FTransform& Trans);
 
-	//地址
+	//当前Pawn客户端IP 
 	bool IsValidPlayerAddr();
 	uint32 GetPlayerAddr();
 
@@ -126,7 +130,7 @@ protected:
 	//联网同步地址
 	UPROPERTY(Replicated)
 	uint32  PlayerAddr = 0;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Replicated)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Replicated, Category = StepvrLibrary)
 	FString  PlayerIP;
 	UFUNCTION(Server, Reliable, WithValidation)
 	void SetPlayerAddrOnServer(const FString& LocalIP);

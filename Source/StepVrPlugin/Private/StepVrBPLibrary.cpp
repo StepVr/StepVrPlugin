@@ -2,6 +2,8 @@
 #include "StepVrBPLibrary.h"
 #include "License/SDKLic.h"
 #include "LocalDefine.h"
+#include "StepVrGlobal.h"
+#include "StepVrServerModule.h"
 
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "IHeadMountedDisplay.h"
@@ -98,4 +100,16 @@ FTransform UStepVrBPLibrary::Convert2UETransform(float Vx, float Vy, float Vz, f
 	Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
 
 	return Transform;
+}
+
+void UStepVrBPLibrary::SetGameType(int32 type, FString ServerIP)
+{
+	if (STEPVR_SERVER_IsValid)
+	{
+		STEPVR_SERVER->SetGameModeType((EGameModeType)type);
+		if (type == EGameModeType::EClient)
+		{
+			STEPVR_SERVER->UpdateServerIP(ServerIP);
+		}
+	}
 }

@@ -88,6 +88,8 @@ void FStepVrInput::Initialize()
 
 void FStepVrInput::SendControllerEvents()
 {
+	SCOPE_CYCLE_COUNTER(StepVrInput_SendControllerEvents);
+
 	if (!STEPVR_FRAME_IsValid)
 	{
 		return;
@@ -118,7 +120,7 @@ void FStepVrInput::SendControllerEvents()
 
 		switch (ButtonState.ActionState)
 		{
-		case EStepActionState::State_Button:
+		case EStepDeviceKeyType::State_Button:
 		{
 			flag = 0x0;
 			flag = (Node.GetKeyUp(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Release : 0x0) | flag;
@@ -148,12 +150,12 @@ void FStepVrInput::SendControllerEvents()
 			}
 		}
 		break;
-		case EStepActionState::State_ValueX:
+		case EStepDeviceKeyType::State_ValueX:
 		{
 			MessageHandler->OnControllerAnalog(ButtonState.key, 0, Node.GetJoyStickPosX(DeviceID));
 		}
 		break;
-		case EStepActionState::State_ValueY:
+		case EStepDeviceKeyType::State_ValueY:
 		{
 			MessageHandler->OnControllerAnalog(ButtonState.key, 0, Node.GetJoyStickPosY(DeviceID));
 		}
@@ -239,97 +241,20 @@ bool FStepVrInput::GetControllerOrientationAndPosition(const int32 ControllerInd
 
 void FStepVrInput::RegisterDeviceKey()
 {
-	/**
-	* add key binding
-	*/
 	EKeys::AddMenuCategoryDisplayInfo(StepVRCategoryName,
 		LOCTEXT(StepVRCategory, StepVRCategoryFriendlyName),
 		TEXT("GraphEditor.PadEvent_16x"));
 
-	/**
-	 * 枪按键
-	 */
-	FStepVRCapacitiveKey CapacitiveKey;
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunBtn_A_Trigger, 
-		LOCTEXT("StepVR_1", "StepVR_GunBtn_A_Trigger"),
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunBtn_B_Trigger, 
-		LOCTEXT("StepVR_2", "StepVR_GunBtn_B_Trigger"), 
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunBtn_C_Trigger, 
-		LOCTEXT("StepVR_3", "StepVR_GunBtn_C_Trigger"), 
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_GunBtn_D_Trigger, 
-		LOCTEXT("StepVR_4", "StepVR_GunBtn_D_Trigger"), 
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_Gun_ValueX, 
-		LOCTEXT("StepVR_5", "StepVR_Gun_ValueX"), 
-		FKeyDetails::FloatAxis,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_Gun_ValueY, 
-		LOCTEXT("StepVR_6", "StepVR_Gun_ValueY"), 
-		FKeyDetails::FloatAxis,
-		StepVRCategoryName));
-
-	/**
-	 * 左手按键
-	 */
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_LeftBtn_A_Trigger, 
-		LOCTEXT("StepVR_10", "StepVR_LeftBtn_A_Trigger"), 
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_LeftBtn_B_Trigger, 
-		LOCTEXT("StepVR_11", "StepVR_LeftBtn_B_Trigger"), 
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_LeftBtn_C_Trigger, 
-		LOCTEXT("StepVR_12", "StepVR_LeftBtn_C_Trigger"), 
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-
-	/**
-	 * 右手按键
-	 */
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_RightBtn_A_Trigger, 
-		LOCTEXT("StepVR_20", "StepVR_RightBtn_A_Trigger"), 
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_RightBtn_B_Trigger, 
-		LOCTEXT("StepVR_21", "StepVR_RightBtn_B_Trigger"), 
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_RightBtn_C_Trigger, 
-		LOCTEXT("StepVR_22", "StepVR_RightBtn_C_Trigger"), 
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-
-	/**
-	 * 导演监视器
-	 */
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_A_Trigger,
-		LOCTEXT("StepVR_31", "StepVR_DirMon_A_Trigger"),
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_B_Trigger,
-		LOCTEXT("StepVR_32", "StepVR_DirMon_B_Trigger"),
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_C_Trigger,
-		LOCTEXT("StepVR_33", "StepVR_DirMon_C_Trigger"),
-		FKeyDetails::GamepadKey,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_ValueX,
-		LOCTEXT("StepVR_34", "StepVR_DirMon_ValueX"),
-		FKeyDetails::FloatAxis,
-		StepVRCategoryName));
-	EKeys::AddKey(FKeyDetails(CapacitiveKey.StepVR_DirMon_ValueY,
-		LOCTEXT("StepVR_35", "StepVR_DirMon_ValueY"),
-		FKeyDetails::FloatAxis,
-		StepVRCategoryName));
+	for (int32 Index = 0; Index < StateController.Devices.Num(); Index++)
+	{
+		FStepVrButtonState& ButtonState = StateController.Devices[Index];
+		uint8 KeyFlag = ButtonState.ActionState == EStepDeviceKeyType::State_Button ?
+			FKeyDetails::GamepadKey :
+			FKeyDetails::FloatAxis;
+		FText KeyText = FText::FromName(ButtonState.key);
+		FKey TargetKey(ButtonState.key);
+		EKeys::AddKey(FKeyDetails(TargetKey, KeyText, KeyFlag, StepVRCategoryName));
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

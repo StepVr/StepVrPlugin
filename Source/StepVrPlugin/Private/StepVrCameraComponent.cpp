@@ -15,7 +15,7 @@ void UStepVrCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& De
 {
 	Super::GetCameraView(DeltaTime, DesiredView);
 
-	if (IsLocalControlled && STEPVR_FRAME_IsValid)
+	if (IsLocalControlled && STEPVR_FRAME_IsValid)  
 	{
 		RecaclCameraData(DeltaTime, DesiredView);
 	}

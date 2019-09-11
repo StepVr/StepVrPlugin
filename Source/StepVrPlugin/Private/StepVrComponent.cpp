@@ -13,6 +13,7 @@
 #include "Engine/Engine.h"
 #include "Engine/NetDriver.h"
 #include "Engine/NetConnection.h"
+#include "StepVrConfig.h"
 
 
 
@@ -24,6 +25,8 @@ UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	bWantsInitializeComponent = true;
 	bAutoActivate = true;
 	bReplicates = true;
+
+	PlayerIP = TEXT("");
 }
 
 void UStepVrComponent::ResetHMD()
@@ -46,6 +49,37 @@ void UStepVrComponent::ToggleResetType()
 			ResetHMDType = FResetHMDType::ResetHMD_RealTime;
 		}
 			break;
+	}
+}
+
+void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
+{
+	if (bIsLocalControll)
+	{
+		auto Temp = GLocalDevicesRT.Find(DeviceID);
+		if (Temp)
+		{
+			Trans = *Temp;
+		}
+		else
+		{
+			if (GNeedUpdateDevices.Find(DeviceID) == INDEX_NONE)
+			{
+				GNeedUpdateDevices.Add(DeviceID);
+			}
+		}
+	}
+	else
+	{
+		auto TempPlayer = GReplicateDevicesRT.Find(PlayerAddr);
+		if (TempPlayer)
+		{
+			auto TempDevice = (*TempPlayer).Find(DeviceID);
+			if (TempDevice)
+			{
+				Trans = *TempDevice;
+			}
+		}
 	}
 }
 
@@ -79,6 +113,16 @@ void UStepVrComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//同步ID
+	UStepSetting* Config = StepVrGlobal::GetInstance()->GetStepSetting();
+	if (Config)
+	{
+		ReplicateID = Config->ReplicateDeviceID;
+	}
+
+	/**
+	 * 组要更新的设备ID
+	 */
 	NeedUpdateDevices.Add(StepVrDeviceID::DLeftController);
 	NeedUpdateDevices.Add(StepVrDeviceID::DRightController);
 	NeedUpdateDevices.Add(StepVrDeviceID::DGun);
@@ -109,7 +153,11 @@ void UStepVrComponent::RegistInputComponent()
 
 void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
+	INC_DWORD_STAT(StepVrComponent_TickComponent_Count);
+	SCOPE_CYCLE_COUNTER(StepVrComponent_TickComponent_State);
+
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
 
 	if (!bInitializeLocal)
 	{
@@ -121,10 +169,10 @@ void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
  	{
  		TickLocal();
  	}
- 	else
- 	{
- 		TickSimulate();
- 	}
+	/*	else
+	   {
+		   TickSimulate();
+	   }*/
 }
 
 void UStepVrComponent::InitializeComponent()
@@ -192,7 +240,7 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	/**
 	 * 同步定位数据
 	 */
-	uint32 Addr = FStepVrServer::GetLocalAddress();
+	FString Addr = FStepVrServer::GetLocalAddressStr();
 	SetPlayerAddrOnServer(Addr);
 }
 
@@ -344,33 +392,6 @@ void UStepVrComponent::ResetHMDAuto()
 	}
 }
 
-void UStepVrComponent::TickSimulate()
-{
-	if (!STEPVR_SERVER_IsValid) 
-	{ 
-		return; 
-	}
-
-	if (!IsValidPlayerAddr())
-	{
-		return;
-	}
-
-	TMap<int32, FTransform> GetData;
-	STEPVR_SERVER->StepVrGetData(PlayerAddr, GetData);
-
-	//更新每个玩家的Device
-	for (auto DevID : NeedUpdateDevices)
-	{
-		FTransform& TempPtr = GetDeviceDataPtr(DevID);
-		FTransform* TempData = GetData.Find(DevID);
-		if (TempData)
-		{
-			TempPtr = *TempData;
-		}
-	}
-}
-
 void UStepVrComponent::TickLocal()
 {
 	if (!STEPVR_FRAME_IsValid)
@@ -389,70 +410,16 @@ void UStepVrComponent::TickLocal()
 	if (STEPVR_SERVER_IsValid)
 	{
 		/**
-		* 更新公用Device
-		*/
-		TMap<int32, FTransform> GlobalDevices;
-		for (auto DevID : GNeedUpdateGlobalDevices)
-		{
-			FTransform TempData;
-			UStepVrBPLibrary::SVGetDeviceStateWithID(DevID, TempData);
-			GlobalDevices.Add(DevID, TempData);
-		}
-
-		/**
-		 * 更新连接状态
-		 */
-		do 
-		{
-			UWorld* CurWorld = GetWorld();
-			if (CurWorld == nullptr)
-			{
-				break;
-			}
-
-			UNetDriver* Driver = CurWorld->NetDriver;
-			if (Driver == nullptr)
-			{
-				STEPVR_SERVER->SetGameModeType(EStandAlone);
-				break;
-			}
-
-			//客户端
-			UNetConnection* ServerConnection = Driver->ServerConnection;
-			if (ServerConnection && (!ServerIP.Equals(ServerConnection->URL.Host)))
-			{
-				ServerIP = ServerConnection->URL.Host;
-				STEPVR_SERVER->UpdateClientState(ServerIP);
-				break;
-			}
-
-			//服务器
-			TArray<class UNetConnection*> ClientConnections = Driver->ClientConnections;
-			if (RemotAddrIP.Num() != ClientConnections.Num())
-			{
-				RemotAddrIP.Empty(ClientConnections.Num());
-				for (UNetConnection* Temp : ClientConnections)
-				{
-					if (Temp)
-					{
-						RemotAddrIP.Add(Temp->URL.Host);
-					}
-				}
-
-				STEPVR_SERVER->UpdateServerState(RemotAddrIP);
-			}
-		} while (0);
-		
-		/**
 		 * 同步定位数据
 		 */
 		TMap<int32, FTransform> SendData;
-		for (auto DevID : NeedUpdateDevices)
+		FTransform TempPtr;
+		for (auto DevID : ReplicateID)
 		{
-			FTransform& TempPtr = GetDeviceDataPtr(DevID);
+			UStepVrBPLibrary::SVGetDeviceStateWithID(DevID,TempPtr);
 			SendData.Add(DevID, TempPtr);
 		}
-		STEPVR_SERVER->StepVrSendData(PlayerAddr, SendData, GlobalDevices);
+		STEPVR_SERVER->StepVrSendData(PlayerAddr, SendData);
 	}
 
 	/**
@@ -512,6 +479,21 @@ bool UStepVrComponent::IsValidPlayerAddr()
 	return PlayerAddr > 1;
 }
 
+uint32 UStepVrComponent::GetPlayerAddr()
+{
+	return PlayerAddr;
+}
+
+bool UStepVrComponent::IsInitialization()
+{
+	return bInitializeLocal;
+}
+
+bool UStepVrComponent::IsLocalControlled()
+{
+	return bIsLocalControll;
+}
+
 bool UStepVrComponent::InitializeLocalControlled()
 {
 	do 
@@ -545,11 +527,12 @@ bool UStepVrComponent::InitializeLocalControlled()
 	return bInitializeLocal;
 }
 
-void UStepVrComponent::SetPlayerAddrOnServer_Implementation(const uint32 InAddr)
+void UStepVrComponent::SetPlayerAddrOnServer_Implementation(const FString& LocalIP)
 {
-	PlayerAddr = InAddr;
+	PlayerIP = LocalIP;
+	PlayerAddr = GetTypeHash(LocalIP);
 }
-bool UStepVrComponent::SetPlayerAddrOnServer_Validate(const uint32 InAddr)
+bool UStepVrComponent::SetPlayerAddrOnServer_Validate(const FString& LocalIP)
 {
 	return true;
 }
@@ -558,4 +541,5 @@ void UStepVrComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UStepVrComponent, PlayerAddr);
+	DOREPLIFETIME(UStepVrComponent, PlayerIP);
 }

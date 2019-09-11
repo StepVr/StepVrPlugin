@@ -5,9 +5,26 @@
 #include "StepVrBPLibrary.h"
 #include "LocalDefine.h"
 #include "StepVrPlugin.h"
+#include "StepVrConfig.h"
+
+
+/************************************************************************/
+/* Global Data                                                                     */
+/************************************************************************/
+AllDevicesTrans	GLocalDevicesRT;
+TMap<uint32, AllDevicesTrans> GReplicateDevicesRT;
+FCriticalSection GReplicateSkeletonCS;
+TAtomic<uint64> GUpdateReplicateSkeleton = 0;
+TMap<uint32, AllSkeletonData> GReplicateSkeletonRT;
+
+TArray<int32>	GNeedUpdateDevices = { StepVrDeviceID::DHead };
 
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 
+
+/************************************************************************/
+/* Global Class                                                                     */
+/************************************************************************/
 StepVrGlobal::StepVrGlobal()
 {
 }
@@ -38,6 +55,12 @@ void StepVrGlobal::Shutdown()
 
 void StepVrGlobal::StartSDK()
 {
+	//加载Config
+	{
+		StepSetting = UStepSetting::StaticClass()->GetDefaultObject<UStepSetting>();
+		StepSetting->ReLoadConfig();
+	}
+
 	//加载本地SDK
 	LoadSDK();
 
@@ -47,9 +70,8 @@ void StepVrGlobal::StartSDK()
 	/**
 	 * 注册开始帧，刷新数据
 	 */
-	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this,&StepVrGlobal::EngineBeginFrame);
-	PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &StepVrGlobal::PostLoadMapWithWorld);
-
+	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this, &StepVrGlobal::EngineBeginFrame);
+	//PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &StepVrGlobal::PostLoadMapWithWorld);
 }
 
 bool StepVrGlobal::ServerIsValid()
@@ -142,9 +164,8 @@ void StepVrGlobal::LoadSDK()
 
 void StepVrGlobal::CloseSDK()
 {
-	CurUsingWorld = nullptr;
 	FCoreDelegates::OnBeginFrame.Remove(EngineBeginFrameHandle);
-	FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
+	//FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
 	if (DllHandle != nullptr)
 	{
 		FPlatformProcess::FreeDllHandle(DllHandle);
@@ -154,6 +175,8 @@ void StepVrGlobal::CloseSDK()
 
 void StepVrGlobal::EngineBeginFrame()
 {
+	INC_DWORD_STAT(StepVrGlobal_EngineBeginFrame_Count);
+	SCOPE_CYCLE_COUNTER(StepVrGlobal_EngineBeginFrame_State);
 	/**
 	* 更新定位数据
 	*/
@@ -210,4 +233,28 @@ FStepVrServer* StepVrGlobal::GetStepVrServer()
 	return StepVrServer.IsValid() ? StepVrServer.Get() : nullptr;
 }
 
+UStepSetting* StepVrGlobal::GetStepSetting()
+{
+	return StepSetting;
+}
 
+
+//void FStepConfig::LoadConfig()
+//{
+//	if (GConfig)
+//	{
+//		StepConfigPath = FPaths::ProjectPluginsDir() + TEXT("StepVrPlugin/Config/StepDevices.ini");
+//		GConfig->LoadFile(StepConfigPath);
+//
+//		FConfigFile* StepConfig = GConfig->FindConfigFile(StepConfigPath);
+//		TArray<FString> ReplicateIDs;
+//		if (StepConfig)
+//		{
+//			StepConfig->GetArray(TEXT("InputKeys"), TEXT("Key"), ReplicateIDs);
+//			for (int32 i = 0; i < ReplicateIDs.Num(); i++)
+//			{
+//				UE_LOG(LogTemp, Warning, TEXT("%s"), *ReplicateIDs[i]);
+//			}
+//		}
+//	}
+//}

@@ -57,4 +57,14 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	 */
 	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	static FTransform Convert2UETransform(float Vx, float Vy, float Vz, float Qw, float Qx, float Qy, float Qz);
+
+	/**
+	 * 	type
+	 * 	0 EStandAlone,
+	 *	1 EClient,
+	 *	2 EServer,
+	 *	@ServerIP ：1 EClient 设置 ServerIP,
+	 */
+	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
+	static void SetGameType(int32 type,FString ServerIP);
 };

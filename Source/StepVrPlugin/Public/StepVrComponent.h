@@ -79,19 +79,32 @@ public:
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
 	FGameUseType	GameUseType = FGameUseType::UseType_Normal;
 
+	//动捕联网 
+	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
+	bool bMocapReplicate = false;
+
 	/**
 	 * 本机/远端 定位信息
 	 * 支持联网，PS：StepVrServer
 	 */
-	UPROPERTY(AdvancedDisplay, EditAnywhere,BlueprintReadOnly, Category = StepvrLibrary)
+	UPROPERTY(AdvancedDisplay,BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
 
-	///**
-	// * 共享设备ID，该设备ID所有玩家只存在一个
-	// * 只用于联机，游戏共享设备姿态
-	// */
-	//UPROPERTY(AdvancedDisplay, EditAnywhere, BlueprintReadOnly, Category = StepvrLibrary)
-	//FStepVRNode CurrentNodeState;
+	/**
+	 * 本机/远端 定位信息
+	 * 支持联网，PS：StepVrServer
+	 */
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	void DeviceTransform(int32 DeviceID, FTransform& Trans);
+
+	//当前Pawn客户端IP 
+	bool IsValidPlayerAddr();
+	uint32 GetPlayerAddr();
+
+	//是否初始化
+	bool IsInitialization();
+
+	bool IsLocalControlled();
 
 protected:
 	/**
@@ -111,19 +124,16 @@ protected:
 	void ResetOculusRealTime();
 	void ResetHMDAuto();
 
-	//void UpdateTimer();
-
-	void TickSimulate();
 	void TickLocal();
 	FTransform& GetDeviceDataPtr(int32 DeviceID);
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	void SetPlayerAddrOnServer(const uint32 InAddr);
-
+	//联网同步地址
 	UPROPERTY(Replicated)
 	uint32  PlayerAddr = 0;
-
-	bool IsValidPlayerAddr();
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Replicated, Category = StepvrLibrary)
+	FString  PlayerIP;
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SetPlayerAddrOnServer(const FString& LocalIP);
 
 	/**
 	 *	@return 是否初始化
@@ -139,17 +149,15 @@ private:
 	float ResetYaw;
 
 	/**
-	 * 服务器
-	 */
-	TArray<FString> RemotAddrIP;
-
-	/**
 	 * 客户端
 	 */
 	FString ServerIP;
 
 	//组件更新节点
 	TArray<int32>	NeedUpdateDevices;
+	
+	//需要同步的组件
+	TArray<int32>   ReplicateID;
 
 	FHMDType HMDType = FHMDType::HMD_InValid;
 

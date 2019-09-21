@@ -1,6 +1,6 @@
 ﻿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #pragma once
-#include "Object.h"
+#include "Engine/DeveloperSettings.h"
 #include "StepVrConfig.generated.h"
 
 UENUM()
@@ -48,19 +48,24 @@ struct FStepDeviceAction
 
 
 
-UCLASS(config=StepConfig)
-class UStepSetting : public UObject
+UCLASS(config=StepConfig, defaultconfig)
+class UStepSetting : public UDeveloperSettings
 {
 	GENERATED_BODY()
+
 public:
 	UStepSetting();
-	~UStepSetting();
 
+	static UStepSetting* Instance();
+
+	void ReLoadConfig();
+
+	bool IsInit = false;
+
+public:
 	UPROPERTY(Config, VisibleAnywhere, Category = StepConfig)
 	TArray<int32> ReplicateDeviceID;
 
 	UPROPERTY(config, VisibleAnywhere, Category = StepConfig)
 	TArray<FStepDeviceAction> KeyAction;
-
-	void ReLoadConfig();
 };

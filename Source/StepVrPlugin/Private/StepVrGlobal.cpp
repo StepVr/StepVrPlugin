@@ -5,7 +5,6 @@
 #include "StepVrBPLibrary.h"
 #include "LocalDefine.h"
 #include "StepVrPlugin.h"
-#include "StepVrConfig.h"
 
 
 /************************************************************************/
@@ -55,12 +54,6 @@ void StepVrGlobal::Shutdown()
 
 void StepVrGlobal::StartSDK()
 {
-	//加载Config
-	{
-		StepSetting = UStepSetting::StaticClass()->GetDefaultObject<UStepSetting>();
-		StepSetting->ReLoadConfig();
-	}
-
 	//加载本地SDK
 	LoadSDK();
 
@@ -232,29 +225,3 @@ FStepVrServer* StepVrGlobal::GetStepVrServer()
 {
 	return StepVrServer.IsValid() ? StepVrServer.Get() : nullptr;
 }
-
-UStepSetting* StepVrGlobal::GetStepSetting()
-{
-	return StepSetting;
-}
-
-
-//void FStepConfig::LoadConfig()
-//{
-//	if (GConfig)
-//	{
-//		StepConfigPath = FPaths::ProjectPluginsDir() + TEXT("StepVrPlugin/Config/StepDevices.ini");
-//		GConfig->LoadFile(StepConfigPath);
-//
-//		FConfigFile* StepConfig = GConfig->FindConfigFile(StepConfigPath);
-//		TArray<FString> ReplicateIDs;
-//		if (StepConfig)
-//		{
-//			StepConfig->GetArray(TEXT("InputKeys"), TEXT("Key"), ReplicateIDs);
-//			for (int32 i = 0; i < ReplicateIDs.Num(); i++)
-//			{
-//				UE_LOG(LogTemp, Warning, TEXT("%s"), *ReplicateIDs[i]);
-//			}
-//		}
-//	}
-//}

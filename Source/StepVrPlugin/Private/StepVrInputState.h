@@ -27,7 +27,7 @@ struct FStepVrStateController
 public:
 	FStepVrStateController()
 	{
-		UStepSetting* StepConfig = StepVrGlobal::GetInstance()->GetStepSetting();
+		UStepSetting* StepConfig = UStepSetting::Instance();
 		for (auto& KeyInfo : StepConfig->KeyAction)
 		{
 			AddActions(KeyInfo.KeyID, KeyInfo.KeyName,KeyInfo.DeviceID, KeyInfo.KeyType);

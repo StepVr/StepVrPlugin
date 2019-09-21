@@ -30,7 +30,6 @@ public:
 
 	StepVR::Manager*	GetStepVrManager();
 	FStepVrServer*		GetStepVrServer();
-	UStepSetting*		GetStepSetting();
 private:
 	void LoadServer();
 	void LoadSDK();
@@ -45,8 +44,6 @@ private:
 
 	TSharedPtr<FStepVrServer>	StepVrServer;
 	TSharedPtr<StepVR::Manager>	StepVrManager;
-
-	UStepSetting* StepSetting;
 
 	void*	DllHandle;
 

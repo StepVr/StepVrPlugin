@@ -3,6 +3,7 @@
 #include "StepVrInput.h"
 #include "StepVrGlobal.h"
 #include "StepVrServerModule.h"
+#include "StepVrConfig.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
@@ -13,7 +14,7 @@
 #include "Engine/Engine.h"
 #include "Engine/NetDriver.h"
 #include "Engine/NetConnection.h"
-#include "StepVrConfig.h"
+
 
 
 
@@ -114,7 +115,7 @@ void UStepVrComponent::BeginPlay()
 	Super::BeginPlay();
 
 	//同步ID
-	UStepSetting* Config = StepVrGlobal::GetInstance()->GetStepSetting();
+	UStepSetting* Config = UStepSetting::Instance();
 	if (Config)
 	{
 		ReplicateID = Config->ReplicateDeviceID;

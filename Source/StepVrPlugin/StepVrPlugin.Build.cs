@@ -42,6 +42,7 @@ public class StepVrPlugin : ModuleRules
         PublicIncludePaths.AddRange(
 			new string[] {
                 Path.Combine(ModulePath, "Public"),
+                Path.Combine(LibPath,"include"),
 				// ... add public include paths required here ...
 			}
 			);

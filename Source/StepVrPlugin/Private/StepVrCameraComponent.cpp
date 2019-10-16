@@ -15,27 +15,24 @@ void UStepVrCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& De
 {
 	Super::GetCameraView(DeltaTime, DesiredView);
 
-	if (IsLocalControlled && STEPVR_FRAME_IsValid)  
+	if (bLocalControlled && STEPVR_FRAME_IsValid)  
 	{
 		RecaclCameraData(DeltaTime, DesiredView);
 	}
 }
-void UStepVrCameraComponent::BeginPlay()
-{
-	Super::BeginPlay();
 
-	APawn* _pawn = Cast<APawn>(GetOwner());
-	if (IsValid(_pawn))
-	{
-		IsLocalControlled = _pawn->IsLocallyControlled();
-	}
+void UStepVrCameraComponent::SetCameraInfo(int32 CameraID, bool IsLocal)
+{
+	iCameraID = CameraID;
+	bLocalControlled = IsLocal;
 }
+
 void UStepVrCameraComponent::RecaclCameraData(float DeltaTime, FMinimalViewInfo& DesiredView)
 {
 	FTransform _StepvrHead;
 	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
 
-	UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, StepVrDeviceID::DHead, _StepvrHead);
+	UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, iCameraID, _StepvrHead);
 	SetRelativeLocation(_StepvrHead.GetLocation());
 	DesiredView.Location = GetComponentToWorld().GetLocation();
 }

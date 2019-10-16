@@ -49,12 +49,15 @@ enum class FResetHMDType : uint8
 	ResetHMD_BeginPlay
 };
 
+
 UENUM()
 enum class FGameUseType : uint8
 {
-	UseType_Normal,
-	UseType_Mocap
+	UseType_VR,
+	UseType_Mocap,
+	UseType_Cave
 };
+
 
 UCLASS(ClassGroup = StepvrClassGroup, editinlinenew, meta = (BlueprintSpawnableComponent))
 class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent
@@ -62,49 +65,50 @@ class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent
 	GENERATED_UCLASS_BODY()
 
 public:
-	//手动校准HMD
+	/**
+	 * 手动校准HMD
+	 */
 	UFUNCTION(BlueprintCallable,Category = StepvrLibrary)
 	void ResetHMD();
-	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
-	void ToggleResetType();
 
-	//HMD校准方式
+	/**
+	* 本机/远端 定位信息
+	* 支持联网，PS：StepVrServer
+	*/
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	void DeviceTransform(int32 DeviceID, FTransform& Trans);
+
+	//ip是否有效
+	bool	IsValidPlayerAddr();
+	//获取同步IP
+	uint32	GetPlayerAddr();
+
+	//是否初始化
+	bool	IsInitialization();
+	//是否本地控制玩家
+	bool	IsLocalControlled();
+
+	/**
+	 * HMD校准方式
+	 * Cave 模式无需校准，当前字段无效
+	 */
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
 	FResetHMDType	ResetHMDType = FResetHMDType::ResetHMD_BeginPlay;
 
-	/**
-	 * UseType_Normal 单独HMD
-	 * UseType_Mocap  动捕链接HMD
-	 */
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
-	FGameUseType	GameUseType = FGameUseType::UseType_Normal;
+	FGameUseType	GameUseType = FGameUseType::UseType_VR;
 
-	//动捕联网 
+	//动捕联网
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
 	bool bMocapReplicate = false;
 
 	/**
 	 * 本机/远端 定位信息
 	 * 支持联网，PS：StepVrServer
+	 * 后续版本删掉，请使用DeviceTransform
 	 */
 	UPROPERTY(AdvancedDisplay,BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
-
-	/**
-	 * 本机/远端 定位信息
-	 * 支持联网，PS：StepVrServer
-	 */
-	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
-	void DeviceTransform(int32 DeviceID, FTransform& Trans);
-
-	//当前Pawn客户端IP 
-	bool IsValidPlayerAddr();
-	uint32 GetPlayerAddr();
-
-	//是否初始化
-	bool IsInitialization();
-
-	bool IsLocalControlled();
 
 protected:
 	/**
@@ -153,10 +157,10 @@ private:
 	 */
 	FString ServerIP;
 
-	//组件更新节点
+	//需要更新的ID
 	TArray<int32>	NeedUpdateDevices;
 	
-	//需要同步的组件
+	//需要同步的ID
 	TArray<int32>   ReplicateID;
 
 	FHMDType HMDType = FHMDType::HMD_InValid;

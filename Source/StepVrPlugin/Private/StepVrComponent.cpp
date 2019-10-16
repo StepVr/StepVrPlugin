@@ -4,6 +4,8 @@
 #include "StepVrGlobal.h"
 #include "StepVrServerModule.h"
 #include "StepVrConfig.h"
+#include "StepVrCameraComponent.h"
+
 
 #include "Kismet/GameplayStatics.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
@@ -14,6 +16,7 @@
 #include "Engine/Engine.h"
 #include "Engine/NetDriver.h"
 #include "Engine/NetConnection.h"
+
 
 
 
@@ -34,23 +37,6 @@ void UStepVrComponent::ResetHMD()
 {
 	GIsResetOculus = false;
 	ResetHMDAuto();
-}
-void UStepVrComponent::ToggleResetType()
-{
-	switch (ResetHMDType)
-	{
-		case FResetHMDType::ResetHMD_RealTime:
-		{
-			ResetHMDType = FResetHMDType::ResetHMD_BeginPlay;
-			ResetHMD();
-		}
-			break;
-		case FResetHMDType::ResetHMD_BeginPlay:
-		{
-			ResetHMDType = FResetHMDType::ResetHMD_RealTime;
-		}
-			break;
-	}
 }
 
 void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
@@ -140,15 +126,9 @@ void UStepVrComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void UStepVrComponent::RegistInputComponent()
 {
 	APawn* Pawn = Cast<APawn>(GetOwner());
-	if (Pawn == nullptr)
-	{
-		return;
-	}
-
-	if (Pawn->InputComponent)
+	if (Pawn && Pawn->InputComponent)
 	{
 		Pawn->InputComponent->BindKey(EKeys::R, EInputEvent::IE_Pressed, this, &UStepVrComponent::ResetHMD);
-		Pawn->InputComponent->BindKey(EKeys::T, EInputEvent::IE_Pressed, this, &UStepVrComponent::ToggleResetType);
 	}
 }
 
@@ -170,16 +150,12 @@ void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
  	{
  		TickLocal();
  	}
-	/*	else
-	   {
-		   TickSimulate();
-	   }*/
 }
 
 void UStepVrComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
-	ResetYaw = GameUseType == FGameUseType::UseType_Normal ? 90.f : -90.f;
+	ResetYaw = GameUseType == FGameUseType::UseType_VR ? 90.f : -90.f;
 }
 
 void UStepVrComponent::AfterinitializeLocalControlled()
@@ -187,6 +163,16 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	if (!bIsLocalControll)
 	{
 		return;
+	}
+
+	/**
+	 * Stepcamera 配置
+	 */
+	auto StepCamera = Cast<UStepVrCameraComponent>(GetOwner()->GetComponentByClass(UStepVrCameraComponent::StaticClass()));
+	if (StepCamera)
+	{
+		int32 CameraID = GameUseType == FGameUseType::UseType_Cave ? 198 : 6;
+		StepCamera->SetCameraInfo(CameraID, bIsLocalControll);
 	}
 
 	/**
@@ -430,19 +416,18 @@ void UStepVrComponent::TickLocal()
 	{
 		switch (HMDType)
 		{
-		case  FHMDType::HMD_Oculus:
-		{
-			ResetOculusRealTime();
-		}
+			case  FHMDType::HMD_Oculus:
+			{
+				ResetOculusRealTime();
+			}
 		break;
-		case  FHMDType::HMD_Windows:
-		{
-
-		}
+			case  FHMDType::HMD_Windows:
+			{
+				
+			}
 		break;
 		}
 	}
-	
 }
 
 FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
@@ -499,18 +484,21 @@ bool UStepVrComponent::InitializeLocalControlled()
 {
 	do 
 	{
+		//本地Controller
 		AController* ControllerLocal = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 		if (ControllerLocal == nullptr)
 		{
 			break;
 		}
-
+		
+		//本地Pawn
 		APawn* LocalPawn = ControllerLocal->GetPawn();
 		if (LocalPawn == nullptr)
 		{
 			break;
 		}
 
+		//当前Pawn
 		APawn* Pawn = Cast<APawn>(GetOwner());
 		if (Pawn == nullptr)
 		{

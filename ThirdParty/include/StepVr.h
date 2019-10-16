@@ -30,10 +30,11 @@
 
 #include <string>
 
-/**
-* Spring glove
-**/
 typedef unsigned char U8;
+typedef void(*Glove_tcb_procFd)(U8* pFd_i, U8 comNum_i);
+extern "C" STEPVR_API void StepVR_initGlove(Glove_tcb_procFd pcb_procFd_i);
+extern "C" STEPVR_API void SendGloveCmd(U8 *cmd);
+
 typedef void(*SpringVR_tcb_procFd)(U8* pFd_i, U8 comNum_i);
 extern "C" STEPVR_API void StepVR_initSpring(SpringVR_tcb_procFd pcb_procFd_i);
 extern "C" STEPVR_API void SendSpringCmd(U8 *cmd);
@@ -380,7 +381,7 @@ namespace StepVR {
 		*
 		* @returns The specified CalibrateFrame.
 		**/
-		STEPVR_API unsigned char* GetCalFrame();
+		//STEPVR_API unsigned char* GetCalFrame();
 		
 		/**
 		* Set receive position and rotation mode. block or non block 

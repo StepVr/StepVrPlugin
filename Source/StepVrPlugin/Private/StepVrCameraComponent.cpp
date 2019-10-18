@@ -33,6 +33,13 @@ void UStepVrCameraComponent::RecaclCameraData(float DeltaTime, FMinimalViewInfo&
 	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
 
 	UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, iCameraID, _StepvrHead);
+	
 	SetRelativeLocation(_StepvrHead.GetLocation());
+	
+	if (iCameraID == 198)
+	{
+		SetRelativeRotation(_StepvrHead.Rotator());
+	}
+
 	DesiredView.Location = GetComponentToWorld().GetLocation();
 }

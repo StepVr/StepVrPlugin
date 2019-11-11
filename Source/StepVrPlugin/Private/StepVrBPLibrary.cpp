@@ -102,12 +102,12 @@ FTransform UStepVrBPLibrary::Convert2UETransform(float Vx, float Vy, float Vz, f
 	return Transform;
 }
 
-void UStepVrBPLibrary::SetGameType(int32 type, FString ServerIP)
+void UStepVrBPLibrary::SetGameType(FGameType type, FString ServerIP)
 {
 	if (STEPVR_SERVER_IsValid)
 	{
 		STEPVR_SERVER->SetGameModeType((EGameModeType)type);
-		if (type == EGameModeType::EClient)
+		if (type == FGameType::GameClient)
 		{
 			STEPVR_SERVER->UpdateServerIP(ServerIP);
 		}

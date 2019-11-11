@@ -31,6 +31,14 @@ class Frame;
 * 
 * received Date class Need inherit StepVrServerInterface
 */
+UENUM()
+enum class FGameType : uint8
+{
+	GameStandAlone,
+	GameServer,
+	GameClient
+};
+
 UCLASS()
 class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 {
@@ -66,5 +74,5 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	 *	@ServerIP ：1 EClient 设置 ServerIP,
 	 */
 	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
-	static void SetGameType(int32 type,FString ServerIP);
+	static void SetGameType(FGameType type,FString ServerIP);
 };

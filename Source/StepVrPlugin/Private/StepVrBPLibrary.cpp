@@ -27,7 +27,7 @@ bool UStepVrBPLibrary::SVCheckGameLic(FString gameId){
 	}
 	return true;
 }
-void UStepVrBPLibrary::SVGetDeviceStateWithID(StepVR::SingleNode* InSingleNode, int32 EquipId, FTransform& Transform)
+void UStepVrBPLibrary::SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 EquipId, FTransform& Transform)
 {
 	if (!InSingleNode->IsHardWareLink(EquipId))
 	{

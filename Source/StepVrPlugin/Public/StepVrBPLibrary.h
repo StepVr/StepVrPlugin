@@ -35,8 +35,9 @@ UENUM()
 enum class FGameType : uint8
 {
 	GameStandAlone,
+	GameClient,
 	GameServer,
-	GameClient
+	
 };
 
 UCLASS()
@@ -52,7 +53,7 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	static bool SVCheckGameLic(FString gameId);
 
 	
-	static void SVGetDeviceStateWithID(StepVR::SingleNode* InSingleNode,int32 DeviceID, FTransform& Transform);
+	static void SVGetDeviceState(StepVR::SingleNode* InSingleNode,int32 DeviceID, FTransform& Transform);
 	
 	/**
 	 * 获取标准件数据

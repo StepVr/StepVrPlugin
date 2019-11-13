@@ -33,6 +33,11 @@ UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	PlayerIP = TEXT("");
 }
 
+void UStepVrComponent::StepServerIntrval(float interval)
+{
+	UE_LOG(LogTemp,Log,TEXT("adasdas"));
+}
+
 void UStepVrComponent::ResetHMD()
 {
 	GIsResetOculus = false;
@@ -64,7 +69,22 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 			auto TempDevice = (*TempPlayer).Find(DeviceID);
 			if (TempDevice)
 			{
-				Trans = *TempDevice;
+				if (DeviceID == 6)
+				{
+					FTransform NA = LastTrans;
+					FTransform NB = *TempDevice;
+
+					FTransform Result;
+					NA.NormalizeRotation();
+					NB.NormalizeRotation();
+					Result.Blend(NA, NB, LerpAlpha);
+					LastTrans = Result;
+					Trans = Result;
+				}
+				else
+				{
+					Trans = *TempDevice;
+				}
 			}
 		}
 	}
@@ -134,11 +154,9 @@ void UStepVrComponent::RegistInputComponent()
 
 void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
-	INC_DWORD_STAT(StepVrComponent_TickComponent_Count);
-	SCOPE_CYCLE_COUNTER(StepVrComponent_TickComponent_State);
+	SCOPE_CYCLE_COUNTER(stat_Componment_tick);
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 
 	if (!bInitializeLocal)
 	{
@@ -432,6 +450,8 @@ void UStepVrComponent::TickLocal()
 
 FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
 {
+	SCOPE_CYCLE_COUNTER(stat_GetDeviceData_tick);
+
 	switch (DeviceID)
 	{
 		case StepVrDeviceID::DHead:

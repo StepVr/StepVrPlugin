@@ -168,8 +168,7 @@ void StepVrGlobal::CloseSDK()
 
 void StepVrGlobal::EngineBeginFrame()
 {
-	INC_DWORD_STAT(StepVrGlobal_EngineBeginFrame_Count);
-	SCOPE_CYCLE_COUNTER(StepVrGlobal_EngineBeginFrame_State);
+	SCOPE_CYCLE_COUNTER(stat_EngineBeginFrame_tick);
 	/**
 	* 更新定位数据
 	*/
@@ -180,7 +179,7 @@ void StepVrGlobal::EngineBeginFrame()
 		for (auto DevID : GNeedUpdateDevices)
 		{
 			FTransform TempData;
-			UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, DevID, TempData);
+			UStepVrBPLibrary::SVGetDeviceState(&Node, DevID, TempData);
 		}
 	}
 

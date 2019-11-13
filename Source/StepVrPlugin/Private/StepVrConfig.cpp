@@ -1,7 +1,9 @@
 ﻿#include "StepVrConfig.h"
-#include "Paths.h"
-#include "CoreGlobals.h"
+
+#include "Misc/Paths.h"
 #include "Misc/ConfigCacheIni.h"
+
+#include "CoreGlobals.h"
 
 UStepSetting::UStepSetting()
 {

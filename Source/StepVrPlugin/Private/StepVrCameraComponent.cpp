@@ -32,10 +32,11 @@ void UStepVrCameraComponent::RecaclCameraData(float DeltaTime, FMinimalViewInfo&
 	FTransform _StepvrHead;
 	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
 
-	UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, iCameraID, _StepvrHead);
+	UStepVrBPLibrary::SVGetDeviceState(&Node, iCameraID, _StepvrHead);
 	
 	SetRelativeLocation(_StepvrHead.GetLocation());
 	
+	//Cave眼镜，需要设置姿态
 	if (iCameraID == 198)
 	{
 		SetRelativeRotation(_StepvrHead.Rotator());

@@ -11,11 +11,11 @@
 
 //Stat stepvr
 DECLARE_STATS_GROUP(TEXT("stepvr"), STATGROUP_STEPVR, STATCAT_Advanced);
-DECLARE_DWORD_ACCUMULATOR_STAT(TEXT("StepVrGlobal_EngineBeginFrame_Count"), StepVrGlobal_EngineBeginFrame_Count, STATGROUP_STEPVR);
-DECLARE_DWORD_ACCUMULATOR_STAT(TEXT("StepVrComponent_TickComponent_Count"), StepVrComponent_TickComponent_Count, STATGROUP_STEPVR);
-DECLARE_CYCLE_STAT(TEXT("StepVrComponent_TickComponent_State"), StepVrComponent_TickComponent_State, STATGROUP_STEPVR);
-DECLARE_CYCLE_STAT(TEXT("StepVrGlobal_EngineBeginFrame_State"), StepVrGlobal_EngineBeginFrame_State, STATGROUP_STEPVR);
-DECLARE_CYCLE_STAT(TEXT("StepVrInput_SendControllerEvents"), StepVrInput_SendControllerEvents, STATGROUP_STEPVR);
+DECLARE_CYCLE_STAT(TEXT("stat Componment tick"), stat_Componment_tick, STATGROUP_STEPVR);
+DECLARE_CYCLE_STAT(TEXT("stat GetDeviceData tick"), stat_GetDeviceData_tick, STATGROUP_STEPVR);
+DECLARE_CYCLE_STAT(TEXT("stat ControllerEvent tick"), stat_ControllerEvent_tick, STATGROUP_STEPVR);
+DECLARE_CYCLE_STAT(TEXT("stat EngineBeginFrame tick"), stat_EngineBeginFrame_tick, STATGROUP_STEPVR);
+
 
 /*----------------------------------------------------------------------------
 	StepVr Node Convert

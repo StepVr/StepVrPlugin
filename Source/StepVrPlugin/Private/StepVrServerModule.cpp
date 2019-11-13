@@ -8,8 +8,14 @@
 
 //所有玩家
 static FString GLocaclIP = "";
+static uint32 GLocaclIPValue = 0;
 uint32 FStepVrServer::GetLocalAddress()
 {
+	if (GLocaclIPValue > 0)
+	{
+		return GLocaclIPValue;
+	}
+
 	if (GLocaclIP.IsEmpty())
 	{
 		bool CanBind = false;
@@ -21,7 +27,12 @@ uint32 FStepVrServer::GetLocalAddress()
 
 		GLocaclIP = LocalIp->ToString(false);
 	}
-	return GetTypeHash(GLocaclIP);
+	if (!GLocaclIP.IsEmpty())
+	{
+		GLocaclIPValue = GetTypeHash(GLocaclIP);
+	}
+
+	return GLocaclIPValue;
 }
 
 FString FStepVrServer::GetLocalAddressStr()

@@ -60,11 +60,14 @@ enum class FGameUseType : uint8
 
 
 UCLASS(ClassGroup = StepvrClassGroup, editinlinenew, meta = (BlueprintSpawnableComponent))
-class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent
+class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent , public FExec
 {
 	GENERATED_UCLASS_BODY()
 
 public:
+	UFUNCTION(Exec)
+	void StepServerIntrval(float interval);
+
 	/**
 	 * 手动校准HMD
 	 */
@@ -149,7 +152,15 @@ private:
 	bool	bIsLocalControll = false;
 	bool    bInitializeLocal = false;
 
+	/************************************************************************/
+	//上次姿态
+	FTransform LastTrans;
+
 	//插值
+	float LerpAlpha = 0.28f;
+	/************************************************************************/
+
+	//头显校准角度
 	float ResetYaw;
 
 	/**

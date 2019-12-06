@@ -11,7 +11,7 @@
 
 #define STEPVR_SERVER_MODULE_NAME	TEXT("StepVrServer")
 class FStepVrServer;
-
+class FStepAllPlayerFrame;
 
 enum EGameModeType
 {
@@ -19,6 +19,62 @@ enum EGameModeType
 	EClient,
 	EServer,
 };
+
+////单个玩家数据
+//struct FPlayerInfo;
+//
+//struct STEPVRPLUGIN_API FPlayerInfo
+//{
+//	//玩家ID
+//	uint32	PlayerAddr;
+//
+//	//最后更新时间
+//	float LastUpdate;
+//
+//	//定位建数据
+//	TMap<int32, FTransform>	StepVrDeviceInfo;
+//
+//	//动捕数据
+//	TArray<FTransform>		StepMocapInfo;
+//
+//public:
+//	//设置某个玩家数据
+//	static void SetPlayerData(uint32 PlayerAddr, FPlayerInfo& OutData);
+//
+//	//获取玩家
+//	static void GetPlayerData(uint32 PlayerAddr, FPlayerInfo& OutData);
+//
+//	//设置属性
+//	static void SetNewDeviceData(uint32 PlayerAddr, const TMap<int32, FTransform>& NewData);
+//	static void SetNewMocapData(uint32 PlayerAddr, const TArray<FTransform>& NewData);
+//
+//private:
+//	/**
+//	 * 锁冲突次数 send 30/s + receive 30/s + 
+//	 */
+//	FCriticalSection CriticalSection;
+//
+//	
+//
+//};
+//
+//typedef TMap<uint32, FPlayerInfo> FAllPlayerInfos;
+//static FAllPlayerInfos AllPlayerInfos;
+//
+//FORCEINLINE FArchive& operator<<(FArchive& Ar, FPlayerInfo& ArData)
+//{
+//	Ar << ArData.PlayerAddr;
+//	Ar << ArData.LastUpdate;
+//	Ar << ArData.StepVrDeviceInfo;
+//	Ar << ArData.StepMocapInfo;
+//	return Ar;
+//}
+
+
+
+
+
+
 
 
 /***************************定位数据************************************/
@@ -116,6 +172,7 @@ public:
 
 	//开始服务
 	virtual void StartServer() = 0;
+	virtual void StopServer() = 0;
 
 	//本机IP
 	static uint32 GetLocalAddress();
@@ -130,7 +187,7 @@ public:
 	void StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InPlayerData);
 	void StepMocapSendData(const TArray<FTransform>& InMocapData);
 
-	void SynchronizationStepVrData();
+	bool SynchronizationStepVrData(FStepAllPlayerFrame* NewFrame);
 
 protected:
 	/**
@@ -149,6 +206,7 @@ protected:
 	/**
 	 * 本机和远端数据 / Other Thread
 	 */
-	AllPlayerData		RemotePlayerData;
-	PlayerDeviceInfo	LocalPlayerData;
+	AllPlayerData		mRemotePlayerData;
+	PlayerDeviceInfo	mLocalPlayerData;
+	TAtomic<float>		mLastReceiveTime;
 };

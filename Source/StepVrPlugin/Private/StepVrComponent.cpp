@@ -21,7 +21,7 @@
 
 
 
-static bool GIsResetOculus = false;
+static bool GIsResetHMD = false;
 UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	:Super(ObjectInitializer)
 {
@@ -33,20 +33,28 @@ UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	PlayerIP = TEXT("");
 }
 
-void UStepVrComponent::StepServerIntrval(float interval)
-{
-	UE_LOG(LogTemp,Log,TEXT("adasdas"));
-}
-
 void UStepVrComponent::ResetHMD()
 {
-	GIsResetOculus = false;
+	GIsResetHMD = false;
 	ResetHMDAuto();
 }
 
 void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 {
-	if (bIsLocalControll)
+#if SHOW_STATE
+	SCOPE_CYCLE_COUNTER(stat_DeviceTransform_tick);
+#endif
+	
+	FTransform* CacheData = LastDeviceData.Find(DeviceID);
+	if (CacheData == nullptr)
+	{
+		LastDeviceData.Add(DeviceID, FTransform());
+		CacheData = LastDeviceData.Find(DeviceID);
+	}
+
+	switch (ControllType)
+	{
+	case FGameControllType::Local:
 	{
 		auto Temp = GLocalDevicesRT.Find(DeviceID);
 		if (Temp)
@@ -61,32 +69,16 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 			}
 		}
 	}
-	else
+	break;
+	case FGameControllType::Remote:
 	{
-		auto TempPlayer = GReplicateDevicesRT.Find(PlayerAddr);
-		if (TempPlayer)
+		if (GStepFrames && IsValidPlayerAddr())
 		{
-			auto TempDevice = (*TempPlayer).Find(DeviceID);
-			if (TempDevice)
-			{
-				if (DeviceID == 6)
-				{
-					FTransform NA = LastTrans;
-					FTransform NB = *TempDevice;
-
-					FTransform Result;
-					NA.NormalizeRotation();
-					NB.NormalizeRotation();
-					Result.Blend(NA, NB, LerpAlpha);
-					LastTrans = Result;
-					Trans = Result;
-				}
-				else
-				{
-					Trans = *TempDevice;
-				}
-			}
+			GStepFrames->GetLastReplicateDeviceData(PlayerID, DeviceID, *CacheData);
+			Trans = *CacheData;
 		}
+	}
+	break;
 	}
 }
 
@@ -100,20 +92,9 @@ void UStepVrComponent::ResetHMDDirection()
 
 	Pawn->SetActorRotation(FRotator::ZeroRotator);
 
-	switch (HMDType)
-	{
-	case FHMDType::HMD_Oculus:
-	{
-		ResetOculusRif();
-	}
-		break;
-	case FHMDType::HMD_Windows:
-		break;
-	case FHMDType::HMD_InValid:
-		break;
-	}
+    ResetHMDFinal();
 
-	GIsResetOculus = true;
+	GIsResetHMD = true;
 }
 
 void UStepVrComponent::BeginPlay()
@@ -154,7 +135,9 @@ void UStepVrComponent::RegistInputComponent()
 
 void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
+#if SHOW_STATE
 	SCOPE_CYCLE_COUNTER(stat_Componment_tick);
+#endif
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
@@ -164,10 +147,10 @@ void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 		return;
 	}
 
- 	if (bIsLocalControll/* || TickType == ELevelTick::LEVELTICK_ViewportsOnly*/)
- 	{
- 		TickLocal();
- 	}
+	if (ControllType == FGameControllType::Local)
+	{
+		TickLocal();
+	}
 }
 
 void UStepVrComponent::InitializeComponent()
@@ -178,7 +161,7 @@ void UStepVrComponent::InitializeComponent()
 
 void UStepVrComponent::AfterinitializeLocalControlled()
 {
-	if (!bIsLocalControll)
+	if (!(ControllType == FGameControllType::Local))
 	{
 		return;
 	}
@@ -190,7 +173,7 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	if (StepCamera)
 	{
 		int32 CameraID = GameUseType == FGameUseType::UseType_Cave ? 198 : 6;
-		StepCamera->SetCameraInfo(CameraID, bIsLocalControll);
+		StepCamera->SetCameraInfo(CameraID);
 	}
 
 	/**
@@ -203,37 +186,13 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 			GNeedUpdateDevices.AddUnique(DevID);
 		}
 	}
-
-	/**
-	 * 检测头盔
-	 */
-	do 
-	{
-		if (!GEngine->XRSystem.IsValid())
-		{
-			break;
-		}
-
-		FName HMDName = GEngine->XRSystem->GetSystemName();
-		if (HMDName.IsEqual("OculusHMD"))
-		{
-			HMDType = FHMDType::HMD_Oculus;
-			break;
-		}
-
-		if (HMDName.IsEqual("WindowsMixedRealityHMD"))
-		{
-			HMDType = FHMDType::HMD_Windows;
-			break;
-		}
-	} while (0);
 	
 	/**
 	 * 编辑器模式重新校准
 	 */
 	if (GetWorld()->IsEditorWorld())
 	{
-		GIsResetOculus = false;
+		GIsResetHMD = false;
 	}
 
 	/**
@@ -249,7 +208,7 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	SetPlayerAddrOnServer(Addr);
 }
 
-void UStepVrComponent::ResetOculusRif()
+void UStepVrComponent::ResetHMDFinal()
 {
 	FTransform TempData;
 	UStepVrBPLibrary::SVGetDeviceStateWithID(StepVrDeviceID::DHead, TempData);
@@ -316,7 +275,8 @@ void UStepVrComponent::ResetOculusRealTime()
 		else if (Cnum < 200)
 		{
 			bIsReset = true;
-			bIsCorrect = false;
+			bIsCorrect = false; 
+
 			Cnum = 0;
 		}
 		else
@@ -386,7 +346,7 @@ void UStepVrComponent::ResetOculusRealTime()
 
 void UStepVrComponent::ResetHMDAuto()
 {
-	if (GIsResetOculus)
+	if (GIsResetHMD)
 	{
 		return;
 	}
@@ -411,12 +371,19 @@ void UStepVrComponent::TickLocal()
 		UStepVrBPLibrary::SVGetDeviceStateWithID(DevID, TempPtr);
 	}
 
+    /**
+    * 实时校准
+    */
+    if (ResetHMDType == FResetHMDType::ResetHMD_RealTime)
+    {
+        ResetOculusRealTime();
+    }
 
+    /**
+    * 同步定位数据
+    */
 	if (STEPVR_SERVER_IsValid)
 	{
-		/**
-		 * 同步定位数据
-		 */
 		TMap<int32, FTransform> SendData;
 		FTransform TempPtr;
 		for (auto DevID : ReplicateID)
@@ -424,34 +391,15 @@ void UStepVrComponent::TickLocal()
 			UStepVrBPLibrary::SVGetDeviceStateWithID(DevID,TempPtr);
 			SendData.Add(DevID, TempPtr);
 		}
-		STEPVR_SERVER->StepVrSendData(PlayerAddr, SendData);
-	}
-
-	/**
-	 * 实时校准
-	 */
-	if (ResetHMDType == FResetHMDType::ResetHMD_RealTime)
-	{
-		switch (HMDType)
+		if (IsValidPlayerAddr())
 		{
-			case  FHMDType::HMD_Oculus:
-			{
-				ResetOculusRealTime();
-			}
-		break;
-			case  FHMDType::HMD_Windows:
-			{
-				
-			}
-		break;
+			STEPVR_SERVER->StepVrSendData(GetPlayerAddr(), SendData);
 		}
 	}
 }
 
 FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
 {
-	SCOPE_CYCLE_COUNTER(stat_GetDeviceData_tick);
-
 	switch (DeviceID)
 	{
 		case StepVrDeviceID::DHead:
@@ -480,14 +428,19 @@ FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
 	return GTransform;
 }
 
+void UStepVrComponent::OnRep_PlayerIP()
+{
+	PlayerID = GetTypeHash(PlayerIP);
+}
+
 bool UStepVrComponent::IsValidPlayerAddr()
 {
-	return PlayerAddr > 1;
+	return PlayerID > 0;
 }
 
 uint32 UStepVrComponent::GetPlayerAddr()
 {
-	return PlayerAddr;
+	return PlayerID;
 }
 
 bool UStepVrComponent::IsInitialization()
@@ -497,7 +450,7 @@ bool UStepVrComponent::IsInitialization()
 
 bool UStepVrComponent::IsLocalControlled()
 {
-	return bIsLocalControll;
+	return ControllType == FGameControllType::Local;
 }
 
 bool UStepVrComponent::InitializeLocalControlled()
@@ -527,7 +480,7 @@ bool UStepVrComponent::InitializeLocalControlled()
 			break;
 		}
 
-		bIsLocalControll = LocalPawn == Pawn;
+		ControllType = LocalPawn == Pawn ? FGameControllType::Local : FGameControllType::Remote;
 		bInitializeLocal = true;
 
 		AfterinitializeLocalControlled();
@@ -539,7 +492,7 @@ bool UStepVrComponent::InitializeLocalControlled()
 void UStepVrComponent::SetPlayerAddrOnServer_Implementation(const FString& LocalIP)
 {
 	PlayerIP = LocalIP;
-	PlayerAddr = GetTypeHash(LocalIP);
+	OnRep_PlayerIP();
 }
 bool UStepVrComponent::SetPlayerAddrOnServer_Validate(const FString& LocalIP)
 {
@@ -549,6 +502,5 @@ void UStepVrComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UStepVrComponent, PlayerAddr);
 	DOREPLIFETIME(UStepVrComponent, PlayerIP);
 }

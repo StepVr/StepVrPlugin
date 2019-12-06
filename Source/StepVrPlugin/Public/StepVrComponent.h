@@ -35,12 +35,6 @@ struct FStepVRNode
 	FTransform FRightController;
 };
 
-enum class FHMDType : uint8
-{
-	HMD_Oculus,
-	HMD_Windows,
-	HMD_InValid,
-};
 
 UENUM()
 enum class FResetHMDType : uint8
@@ -58,42 +52,25 @@ enum class FGameUseType : uint8
 	UseType_Cave
 };
 
+UENUM()
+enum class FGameControllType : uint8
+{
+	Local,		//本地控制玩家
+	Remote,		//远端模拟玩家
+	Invalid		//非Pawn
+};
+
+
 
 UCLASS(ClassGroup = StepvrClassGroup, editinlinenew, meta = (BlueprintSpawnableComponent))
-class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent , public FExec
+class STEPVRPLUGIN_API UStepVrComponent : public UActorComponent
 {
 	GENERATED_UCLASS_BODY()
 
 public:
-	UFUNCTION(Exec)
-	void StepServerIntrval(float interval);
-
-	/**
-	 * 手动校准HMD
-	 */
-	UFUNCTION(BlueprintCallable,Category = StepvrLibrary)
-	void ResetHMD();
-
-	/**
-	* 本机/远端 定位信息
-	* 支持联网，PS：StepVrServer
-	*/
-	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
-	void DeviceTransform(int32 DeviceID, FTransform& Trans);
-
-	//ip是否有效
-	bool	IsValidPlayerAddr();
-	//获取同步IP
-	uint32	GetPlayerAddr();
-
-	//是否初始化
-	bool	IsInitialization();
-	//是否本地控制玩家
-	bool	IsLocalControlled();
-
 	/**
 	 * HMD校准方式
-	 * Cave 模式无需校准，当前字段无效
+	 * Cave  无需校准
 	 */
 	UPROPERTY(EditAnywhere, Category = StepvrLibrary)
 	FResetHMDType	ResetHMDType = FResetHMDType::ResetHMD_BeginPlay;
@@ -106,12 +83,35 @@ public:
 	bool bMocapReplicate = false;
 
 	/**
-	 * 本机/远端 定位信息
+	* 本机/远端 定位信息
 	 * 支持联网，PS：StepVrServer
-	 * 后续版本删掉，请使用DeviceTransform
-	 */
-	UPROPERTY(AdvancedDisplay,BlueprintReadOnly, Category = StepvrLibrary)
+	* 后续版本删掉，请使用DeviceTransform
+	*/
+	UPROPERTY(AdvancedDisplay, BlueprintReadOnly, Category = StepvrLibrary)
 	FStepVRNode CurrentNodeState;
+
+	/**
+	* 本机/远端 定位信息
+	* 支持联网，PS：StepVrServer
+	*/
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	void DeviceTransform(int32 DeviceID, FTransform& Trans);
+
+	//手动校准HMD
+	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
+	void ResetHMD();
+
+	//ip是否有效
+	bool	IsValidPlayerAddr();
+
+	//获取同步IP
+	uint32	GetPlayerAddr();
+
+	//是否初始化
+	bool	IsInitialization();
+
+	//是否本地控制玩家
+	bool	IsLocalControlled();
 
 protected:
 	/**
@@ -127,18 +127,19 @@ protected:
 
 	//Reset HMD
 	void ResetHMDDirection();
-	void ResetOculusRif();
+	void ResetHMDFinal();
 	void ResetOculusRealTime();
 	void ResetHMDAuto();
 
 	void TickLocal();
 	FTransform& GetDeviceDataPtr(int32 DeviceID);
 
-	//联网同步地址
-	UPROPERTY(Replicated)
-	uint32  PlayerAddr = 0;
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Replicated, Category = StepvrLibrary)
+	//同步IP
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, ReplicatedUsing=OnRep_PlayerIP, Category = StepvrLibrary)
 	FString  PlayerIP;
+	uint32   PlayerID;
+	UFUNCTION()
+	void OnRep_PlayerIP();
 	UFUNCTION(Server, Reliable, WithValidation)
 	void SetPlayerAddrOnServer(const FString& LocalIP);
 
@@ -149,35 +150,35 @@ protected:
 	void AfterinitializeLocalControlled();
 
 private:
-	bool	bIsLocalControll = false;
+	FGameControllType ControllType = FGameControllType::Invalid;
 	bool    bInitializeLocal = false;
 
 	/************************************************************************/
-	//上次姿态
+	/* 同步																	*/
+	/************************************************************************/
 	FTransform LastTrans;
 
 	//插值
 	float LerpAlpha = 0.28f;
 	/************************************************************************/
+	/* 同步																	*/
+	/************************************************************************/
+
 
 	//头显校准角度
 	float ResetYaw;
 
-	/**
-	 * 客户端
-	 */
-	FString ServerIP;
-
 	//需要更新的ID
 	TArray<int32>	NeedUpdateDevices;
-	
+
 	//需要同步的ID
 	TArray<int32>   ReplicateID;
 
-	FHMDType HMDType = FHMDType::HMD_InValid;
+	//最新数据
+	TMap<int32, FTransform> LastDeviceData;
 
 	/************************************************************************/
-	/* 时时校准															   */
+	/* Auto Reset 															   */
 	/************************************************************************/
 	#define Yawn  45
 	float HMDYaw[Yawn];

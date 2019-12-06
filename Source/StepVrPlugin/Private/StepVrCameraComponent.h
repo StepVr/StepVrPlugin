@@ -4,6 +4,7 @@
 #include "Camera/CameraComponent.h"
 #include "StepVrCameraComponent.generated.h"
 
+class FArchive;
 
 
 UCLASS(meta = (BlueprintSpawnableComponent), ClassGroup = (StepVR,Camera))
@@ -15,11 +16,27 @@ public:
 	virtual void GetCameraView(float DeltaTime, FMinimalViewInfo& DesiredView) override;
 	
 	//设置Camera类型
-	void SetCameraInfo(int32 CameraID , bool IsLocal);
+	void SetCameraInfo(int32 CameraID , bool IsLocal = true);
+
+
+	virtual void BeginDestroy() override;
+
+
+	virtual void BeginPlay() override;
+
+	void ExecCommands(FString& Commands);
 
 protected:
 	void RecaclCameraData(float DeltaTime, FMinimalViewInfo& DesiredView);
 
+	void RecordHMDData(FTransform& Head, FMinimalViewInfo& CameraInfo);
+
 	int32	iCameraID = 6;
 	bool	bLocalControlled = false;
+
+	//Delegate
+	FDelegateHandle HandleCommand;
+
+	bool					IsStartRecord;
+	FArchive*				HandleFile;
 };

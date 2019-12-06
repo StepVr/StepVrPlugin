@@ -71,28 +71,67 @@ void FStepVrServer::UpdateServerIP(const FString& InServerIP)
 	ServerIP = InServerIP;
 }
 
-void FStepVrServer::SynchronizationStepVrData()
+bool FStepVrServer::SynchronizationStepVrData(FStepAllPlayerFrame* NewFrame)
 {
-	FScopeLock Lock(&Section_AllPlayerData);
-	FScopeLock Lock1(&GReplicateSkeletonCS);
-
-	for (auto& Pair : RemotePlayerData)
+	//时间校验
+	float LastTime = mLastReceiveTime.Load();
+	if (LastTime > GLastReceiveTime)
 	{
-		GReplicateDevicesRT.FindOrAdd(Pair.Key) = Pair.Value.StepVrDeviceInfo;
-		GReplicateSkeletonRT.FindOrAdd(Pair.Key) = Pair.Value.StepMocapInfo;
-		GUpdateReplicateSkeleton = GUpdateReplicateSkeleton + 1;
+		//更新时间
+		GLastReceiveTime = LastTime;
+		NewFrame->TimeStemp = LastTime;
+
+		FScopeLock Lock(&Section_AllPlayerData);
+		FScopeLock Lock1(&GReplicateSkeletonCS);
+		for (auto& Pair : mRemotePlayerData)
+		{
+			NewFrame->AllPlayerInfo.FindOrAdd(Pair.Key).CurDeviceData = Pair.Value.StepVrDeviceInfo;
+			NewFrame->AllPlayerInfo.FindOrAdd(Pair.Key).CurMocapData = Pair.Value.StepMocapInfo;
+			
+			//GReplicateDevicesRT.FindOrAdd(Pair.Key) = Pair.Value.StepVrDeviceInfo;
+			//GReplicateSkeletonRT.FindOrAdd(Pair.Key) = Pair.Value.StepMocapInfo;
+			//GUpdateReplicateSkeleton = GUpdateReplicateSkeleton + 1;
+		}
+
+		return true;
 	}
+
+	return false;
 }
 
 void FStepVrServer::StepMocapSendData(const TArray<FTransform>& InMocapData)
 {
 	FScopeLock Lock(&Section_AllPlayerData);
-	LocalPlayerData.StepMocapInfo = InMocapData;
+	mLocalPlayerData.StepMocapInfo = InMocapData;
 }
 
 void FStepVrServer::StepVrSendData(uint32 InPlayerAddr, TMap<int32, FTransform>& InPlayerData)
 {
 	FScopeLock Lock(&Section_AllPlayerData);
-	LocalPlayerData.PlayerAddr = InPlayerAddr;
-	LocalPlayerData.StepVrDeviceInfo = InPlayerData;
+	mLocalPlayerData.PlayerAddr = InPlayerAddr;
+	mLocalPlayerData.StepVrDeviceInfo = InPlayerData;
 }
+
+
+
+
+/**********************数据同步***************************************/
+/*                                                                      */
+/************************************************************************/
+ 
+//void FPlayerInfo::GetPlayerData(uint32 PlayerAddr, FPlayerInfo& OutData)
+//{
+//	FScopeLock Lock(CriticalSection);
+//
+//	OutData = this;
+//}
+//
+//void FPlayerInfo::SetNewDeviceData(uint32 PlayerAddr, const TMap<int32, FTransform>& NewData)
+//{
+//
+//}
+//
+//void FPlayerInfo::SetNewMocapData(uint32 PlayerAddr, const TArray<FTransform>& NewData)
+//{
+//
+//}

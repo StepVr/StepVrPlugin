@@ -49,22 +49,19 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	*	先确保PlayerController有效
 	*	@param: GameId和自定义的ID匹配	
 	*/
-	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
 	static bool SVCheckGameLic(FString gameId);
 
-	
-	static void SVGetDeviceState(StepVR::SingleNode* InSingleNode,int32 DeviceID, FTransform& Transform);
-	
 	/**
-	 * 获取标准件数据
-	 */
-	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	* 获取标准件数据
+	*/
+	UFUNCTION(BlueprintPure, Category = "StepVr|Global")
 	static void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
-
+	
 	/**
 	 * 激光系定位转UE系
 	 */
-	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	UFUNCTION(BlueprintPure, Category = "StepVr|Global")
 	static FTransform Convert2UETransform(float Vx, float Vy, float Vz, float Qw, float Qx, float Qy, float Qz);
 
 	/**
@@ -74,6 +71,8 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	 *	2 EServer,
 	 *	@ServerIP ：1 EClient 设置 ServerIP,
 	 */
-	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
 	static void SetGameType(FGameType type,FString ServerIP);
+
+	static void SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 DeviceID, FTransform& Transform);
 };

@@ -52,14 +52,6 @@ enum class FGameUseType : uint8
 	UseType_Cave
 };
 
-UENUM()
-enum class FGameControllType : uint8
-{
-	Local,		//本地控制玩家
-	Remote,		//远端模拟玩家
-	Invalid		//非Pawn
-};
-
 
 
 UCLASS(ClassGroup = StepvrClassGroup, editinlinenew, meta = (BlueprintSpawnableComponent))
@@ -101,14 +93,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
 	void ResetHMD();
 
+	//获取本机IP
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	FString GetLocalIP();
+
 	//ip是否有效
 	bool	IsValidPlayerAddr();
 
 	//获取同步IP
 	uint32	GetPlayerAddr();
-
-	//是否初始化
-	bool	IsInitialization();
 
 	//是否本地控制玩家
 	bool	IsLocalControlled();
@@ -143,15 +136,12 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void SetPlayerAddrOnServer(const FString& LocalIP);
 
-	/**
-	 *	@return 是否初始化
-	 */
-	bool InitializeLocalControlled();
+	//初始化
 	void AfterinitializeLocalControlled();
 
 private:
-	FGameControllType ControllType = FGameControllType::Invalid;
-	bool    bInitializeLocal = false;
+	bool    bAlreadyInitializeLocal = false;
+	bool	bLocalControlled = false;
 
 	/************************************************************************/
 	/* 同步																	*/

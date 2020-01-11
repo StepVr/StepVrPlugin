@@ -16,11 +16,9 @@ public:
 	virtual void GetCameraView(float DeltaTime, FMinimalViewInfo& DesiredView) override;
 	
 	//设置Camera类型
-	void SetCameraInfo(int32 CameraID , bool IsLocal = true);
-
+	void SetCameraInfo(int32 CameraID);
 
 	virtual void BeginDestroy() override;
-
 
 	virtual void BeginPlay() override;
 
@@ -32,7 +30,6 @@ protected:
 	void RecordHMDData(FTransform& Head, FMinimalViewInfo& CameraInfo);
 
 	int32	iCameraID = 6;
-	bool	bLocalControlled = false;
 
 	//Delegate
 	FDelegateHandle HandleCommand;

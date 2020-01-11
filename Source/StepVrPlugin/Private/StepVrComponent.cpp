@@ -39,12 +39,18 @@ void UStepVrComponent::ResetHMD()
 	ResetHMDAuto();
 }
 
+FString UStepVrComponent::GetLocalIP()
+{
+	return FStepVrServer::GetLocalAddressStr();
+}
+
 void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 {
 #if SHOW_STATE
 	SCOPE_CYCLE_COUNTER(stat_DeviceTransform_tick);
 #endif
 	
+	//获取同步数据
 	FTransform* CacheData = LastDeviceData.Find(DeviceID);
 	if (CacheData == nullptr)
 	{
@@ -52,9 +58,7 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 		CacheData = LastDeviceData.Find(DeviceID);
 	}
 
-	switch (ControllType)
-	{
-	case FGameControllType::Local:
+	if (IsLocalControlled())
 	{
 		auto Temp = GLocalDevicesRT.Find(DeviceID);
 		if (Temp)
@@ -69,16 +73,13 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 			}
 		}
 	}
-	break;
-	case FGameControllType::Remote:
+	else
 	{
 		if (GStepFrames && IsValidPlayerAddr())
 		{
 			GStepFrames->GetLastReplicateDeviceData(PlayerID, DeviceID, *CacheData);
 			Trans = *CacheData;
 		}
-	}
-	break;
 	}
 }
 
@@ -141,14 +142,10 @@ void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!bInitializeLocal)
+	if (IsLocalControlled())
 	{
-		InitializeLocalControlled();
-		return;
-	}
+		AfterinitializeLocalControlled();
 
-	if (ControllType == FGameControllType::Local)
-	{
 		TickLocal();
 	}
 }
@@ -161,10 +158,11 @@ void UStepVrComponent::InitializeComponent()
 
 void UStepVrComponent::AfterinitializeLocalControlled()
 {
-	if (!(ControllType == FGameControllType::Local))
+	if (bAlreadyInitializeLocal)
 	{
 		return;
 	}
+	bAlreadyInitializeLocal = true;
 
 	/**
 	 * Stepcamera 配置
@@ -204,7 +202,7 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	/**
 	 * 同步定位数据
 	 */
-	FString Addr = FStepVrServer::GetLocalAddressStr();
+	FString Addr = GetLocalIP();
 	SetPlayerAddrOnServer(Addr);
 }
 
@@ -443,51 +441,17 @@ uint32 UStepVrComponent::GetPlayerAddr()
 	return PlayerID;
 }
 
-bool UStepVrComponent::IsInitialization()
-{
-	return bInitializeLocal;
-}
-
 bool UStepVrComponent::IsLocalControlled()
 {
-	return ControllType == FGameControllType::Local;
-}
-
-bool UStepVrComponent::InitializeLocalControlled()
-{
-	do 
+	APawn* LocalPawn = Cast<APawn>(GetOwner());
+	if (LocalPawn == nullptr)
 	{
-		//本地Controller
-		AController* ControllerLocal = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-		if (ControllerLocal == nullptr)
-		{
-			break;
-		}
-		
-		//本地Pawn
-		APawn* LocalPawn = ControllerLocal->GetPawn();
-		if (LocalPawn == nullptr)
-		{
-			break;
-		}
+		return false;
+	}
 
-		//当前Pawn
-		APawn* Pawn = Cast<APawn>(GetOwner());
-		if (Pawn == nullptr)
-		{
-			//基类非Pawn下的组件无效
-			bInitializeLocal = true;
-			break;
-		}
-
-		ControllType = LocalPawn == Pawn ? FGameControllType::Local : FGameControllType::Remote;
-		bInitializeLocal = true;
-
-		AfterinitializeLocalControlled();
-	} while (0);
-
-	return bInitializeLocal;
+	return LocalPawn->IsLocallyControlled();
 }
+
 
 void UStepVrComponent::SetPlayerAddrOnServer_Implementation(const FString& LocalIP)
 {

@@ -15,16 +15,31 @@ void UStepVrCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& De
 {
 	Super::GetCameraView(DeltaTime, DesiredView);
 
-	if (bLocalControlled && STEPVR_FRAME_IsValid)  
+	do 
 	{
+		APawn* Pawn = Cast<APawn>(GetOwner());
+		if (Pawn == nullptr)
+		{
+			break;
+		}
+
+		if (!Pawn->IsLocallyControlled())
+		{
+			break;
+		}
+
+		if (!STEPVR_FRAME_IsValid)
+		{
+			break;
+		}
+
 		RecaclCameraData(DeltaTime, DesiredView);
-	}
+	} while (0);
 }
 
-void UStepVrCameraComponent::SetCameraInfo(int32 CameraID, bool IsLocal)
+void UStepVrCameraComponent::SetCameraInfo(int32 CameraID)
 {
 	iCameraID = CameraID;
-	bLocalControlled = IsLocal;
 }
 
 void UStepVrCameraComponent::BeginDestroy()
@@ -82,7 +97,7 @@ void UStepVrCameraComponent::RecaclCameraData(float DeltaTime, FMinimalViewInfo&
 	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
 	UStepVrBPLibrary::SVGetDeviceState(&Node, iCameraID, _StepvrHead);
 	
-	//录制数据
+	//Command录制数据
 	if (IsStartRecord)
 	{
 		RecordHMDData(_StepvrHead, DesiredView);

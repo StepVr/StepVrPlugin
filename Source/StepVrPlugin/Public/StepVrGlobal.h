@@ -160,3 +160,26 @@ private:
 	//最新数据
 	FStepAllPlayerFrame* NewFrame;
 };
+
+
+
+//计时
+class StepTime
+{
+public:
+	static TSharedPtr<StepTime> GetTime();
+	virtual ~StepTime() {}
+
+	//刷新为当前时间
+	virtual void ResetTime() {}
+
+	//上次刷新间隔,并刷新当前时间 毫秒
+	//double times = __Test->IntervalAndReset(); 再使用
+	virtual double IntervalAndReset() { return -1; }
+
+	//上次刷新间隔 毫秒
+	virtual double Interval_MS() { return -1; }
+
+	//上次刷新间隔 微秒
+	virtual int64 Interval_Micro() { return -1; }
+};

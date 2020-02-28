@@ -148,6 +148,7 @@ void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 
 		TickLocal();
 	}
+
 }
 
 void UStepVrComponent::InitializeComponent()

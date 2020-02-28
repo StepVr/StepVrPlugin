@@ -360,3 +360,67 @@ void FStepFrames::ForecastNewData()
 		}
 	}
 }
+
+
+
+
+
+/************************************************************************/
+/* Time                                                                     */
+/************************************************************************/
+#include "AllowWindowsPlatformTypes.h"  
+#include <chrono>
+using namespace std;
+using namespace std::chrono;
+
+
+class StepTimeWin : public StepTime
+{
+public:
+	StepTimeWin() :
+		m_begin(high_resolution_clock::now())
+	{
+
+	}
+	virtual ~StepTimeWin()
+	{
+	}
+
+	virtual void ResetTime() override
+	{
+		//m_begin = high_resolution_clock::now();
+	}
+
+
+	virtual double IntervalAndReset() override
+	{
+		double __LastTime = Interval_MS();
+		double __Interval = __LastTime - LastTime;
+
+		LastTime = __LastTime;
+		return __Interval;
+	}
+
+
+	virtual double Interval_MS() override
+	{
+		return duration_cast<chrono::microseconds>(high_resolution_clock::now() - m_begin).count() / 1000.f;
+	}
+	virtual int64 Interval_Micro() override
+	{
+		return duration_cast<chrono::microseconds>(high_resolution_clock::now() - m_begin).count();
+	}
+
+protected:
+	time_point<high_resolution_clock> m_begin;
+
+	double LastTime = 0.f;
+};
+
+TSharedPtr<StepTime> StepTime::GetTime()
+{
+	return MakeShareable(new StepTimeWin());
+}
+
+
+#include "HideWindowsPlatformTypes.h"  

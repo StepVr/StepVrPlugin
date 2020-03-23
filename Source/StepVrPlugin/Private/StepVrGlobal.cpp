@@ -368,7 +368,7 @@ void FStepFrames::ForecastNewData()
 /************************************************************************/
 /* Time                                                                     */
 /************************************************************************/
-#include "AllowWindowsPlatformTypes.h"  
+#include "Windows/AllowWindowsPlatformTypes.h"  
 #include <chrono>
 using namespace std;
 using namespace std::chrono;
@@ -423,4 +423,4 @@ TSharedPtr<StepTime> StepTime::GetTime()
 }
 
 
-#include "HideWindowsPlatformTypes.h"  
+#include "Windows/HideWindowsPlatformTypes.h"  

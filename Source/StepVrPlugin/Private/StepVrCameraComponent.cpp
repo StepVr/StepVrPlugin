@@ -69,7 +69,10 @@ void UStepVrCameraComponent::ExecCommands(FString& Commands)
 		FString FileName;
 		FileName.Append("HDM-Head-").AppendInt(FPlatformTime::Seconds());
 		FileName.Append(".csv");
-		FString FilePath = FPaths::ProjectSavedDir().Append(*FileName);
+
+
+		FString FilePath = FPaths::ProjectSavedDir();
+		FilePath.Append(*FileName);
 		HandleFile = IFileManager::Get().CreateFileWriter(*FilePath);
 	}
 	if (Commands.Equals(TEXT("StopHMDState")))

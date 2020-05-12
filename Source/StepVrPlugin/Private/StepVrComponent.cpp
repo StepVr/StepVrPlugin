@@ -28,9 +28,10 @@ UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	PrimaryComponentTick.bCanEverTick = true;
 	bWantsInitializeComponent = true;
 	bAutoActivate = true;
-	bReplicates = true;
-
+	
 	PlayerIP = TEXT("");
+
+	SetIsReplicatedByDefault(true);
 }
 
 void UStepVrComponent::ResetHMD()

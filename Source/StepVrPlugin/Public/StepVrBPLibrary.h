@@ -74,5 +74,11 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
 	static void SetGameType(FGameType type,FString ServerIP);
 
+	/**
+	 * 设置缩放，所有定位数据得Location将进行缩放
+	 */
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
+	static void SetScaleTransform(float Scales);
+
 	static void SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 DeviceID, FTransform& Transform);
 };

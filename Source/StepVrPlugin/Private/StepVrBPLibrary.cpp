@@ -62,6 +62,12 @@ void UStepVrBPLibrary::SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 
 		Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
 	}
 
+	{
+		//数据进行缩放
+		FVector ScaleLocaltion = Transform.GetLocation() * GScaleTransform;
+		Transform.SetLocation(ScaleLocaltion);
+	}
+
 	GLocalDevicesRT.FindOrAdd(EquipId) = Transform;
 }
 
@@ -112,4 +118,9 @@ void UStepVrBPLibrary::SetGameType(FGameType type, FString ServerIP)
 			STEPVR_SERVER->UpdateServerIP(ServerIP);
 		}
 	}
+}
+
+void UStepVrBPLibrary::SetScaleTransform(float Scales)
+{
+	GScaleTransform = Scales;
 }

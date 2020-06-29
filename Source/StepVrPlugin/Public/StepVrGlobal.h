@@ -34,6 +34,11 @@ extern STEPVRPLUGIN_API TMap<uint32, AllSkeletonData>	GReplicateSkeletonRT;
 //需要获取定位的设备ID
 extern TArray<int32>	GNeedUpdateDevices;
 
+//定位缩放比例
+extern float			GScaleTransform;
+
+
+
 /************************************************************************/
 
 

@@ -7,7 +7,7 @@
 #include "InputCoreTypes.h "
 #include "CoreGlobals.h"
 
-const uint8 SButton_Release = (int32)FMath::Pow(2, 0);
+const uint8 SButton_Release = 0;
 const uint8 SButton_Press = (int32)FMath::Pow(2, 1);
 const uint8 SButton_Repeat = (int32)FMath::Pow(2, 2);
 struct FStepVrButtonState

@@ -217,6 +217,13 @@ namespace StepVR {
 		STEPVR_API bool GetKey(NODEID _nodeid, KeyID _keyid);
 		STEPVR_API bool GetKey(NodeID _nodeid, KeyID _keyid);
 
+		/**
+		* Glove's button state
+		* id: 0->left  1->right
+		**/
+		STEPVR_API bool GetGloveKeyDown(int id);
+		STEPVR_API bool GetGloveKeyLongPress(int id);
+		STEPVR_API bool GetGloveKeyUp(int id);
 
 		/**
 		* The GetVelocity() function return speed of node.
@@ -263,6 +270,9 @@ namespace StepVR {
 		*/
 		STEPVR_API float GetTimeStamp(NODEID _nodeid);
 
+		//硬件时间ms
+		STEPVR_API unsigned int GetTimeStamp1(NODEID _nodeid);
+
 		/**
 		* justify data valid or not
 		*
@@ -270,14 +280,10 @@ namespace StepVR {
 		*/
 		STEPVR_API int GetDataValid(NODEID _nodeid);
 
-
-		/**
-		* Get north angle.
-		*
-		* @return angle
-		*/
-		STEPVR_API float GetNorthAngle(NODEID _nodeid);
-
+		//计算后的PC时间s
+		STEPVR_API float GetTimeStamp2(NODEID _nodeid);
+		//计算前的PC时间s
+		STEPVR_API float GetTimeStampStartAndDelay(NODEID _nodeid, float & dTime);
 
 		STEPVR_API int GetPowerVol(NODEID _nodeid);
 		STEPVR_API int GetFpgaVersion(NODEID _nodeid);
@@ -288,6 +294,18 @@ namespace StepVR {
 
 	};
 
+	STEPVR_API struct GERData{
+		int data0;	int data1;	int data2;	int data3;	int data4;	int data5;	int data6;	int data7;	int data8;	int data9;
+		int data10;int data11;int data12;int data13;int data14;int data15;int data16;int data17;int data18;int data19;
+		int data20;int data21;int data22;int data23;int data24;int data25;int data26;int data27;int data28;int data29;
+		int data30;int data31;int data32;int data33;int data34;int data35;int data36;int data37;int data38;int data39;
+		int data40;int data41;int data42;int data43;int data44;int data45;int data46;int data47;int data48;int data49;
+		int data50;int data51;int data52;int data53;int data54;int data55;int data56;int data57;int data58;	
+	};
+
+	STEPVR_API struct IMUData{
+		int data0;	int data1;	int data2;	int data3;	int data4;	int data5;	int data6;	int data7;	int data8;
+	};
 	/**
 	* The Frame class contains the all the detected data in a single
 	* frame.
@@ -323,11 +341,89 @@ namespace StepVR {
 		//得到同步板的延迟的时间间隔
 		STEPVR_API float GetTimeInterval();
 
-		
+		//获取歌尔的数据 59字节
+		STEPVR_API void GetGERData(char *data);
+		STEPVR_API GERData GetGERData_CSharp();
+
+		//获取5040的IMU数据
+		STEPVR_API void GetImuData(short *data);
+		STEPVR_API IMUData GetImuData_CSharp();
 	};
 
+	STEPVR_API struct CmdBuf{
+		int buf0 = 0;
+		int buf1 = 0;
+		int buf2 = 0;
+		int buf3 = 0;
+		int buf4 = 0;
+		int buf5 = 0;
+		int buf6 = 0;
+		int buf7 = 0;
+		int buf8 = 0;
+		int buf9 = 0;
 
+		int buf10 = 0;
+		int buf11 = 0;
+		int buf12 = 0;
+		int buf13 = 0;
+		int buf14 = 0;
+		int buf15 = 0;
+		int buf16 = 0;
+		int buf17 = 0;
+		int buf18 = 0;
+		int buf19 = 0;
 
+		int buf20 = 0;
+		int buf21 = 0;
+		int buf22 = 0;
+		int buf23 = 0;
+		int buf24 = 0;
+		int buf25 = 0;
+		int buf26 = 0;
+		int buf27 = 0;
+		int buf28 = 0;
+		int buf29 = 0;
+
+		int buf30 = 0;
+		int buf31 = 0;
+		int buf32 = 0;
+		int buf33 = 0;
+		int buf34 = 0;
+		int buf35 = 0;
+		int buf36 = 0;
+		int buf37 = 0;
+		int buf38 = 0;
+		int buf39 = 0;
+
+		int buf40 = 0;
+		int buf41 = 0;
+		int buf42 = 0;
+		int buf43 = 0;
+		int buf44 = 0;
+		int buf45 = 0;
+		int buf46 = 0;
+		int buf47 = 0;
+		int buf48 = 0;
+		int buf49 = 0;
+
+		int buf50 = 0;
+		int buf51 = 0;
+		int buf52 = 0;
+		int buf53 = 0;
+		int buf54 = 0;
+		int buf55 = 0;
+		int buf56 = 0;
+		int buf57 = 0;
+		int buf58 = 0;
+		int buf59 = 0;
+		
+		int buf60 = 0;
+		int buf61 = 0;
+		int buf62 = 0;
+		int buf63 = 0;
+	};
+
+	
 	/**
 	* The Manager class is the main interface to the StepVR SDK.
 	*
@@ -375,13 +471,6 @@ namespace StepVR {
 		* @returns The specified MocapFrame.
 		**/
 		STEPVR_API Frame GetFrame();
-
-		/**
-		* Returns the most recent frame of raw skeleton posture data.
-		*
-		* @returns The specified CalibrateFrame.
-		**/
-		//STEPVR_API unsigned char* GetCalFrame();
 		
 		/**
 		* Set receive position and rotation mode. block or non block 
@@ -412,13 +501,19 @@ namespace StepVR {
 		**/
 		STEPVR_API void SendStampZeroCmd(const unsigned char* cmd);
 
+		/**
+		* Send glove command.
+		* 
+		*
+		**/
+		
+		STEPVR_API void SendCommonCmd_CPP(int id, const unsigned char* cmd, int cmd_len);
+		STEPVR_API void SendCommonCmd_CSharp(int id,CmdBuf cbuf, int cmd_len);
 		STEPVR_API std::string GetVersion();
 
 		STEPVR_API void RecordOneMinuter();
-
 		STEPVR_API bool IsServerAlive();
 	};
-
 
 	//this class just for Unreal develop
 	STEPVR_API enum EulerOrd{

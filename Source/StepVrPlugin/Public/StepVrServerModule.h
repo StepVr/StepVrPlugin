@@ -175,7 +175,6 @@ public:
 	virtual void StopServer() = 0;
 
 	//本机IP
-	static uint32 GetLocalAddress();
 	static FString GetLocalAddressStr();
 	
 	//更新联机状态

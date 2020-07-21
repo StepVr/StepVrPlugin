@@ -122,33 +122,18 @@ void FStepVrInput::SendControllerEvents()
 		{
 		case EStepDeviceKeyType::State_Button:
 		{
-			if (Node.GetKeyUp(DeviceID, SDKKEYID(ButtonState.KeyID)))
+			if (Node.GetKeyDown(DeviceID, SDKKEYID(ButtonState.KeyID)) ||
+				Node.GetKey(DeviceID, SDKKEYID(ButtonState.KeyID)))
 			{
-				UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Relese!"), DeviceID, *ButtonState.key.ToString());
-				MessageHandler->OnControllerButtonReleased(ButtonState.key, 0, false);
-				ButtonState.PressedState = SButton_Release;
-			}else if (Node.GetKeyDown(DeviceID, SDKKEYID(ButtonState.KeyID)))
-			{
-				UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Press!"), DeviceID, *ButtonState.key.ToString());
-				MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);	
-				ButtonState.PressedState = SButton_Press;
-			}else if (Node.GetKey(DeviceID, SDKKEYID(ButtonState.KeyID)))
-			{
-				if (ButtonState.PressedState != SButton_Repeat)
+				if (ButtonState.PressedState != SButton_Press)
 				{
-					UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Press!"), DeviceID, *ButtonState.key.ToString());
 					MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
-					ButtonState.PressedState = SButton_Repeat;
+					ButtonState.PressedState = SButton_Press;
 				}
-			}
-			else
+			}else if (ButtonState.PressedState != SButton_Release)
 			{
-				if (ButtonState.PressedState != SButton_Release)
-				{
-					UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Relese!"), DeviceID, *ButtonState.key.ToString());
 					MessageHandler->OnControllerButtonReleased(ButtonState.key, 0, false);
 					ButtonState.PressedState = SButton_Release;
-				}
 			}
 
 			//flag = 0x0;
@@ -188,6 +173,23 @@ void FStepVrInput::SendControllerEvents()
 		case EStepDeviceKeyType::State_ValueY:
 		{
 			MessageHandler->OnControllerAnalog(ButtonState.key, 0, Node.GetJoyStickPosY(DeviceID));
+		}
+		break;
+		case EStepDeviceKeyType::State_MocapHand:
+		{
+			if (Node.GetGloveKeyDown(ButtonState.KeyID) ||
+				Node.GetGloveKeyLongPress(ButtonState.KeyID))
+			{
+				if (ButtonState.PressedState != SButton_Press)
+				{
+					MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
+					ButtonState.PressedState = SButton_Press;
+				}
+			}else if (ButtonState.PressedState != SButton_Release)
+			{
+					MessageHandler->OnControllerButtonReleased(ButtonState.key, 0, false);
+					ButtonState.PressedState = SButton_Release;
+			}
 		}
 		break;
 		}
@@ -278,9 +280,14 @@ void FStepVrInput::RegisterDeviceKey()
 	for (int32 Index = 0; Index < StateController.Devices.Num(); Index++)
 	{
 		FStepVrButtonState& ButtonState = StateController.Devices[Index];
-		uint8 KeyFlag = ButtonState.ActionState == EStepDeviceKeyType::State_Button ?
-			FKeyDetails::GamepadKey :
-			FKeyDetails::FloatAxis;
+
+		uint8 KeyFlag = FKeyDetails::GamepadKey;
+		if (ButtonState.ActionState == State_ValueX || 
+			ButtonState.ActionState == State_ValueY)
+		{
+			KeyFlag = FKeyDetails::FloatAxis;
+		}
+
 		FText KeyText = FText::FromName(ButtonState.key);
 		FKey TargetKey(ButtonState.key);
 		EKeys::AddKey(FKeyDetails(TargetKey, KeyText, KeyFlag, StepVRCategoryName));

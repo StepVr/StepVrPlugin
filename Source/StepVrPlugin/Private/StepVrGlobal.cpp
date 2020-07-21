@@ -27,7 +27,7 @@ bool			GStepFrameForecast = false;
 float			GStepFrameForecastInterval = 0.33;
 bool			GStepFrameLerp = true;
 float			GStepFrameLerpAlpha = 0.1f;
-
+float			GScaleTransform = 1.f;
 
 
 /************************************************************************/

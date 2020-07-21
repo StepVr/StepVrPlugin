@@ -9,45 +9,32 @@
 //所有玩家
 static FString GLocaclIP = "";
 static uint32 GLocaclIPValue = 0;
-uint32 FStepVrServer::GetLocalAddress()
-{
-	if (GLocaclIPValue > 0)
-	{
-		return GLocaclIPValue;
-	}
-
-	if (GLocaclIP.IsEmpty())
-	{
-		bool CanBind = false;
-		TSharedRef<FInternetAddr> LocalIp = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, CanBind);
-		if (!LocalIp->IsValid())
-		{
-			return 0;
-		}
-
-		GLocaclIP = LocalIp->ToString(false);
-	}
-	if (!GLocaclIP.IsEmpty())
-	{
-		GLocaclIPValue = GetTypeHash(GLocaclIP);
-	}
-
-	return GLocaclIPValue;
-}
 
 FString FStepVrServer::GetLocalAddressStr()
 {
-	if (GLocaclIP.IsEmpty())
+	do
 	{
+		if (!GLocaclIP.IsEmpty())
+		{
+			break;
+		}
+
 		bool CanBind = false;
-		TSharedRef<FInternetAddr> LocalIp = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, CanBind);
+		auto OnlinePtr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+		if (OnlinePtr == nullptr)
+		{
+			break;
+		}
+
+		TSharedRef<FInternetAddr> LocalIp = OnlinePtr->GetLocalHostAddr(*GLog, CanBind);
 		if (!LocalIp->IsValid())
 		{
-			return FString();
+			break;
 		}
 
 		GLocaclIP = LocalIp->ToString(false);
-	}
+	} while (0);
+
 	return GLocaclIP;
 }
 

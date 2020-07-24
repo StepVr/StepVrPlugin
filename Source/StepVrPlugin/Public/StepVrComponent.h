@@ -9,6 +9,15 @@
 #define StepvrClassGroup
 
 
+UENUM()
+enum class FGameType : uint8
+{
+	GameStandAlone,
+	GameClient,
+	GameServer,
+
+};
+
 USTRUCT(BlueprintType)
 struct FStepVRNode
 {
@@ -89,6 +98,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	void DeviceTransform(int32 DeviceID, FTransform& Trans);
 
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
+	void SetGameType(FGameType type, FString ServerIP);
+
 	//手动校准HMD
 	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
 	void ResetHMD();
@@ -97,11 +109,15 @@ public:
 	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	FString GetLocalIP();
 
-	//ip是否有效
-	bool	IsValidPlayerAddr();
 
-	//获取同步IP
-	uint32	GetPlayerAddr();
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, ReplicatedUsing = OnRep_PlayerIP, Category = StepvrLibrary)
+	FString  PlayerIP;
+
+	UFUNCTION()
+	void OnRep_PlayerIP();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SetPlayerAddrOnServer(const FString& LocalIP);
 
 	//是否本地控制玩家
 	bool	IsLocalControlled();
@@ -127,17 +143,10 @@ protected:
 	void TickLocal();
 	FTransform& GetDeviceDataPtr(int32 DeviceID);
 
-	//同步IP
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, ReplicatedUsing=OnRep_PlayerIP, Category = StepvrLibrary)
-	FString  PlayerIP;
-	uint32   PlayerID;
-	UFUNCTION()
-	void OnRep_PlayerIP();
-	UFUNCTION(Server, Reliable, WithValidation)
-	void SetPlayerAddrOnServer(const FString& LocalIP);
 
 	//初始化
 	void AfterinitializeLocalControlled();
+
 
 private:
 	bool    bAlreadyInitializeLocal = false;
@@ -158,11 +167,6 @@ private:
 	//头显校准角度
 	float ResetYaw;
 
-	//需要更新的ID
-	TArray<int32>	NeedUpdateDevices;
-
-	//需要同步的ID
-	TArray<int32>   ReplicateID;
 
 	//最新数据
 	TMap<int32, FTransform> LastDeviceData;

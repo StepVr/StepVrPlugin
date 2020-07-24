@@ -1,8 +1,7 @@
 ﻿#include "StepVrComponent.h"
-#include "StepVrBPLibrary.h"
 #include "StepVrInput.h"
 #include "StepVrGlobal.h"
-#include "StepVrServerModule.h"
+
 #include "StepVrConfig.h"
 #include "StepVrCameraComponent.h"
 
@@ -42,7 +41,24 @@ void UStepVrComponent::ResetHMD()
 
 FString UStepVrComponent::GetLocalIP()
 {
-	return FStepVrServer::GetLocalAddressStr();
+	//return FStepVrServer::GetLocalAddressStr();
+	return "";
+}
+
+void UStepVrComponent::OnRep_PlayerIP()
+{
+	//PlayerID = GetTypeHash(PlayerIP);
+}
+
+void UStepVrComponent::SetPlayerAddrOnServer_Implementation(const FString& LocalIP)
+{
+	PlayerIP = LocalIP;
+	OnRep_PlayerIP();
+}
+
+bool UStepVrComponent::SetPlayerAddrOnServer_Validate(const FString& LocalIP)
+{
+	return true;
 }
 
 void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
@@ -76,10 +92,25 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 	}
 	else
 	{
-		if (GStepFrames && IsValidPlayerAddr())
+		if (STEPVE_GLOBAL_IsValid)
 		{
-			GStepFrames->GetLastReplicateDeviceData(PlayerID, DeviceID, *CacheData);
-			Trans = *CacheData;
+			if (GStepFrames && STEPVR_GLOBAL->IsValidPlayerAddr())
+			{
+				GStepFrames->GetLastReplicateDeviceData(STEPVR_GLOBAL->PlayerID, DeviceID, *CacheData);
+				Trans = *CacheData;
+			}
+		}
+	}
+}
+
+void UStepVrComponent::SetGameType(FGameType type, FString ServerIP)
+{
+	if (STEPVE_GLOBAL_IsValid)
+	{
+		STEPVR_GLOBAL->SetGameModeTypeGlobal((EGameModeType)type);
+		if (type == FGameType::GameClient)
+		{
+			//STEPVR_GLOBAL->UpdateServerIP(ServerIP);
 		}
 	}
 }
@@ -103,21 +134,6 @@ void UStepVrComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//同步ID
-	UStepSetting* Config = UStepSetting::Instance();
-	if (Config)
-	{
-		ReplicateID = Config->ReplicateDeviceID;
-	}
-
-	/**
-	 * 组要更新的设备ID
-	 */
-	NeedUpdateDevices.Add(StepVrDeviceID::DLeftController);
-	NeedUpdateDevices.Add(StepVrDeviceID::DRightController);
-	NeedUpdateDevices.Add(StepVrDeviceID::DGun);
-	NeedUpdateDevices.Add(StepVrDeviceID::DHead);
-	NeedUpdateDevices.Add(StepVrDeviceID::DHMD);
 }
 
 void UStepVrComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -179,7 +195,11 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	/**
 	* 注册需要更新定位的标准件
 	*/
-	for (auto DevID : NeedUpdateDevices)
+	if (!STEPVE_GLOBAL_IsValid)
+	{
+		return;
+	}
+	for (auto DevID : STEPVR_GLOBAL->NeedUpdateDevices)
 	{
 		if (DevID != StepVrDeviceID::DHMD)
 		{
@@ -211,7 +231,7 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 void UStepVrComponent::ResetHMDFinal()
 {
 	FTransform TempData;
-	UStepVrBPLibrary::SVGetDeviceStateWithID(StepVrDeviceID::DHead, TempData);
+	//UStepVrBPLibrary::SVGetDeviceStateWithID(StepVrDeviceID::DHead, TempData);
 	float TempYaw = TempData.Rotator().Yaw + ResetYaw;
 
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(TempYaw);
@@ -359,44 +379,20 @@ void UStepVrComponent::ResetHMDAuto()
 
 void UStepVrComponent::TickLocal()
 {
-	if (!STEPVR_FRAME_IsValid)
+	if (!STEPVE_GLOBAL_IsValid)
 	{
 		return;
 	}
 
 	//更新每个玩家的Device
-	for (auto DevID : NeedUpdateDevices)
+	for (auto DevID : STEPVR_GLOBAL->NeedUpdateDevices)
 	{
 		FTransform& TempPtr = GetDeviceDataPtr(DevID);
-		UStepVrBPLibrary::SVGetDeviceStateWithID(DevID, TempPtr);
-	}
-
-    /**
-    * 实时校准
-    */
-    if (ResetHMDType == FResetHMDType::ResetHMD_RealTime)
-    {
-        ResetOculusRealTime();
-    }
-
-    /**
-    * 同步定位数据
-    */
-	if (STEPVR_SERVER_IsValid)
-	{
-		TMap<int32, FTransform> SendData;
-		FTransform TempPtr;
-		for (auto DevID : ReplicateID)
-		{
-			UStepVrBPLibrary::SVGetDeviceStateWithID(DevID,TempPtr);
-			SendData.Add(DevID, TempPtr);
-		}
-		if (IsValidPlayerAddr())
-		{
-			STEPVR_SERVER->StepVrSendData(GetPlayerAddr(), SendData);
-		}
+		STEPVR_GLOBAL->SVGetDeviceStateWithID(DevID, TempPtr);
 	}
 }
+
+
 
 FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
 {
@@ -428,21 +424,6 @@ FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
 	return GTransform;
 }
 
-void UStepVrComponent::OnRep_PlayerIP()
-{
-	PlayerID = GetTypeHash(PlayerIP);
-}
-
-bool UStepVrComponent::IsValidPlayerAddr()
-{
-	return PlayerID > 0;
-}
-
-uint32 UStepVrComponent::GetPlayerAddr()
-{
-	return PlayerID;
-}
-
 bool UStepVrComponent::IsLocalControlled()
 {
 	APawn* LocalPawn = Cast<APawn>(GetOwner());
@@ -455,15 +436,6 @@ bool UStepVrComponent::IsLocalControlled()
 }
 
 
-void UStepVrComponent::SetPlayerAddrOnServer_Implementation(const FString& LocalIP)
-{
-	PlayerIP = LocalIP;
-	OnRep_PlayerIP();
-}
-bool UStepVrComponent::SetPlayerAddrOnServer_Validate(const FString& LocalIP)
-{
-	return true;
-}
 void UStepVrComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

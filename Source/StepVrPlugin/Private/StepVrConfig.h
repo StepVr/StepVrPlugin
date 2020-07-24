@@ -9,14 +9,12 @@ enum EStepDeviceKeyType
 	State_Button,
 	State_ValueX,
 	State_ValueY,
-	State_MocapHand,
 };
 
 
 UENUM()
 enum EStepDeviceKeyID
 {
-	KeyZero = 0,
 	KeyA = 1,
 	KeyB,
 	KeyC,

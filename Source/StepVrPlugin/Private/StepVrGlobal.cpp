@@ -1,11 +1,22 @@
 ﻿#include "StepVrGlobal.h"
 #include "Engine.h"
+#include "StepVrInput.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
+#include "StepVrConfig.h"
 
-#include "StepVrServerModule.h"
-#include "StepVrBPLibrary.h"
 #include "LocalDefine.h"
 #include "StepVrPlugin.h"
 
+
+#include "Kismet/GameplayStatics.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
+#include "IHeadMountedDisplay.h"
+#include "IXRTrackingSystem.h"
+#include "IXRSystemAssets.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/Engine.h"
+#include "Engine/NetDriver.h"
+#include "Engine/NetConnection.h"
 
 /************************************************************************/
 /* Global Data                                                                     */
@@ -53,6 +64,12 @@ StepVrGlobal* StepVrGlobal::GetInstance()
 	SingletonInstance = MakeShareable(new StepVrGlobal());
 	return SingletonInstance.Get();
 }
+
+bool StepVrGlobal::GlobalIsValid()
+{
+	return SingletonInstance.IsValid();
+}
+
 void StepVrGlobal::Shutdown()
 {
 	if (SingletonInstance.IsValid())
@@ -69,18 +86,30 @@ void StepVrGlobal::StartSDK()
 	//加载Server
 	LoadServer();
 
+
+	//同步ID
+	UStepSetting* Config = UStepSetting::Instance();
+	if (Config)
+	{
+		ReplicateID = Config->ReplicateDeviceID;
+	}
+
+	/**
+	 * 组要更新的设备ID
+	 */
+	NeedUpdateDevices.Add(StepVrDeviceID::DLeftController);
+	NeedUpdateDevices.Add(StepVrDeviceID::DRightController);
+	NeedUpdateDevices.Add(StepVrDeviceID::DGun);
+	NeedUpdateDevices.Add(StepVrDeviceID::DHead);
+	NeedUpdateDevices.Add(StepVrDeviceID::DHMD);
+
+
 	/**
 	 * 注册开始帧，刷新数据
 	 */
 	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this, &StepVrGlobal::EngineBeginFrame);
 	//PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &StepVrGlobal::PostLoadMapWithWorld);
 }
-
-bool StepVrGlobal::ServerIsValid()
-{
-	return StepVrServer.IsValid();
-}
-
 
 bool StepVrGlobal::SDKIsValid()
 {
@@ -89,26 +118,15 @@ bool StepVrGlobal::SDKIsValid()
 
 void StepVrGlobal::LoadServer()
 {
-	IStepvrServerModule* _Server = static_cast<IStepvrServerModule*>(FModuleManager::Get().GetModule(IStepvrServerModule::GetModularFeatureName()));
+	//创建服务器数据对象
 
-	if (_Server)
-	{
-		//创建服务器
-		StepVrServer = _Server->CreateServer();
+	StepVrServerData = MakeShareable(new FStepVrData());
 
-		if (StepVrServer.IsValid())
-		{ 
-			UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrServer Start Success"));
-		}
-		else 
-		{ 
-			UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrServer Start Faild"));
-		}	
 
-		//创建接收数据
-		StepVrReplicateData = MakeShareable(new FStepFrames());
-		GStepFrames = StepVrReplicateData.Get();
-	}
+	//创建接收数据
+	StepVrReplicateData = MakeShareable(new FStepFrames());
+	GStepFrames = StepVrReplicateData.Get();
+	
 }
 
 void StepVrGlobal::LoadSDK()
@@ -192,27 +210,117 @@ void StepVrGlobal::EngineBeginFrame()
 		for (auto DevID : GNeedUpdateDevices)
 		{
 			FTransform TempData;
-			UStepVrBPLibrary::SVGetDeviceState(&Node, DevID, TempData);
+			SVGetDeviceState(&Node, DevID, TempData);
 		}
 	}
 
-	//UE_LOG(LogTemp,Log,TEXT("PLatform Time : %f"), FPlatformTime::Seconds());
+	UE_LOG(LogTemp,Log,TEXT("PLatform Time : %f"), FPlatformTime::Seconds());
 
 	/**
 	 * 更新同步数据
 	 */
-	if (StepVrServer.IsValid() && StepVrReplicateData.IsValid())
+	//if (StepVrServer.IsValid() && StepVrReplicateData.IsValid())
+	//{
+	//	FStepAllPlayerFrame* Container = StepVrReplicateData->GetHeadContainer();
+	//	if (StepVrServer->SynchronizationStepVrData(Container))
+	//	{
+	//		StepVrReplicateData->FlushHeadContain();
+	//	}
+	//	else if (GStepFrameForecast)
+	//	{
+	//		StepVrReplicateData->ForecastNewData();
+	//	}
+	//}
+
+
+	if (!STEPVR_FRAME_IsValid)
 	{
-		FStepAllPlayerFrame* Container = StepVrReplicateData->GetHeadContainer();
-		if (StepVrServer->SynchronizationStepVrData(Container))
+		return;
+	}
+
+	/**
+	* 同步定位数据
+	*/
+	if (StepVrServerData.IsValid())
+	{
+		TMap<int32, FTransform> SendData;
+		FTransform TempPtr;
+		for (auto DevID : ReplicateID)
 		{
-			StepVrReplicateData->FlushHeadContain();
+			SVGetDeviceStateWithID(DevID, TempPtr);
+
+			SendData.Add(DevID, TempPtr);
 		}
-		else if(GStepFrameForecast)
+		if (IsValidPlayerAddr())
 		{
-			StepVrReplicateData->ForecastNewData();
+			StepVrServerData->ReceiveStepVrData(GetPlayerAddr(), SendData);
 		}
 	}
+
+}
+
+void StepVrGlobal::SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 EquipId, FTransform& Transform)
+{
+	if (!InSingleNode->IsHardWareLink(EquipId))
+	{
+		return;
+	}
+
+	static StepVR::Vector3f vec3;
+	vec3 = InSingleNode->GetPosition(SDKNODEID(EquipId));
+	vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
+	Transform.SetLocation(FVector(vec3.x * 100, vec3.y * 100, vec3.z * 100));
+
+	static StepVR::Vector4f vec4;
+	vec4 = InSingleNode->GetQuaternion(SDKNODEID(EquipId));
+	if (EquipId == 6)
+	{
+		vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
+		Transform.SetRotation(FQuat(vec4.y*-1, vec4.x, vec4.z, vec4.w));
+
+		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
+		{
+			FRotator	S_QTemp;
+			FVector		S_VTemp;
+			UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(S_QTemp, S_VTemp);
+			GLocalDevicesRT.FindOrAdd(StepVrDeviceID::DHMD) = FTransform(
+				S_QTemp.Quaternion(),
+				Transform.GetLocation() - S_VTemp);
+		}
+	}
+	else
+	{
+		vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
+		Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
+	}
+
+	{
+		//数据进行缩放
+		FVector ScaleLocaltion = Transform.GetLocation() * GScaleTransform;
+		Transform.SetLocation(ScaleLocaltion);
+	}
+
+	GLocalDevicesRT.FindOrAdd(EquipId) = Transform;
+}
+
+void StepVrGlobal::SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform)
+{
+	FTransform* _trans = GLocalDevicesRT.Find(DeviceID);
+	if (_trans)
+	{
+		Transform = *_trans;
+		return;
+	}
+
+	if (GNeedUpdateDevices.Find(DeviceID) == INDEX_NONE)
+	{
+		GNeedUpdateDevices.Add(DeviceID);
+	}
+}
+
+void StepVrGlobal::SetGameModeTypeGlobal(EGameModeType InGameModeType)
+{
+	StepVrServerData->SetGameModeType(InGameModeType);
 }
 
 void StepVrGlobal::PostLoadMapWithWorld(UWorld* UsingWorld)
@@ -224,6 +332,16 @@ void StepVrGlobal::PostLoadMapWithWorld(UWorld* UsingWorld)
 	//	ENetMode mode = Driver->GetNetMode();
 	//	UE_LOG(LogTemp, Log, TEXT("%d"), mode);
 	//}
+}
+
+bool StepVrGlobal::IsValidPlayerAddr()
+{
+	return PlayerID > 0;
+}
+
+uint32 StepVrGlobal::GetPlayerAddr()
+{
+	return PlayerID;
 }
 
 UWorld* StepVrGlobal::GetWorld()
@@ -242,12 +360,6 @@ StepVR::Manager* StepVrGlobal::GetStepVrManager()
 	return StepVrManager.IsValid() ? StepVrManager.Get() : nullptr;
 }
 
-
-FStepVrServer* StepVrGlobal::GetStepVrServer()
-{
-	return StepVrServer.IsValid() ? StepVrServer.Get() : nullptr;
-}
-
 FStepFrames* StepVrGlobal::GetStepVrReplicateFrame()
 {
 	return StepVrReplicateData.IsValid() ? StepVrReplicateData.Get() : nullptr;
@@ -256,14 +368,13 @@ FStepFrames* StepVrGlobal::GetStepVrReplicateFrame()
 /****************************FStepFrams***********************************/
 /*                                                                      */
 /************************************************************************/
-FStepFrames::FStepFrames():
+FStepFrames::FStepFrames() :
 	IndexCurHead(0),
 	IndexHeadContain(0),
 	NewFrame(nullptr)
 {
 
 }
-
 
 void FStepFrames::GetLastReplicateDeviceData(uint32 PlayerID, int32 DeviceID, FTransform& Data)
 {
@@ -308,7 +419,7 @@ FStepAllPlayerFrame* FStepFrames::GetHeadContainer()
 void FStepFrames::FlushHeadContain()
 {
 	IndexCurHead = IndexHeadContain;
-    NewFrame = &CacheFrames[IndexCurHead];
+	NewFrame = &CacheFrames[IndexCurHead];
 }
 
 void FStepFrames::ForecastNewData()

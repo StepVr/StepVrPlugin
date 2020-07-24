@@ -3,14 +3,19 @@
 
 #include "StepVr.h"
 #include "CoreMinimal.h"
+#include "StepVrData.h"
+
 
 #define STEPVR_FRAME	(StepVrGlobal::GetInstance()->GetStepVrManager())
-#define STEPVR_SERVER	(StepVrGlobal::GetInstance()->GetStepVrServer())
+
 
 #define STEPVR_FRAME_IsValid	(StepVrGlobal::GetInstance()->SDKIsValid())
-#define STEPVR_SERVER_IsValid	(StepVrGlobal::GetInstance()->ServerIsValid())
 
-class FStepVrServer;
+
+#define STEPVR_GLOBAL   (StepVrGlobal::GetInstance())
+#define STEPVE_GLOBAL_IsValid (StepVrGlobal::GetInstance()->GlobalIsValid())
+
+//class FStepVrServer;
 class UStepSetting;
 class FStepFrames;
 
@@ -69,30 +74,44 @@ public:
 	~StepVrGlobal();
 
 	static StepVrGlobal* GetInstance();
+
+	bool GlobalIsValid();
+
 	static void Shutdown();
 
 	void StartSDK();
 
-	bool ServerIsValid();
+	//bool ServerIsValid();
 	bool SDKIsValid();
 
 	StepVR::Manager*	GetStepVrManager();
-	FStepVrServer*		GetStepVrServer();
+	//FStepVrServer*		GetStepVrServer();
 	FStepFrames*		GetStepVrReplicateFrame();
-private:
+
 	void LoadServer();
 	void LoadSDK();
 	void CloseSDK();
-	
-	void EngineBeginFrame();
-	void PostLoadMapWithWorld(UWorld* UsingWorld);
 
+	void EngineBeginFrame();
+
+	/*获取定位状态*/
+	void SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 EquipId, FTransform& Transform);
+
+
+	bool IsValidPlayerAddr();
+	uint32 GetPlayerAddr();
 	UWorld* GetWorld();
+public:
+	/*得到游戏状态*/
+	void SetGameModeTypeGlobal(EGameModeType InGameModeType);
+	void PostLoadMapWithWorld(UWorld* UsingWorld);
+	void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
+
 private:
 	static TSharedPtr<StepVrGlobal>	SingletonInstance;
 
 	//服务器
-	TSharedPtr<FStepVrServer>	StepVrServer;
+	TSharedPtr<FStepVrData>	StepVrServerData;
 
 	//定位服务
 	TSharedPtr<StepVR::Manager>	StepVrManager;
@@ -100,11 +119,22 @@ private:
 	//同步数据管理
 	TSharedPtr<FStepFrames>		StepVrReplicateData;
 
+	//需要同步的ID
+	TArray<int32>   ReplicateID;
+	//需要更新的ID
+
+
+
 	//DLL
 	void*	DllHandle;
 
 	FDelegateHandle EngineBeginFrameHandle;
 	//FDelegateHandle PostLoadMapHandle;
+
+public:
+	TArray<int32>	NeedUpdateDevices;
+
+	uint32   PlayerID;
 };
 
 
@@ -140,7 +170,7 @@ public:
 	FStepFrames();
 
 	//获取同步数据
-	void GetLastReplicateDeviceData(uint32 PlayerID , int32 DeviceID , FTransform& Data);
+	void GetLastReplicateDeviceData(uint32 PlayerID, int32 DeviceID, FTransform& Data);
 
 	//准备添加新数据的容器
 	FStepAllPlayerFrame* GetHeadContainer();

@@ -3,7 +3,6 @@
 #include "StepVrCameraComponent.h"
 #include "Engine.h"
 
-#include "StepVrBPLibrary.h"
 #include "StepVrGlobal.h"
 #include "LocalDefine.h"
 
@@ -98,7 +97,7 @@ void UStepVrCameraComponent::RecaclCameraData(float DeltaTime, FMinimalViewInfo&
 {
 	FTransform _StepvrHead;
 	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
-	UStepVrBPLibrary::SVGetDeviceState(&Node, iCameraID, _StepvrHead);
+	//UStepVrBPLibrary::SVGetDeviceState(&Node, iCameraID, _StepvrHead);
 	
 	//Command录制数据
 	if (IsStartRecord)

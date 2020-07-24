@@ -77,7 +77,8 @@ public class StepVrPlugin : ModuleRules
                 "InputDevice",
                 "HeadMountedDisplay",
                 "Sockets",
-                "Slate"
+                "Slate",
+                "StepVrServer"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

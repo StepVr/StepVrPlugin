@@ -76,6 +76,7 @@ public class StepVrPlugin : ModuleRules
                 "InputCore",
                 "InputDevice",
                 "HeadMountedDisplay",
+                "Networking",
                 "Sockets",
                 "Slate",
                 "StepVrServer"

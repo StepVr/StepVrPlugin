@@ -120,7 +120,7 @@ void StepVrGlobal::LoadServer()
 {
 	//创建服务器数据对象
 
-	StepVrServerData = MakeShareable(new FStepVrData());
+	//StepVrServerData = MakeShareable(new FStepVrData());
 
 
 	//创建接收数据
@@ -241,7 +241,7 @@ void StepVrGlobal::EngineBeginFrame()
 	/**
 	* 同步定位数据
 	*/
-	if (StepVrServerData.IsValid())
+	if (STEPVR_Data_IsValid)
 	{
 		TMap<int32, FTransform> SendData;
 		FTransform TempPtr;
@@ -253,7 +253,7 @@ void StepVrGlobal::EngineBeginFrame()
 		}
 		if (IsValidPlayerAddr())
 		{
-			StepVrServerData->ReceiveStepVrData(GetPlayerAddr(), SendData);
+			STEPVR_Data->ReceiveStepVrData(GetPlayerAddr(), SendData);
 		}
 	}
 
@@ -320,7 +320,7 @@ void StepVrGlobal::SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform)
 
 void StepVrGlobal::SetGameModeTypeGlobal(EGameModeType InGameModeType)
 {
-	StepVrServerData->SetGameModeType(InGameModeType);
+	STEPVR_Data->SetGameModeType(InGameModeType);
 }
 
 void StepVrGlobal::PostLoadMapWithWorld(UWorld* UsingWorld)

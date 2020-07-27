@@ -22,5 +22,11 @@
         "Win64"
       ]
     }
+  ],
+  "Plugins": [
+    {
+      "Name": "StepVrServer",
+      "Enabled": true
+    }
   ]
 }

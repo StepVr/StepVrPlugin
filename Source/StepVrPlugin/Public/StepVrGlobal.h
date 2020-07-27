@@ -66,8 +66,7 @@ extern float											GStepFrameLerpAlpha;
 /************************************************************************/
 
 
-
-class STEPVRPLUGIN_API StepVrGlobal
+class STEPVRPLUGIN_API StepVrGlobal 
 {
 public:
 	StepVrGlobal();
@@ -85,7 +84,6 @@ public:
 	bool SDKIsValid();
 
 	StepVR::Manager*	GetStepVrManager();
-	//FStepVrServer*		GetStepVrServer();
 	FStepFrames*		GetStepVrReplicateFrame();
 
 	void LoadServer();
@@ -104,14 +102,13 @@ public:
 public:
 	/*得到游戏状态*/
 	void SetGameModeTypeGlobal(EGameModeType InGameModeType);
+
+
 	void PostLoadMapWithWorld(UWorld* UsingWorld);
 	void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
 
 private:
 	static TSharedPtr<StepVrGlobal>	SingletonInstance;
-
-	//服务器
-	TSharedPtr<FStepVrData>	StepVrServerData;
 
 	//定位服务
 	TSharedPtr<StepVR::Manager>	StepVrManager;
@@ -122,8 +119,6 @@ private:
 	//需要同步的ID
 	TArray<int32>   ReplicateID;
 	//需要更新的ID
-
-
 
 	//DLL
 	void*	DllHandle;

@@ -9,15 +9,6 @@
 #define StepvrClassGroup
 
 
-UENUM()
-enum class FGameType : uint8
-{
-	GameStandAlone,
-	GameClient,
-	GameServer,
-
-};
-
 USTRUCT(BlueprintType)
 struct FStepVRNode
 {
@@ -97,9 +88,6 @@ public:
 	*/
 	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	void DeviceTransform(int32 DeviceID, FTransform& Trans);
-
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
-	void SetGameType(FGameType type, FString ServerIP);
 
 	//手动校准HMD
 	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)

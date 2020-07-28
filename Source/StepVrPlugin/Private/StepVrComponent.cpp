@@ -103,18 +103,6 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 	}
 }
 
-void UStepVrComponent::SetGameType(FGameType type, FString ServerIP)
-{
-	if (STEPVE_GLOBAL_IsValid)
-	{
-		//STEPVR_GLOBAL->SetGameModeTypeGlobal((EGameModeType)type);
-		if (type == FGameType::GameClient)
-		{
-			//STEPVR_GLOBAL->UpdateServerIP(ServerIP);
-		}
-	}
-}
-
 void UStepVrComponent::ResetHMDDirection()
 {
 	APawn* Pawn = Cast<APawn>(GetOwner());

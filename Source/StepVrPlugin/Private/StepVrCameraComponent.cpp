@@ -44,13 +44,13 @@ void UStepVrCameraComponent::SetCameraInfo(int32 CameraID)
 void UStepVrCameraComponent::BeginDestroy()
 {
 	Super::BeginDestroy();
-	HandleCommand = GStepCommand.AddUObject(this,&UStepVrCameraComponent::ExecCommands);
+	//HandleCommand = GStepCommand.AddUObject(this,&UStepVrCameraComponent::ExecCommands);
 }
 
 void UStepVrCameraComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	GStepCommand.Remove(HandleCommand);
+	//GStepCommand.Remove(HandleCommand);
 }
 
 void UStepVrCameraComponent::ExecCommands(FString& Commands)

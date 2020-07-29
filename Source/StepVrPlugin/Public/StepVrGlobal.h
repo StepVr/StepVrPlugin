@@ -30,27 +30,6 @@ extern TArray<int32>	GNeedUpdateDevices;
 
 
 /************************************************************************/
-
-
-/*************************全局指针，非线程安全，Game线程使用******************/
-DECLARE_MULTICAST_DELEGATE_OneParam(FStepCommand, FString&);
-//普通状态
-extern STEPVRPLUGIN_API FStepCommand					GStepCommand;
-//服务器发送间隔 单位S
-extern STEPVRPLUGIN_API float							GStepServerSendInterval;
-//客户端同步数据
-extern FStepFrames*										GStepFrames;
-//Net，数据预测间隔
-extern float											GStepFrameForecastInterval;
-//Net，数据预测
-extern bool												GStepFrameForecast;
-//Net，数据插值
-extern bool												GStepFrameLerp;
-//Net，数据插值Alpha
-extern float											GStepFrameLerpAlpha;
-/************************************************************************/
-
-
 class STEPVRPLUGIN_API StepVrGlobal 
 {
 public:

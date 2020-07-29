@@ -1,7 +1,6 @@
 ﻿#include "StepVrGlobal.h"
 #include "Engine.h"
 #include "StepVrInput.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 #include "StepVrConfig.h"
 #include "StepVrData.h"
 
@@ -26,14 +25,6 @@
 TArray<int32>					GNeedUpdateDevices = { StepVrDeviceID::DHead };
 
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
-
-FStepCommand	GStepCommand;
-FStepFrames*	GStepFrames = nullptr;
-float			GStepServerSendInterval = 0.0333f;
-bool			GStepFrameForecast = false;
-float			GStepFrameForecastInterval = 0.33;
-bool			GStepFrameLerp = true;
-float			GStepFrameLerpAlpha = 0.1f;
 
 
 
@@ -121,8 +112,8 @@ void StepVrGlobal::LoadServer()
 
 
 	//创建接收数据
-	StepVrReplicateData = MakeShareable(new FStepFrames());
-	GStepFrames = StepVrReplicateData.Get();
+	//StepVrReplicateData = MakeShareable(new FStepFrames());
+	//GStepFrames = StepVrReplicateData.Get();
 	
 }
 
@@ -384,18 +375,8 @@ void StepVrGlobal::GetLastReplicateDeviceData(uint32 lPlayerID, int32 DeviceID, 
 		return;
 	}
 
-	if (GStepFrameLerp)
-	{
-		//插值
-		FVector CurLocation = Data.GetLocation();
-		FVector NewLocation = CurLocation + GStepFrameLerpAlpha * (NewDeviceData->GetLocation() - CurLocation);
-		Data.SetLocation(NewLocation);
-		Data.SetRotation(NewDeviceData->GetRotation());
-	}
-	else
-	{
-		Data = *NewDeviceData;
-	}
+	Data = *NewDeviceData;
+	
 }
 
 

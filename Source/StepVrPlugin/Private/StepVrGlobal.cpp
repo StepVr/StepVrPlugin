@@ -3,6 +3,7 @@
 #include "StepVrInput.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "StepVrConfig.h"
+#include "StepVrData.h"
 
 #include "LocalDefine.h"
 #include "StepVrPlugin.h"
@@ -21,16 +22,11 @@
 /************************************************************************/
 /* Global Data                                                                     */
 /************************************************************************/
-AllDevicesData					GLocalDevicesRT;
-float							GLastReceiveTime = 0.f;
-TMap<uint32, AllDevicesData>	GReplicateDevicesRT;
-FCriticalSection				GReplicateSkeletonCS;
-TAtomic<uint64>					GUpdateReplicateSkeleton = 0;
-TMap<uint32, AllSkeletonData>	GReplicateSkeletonRT;
 
 TArray<int32>					GNeedUpdateDevices = { StepVrDeviceID::DHead };
 
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
+
 FStepCommand	GStepCommand;
 FStepFrames*	GStepFrames = nullptr;
 float			GStepServerSendInterval = 0.0333f;
@@ -38,7 +34,7 @@ bool			GStepFrameForecast = false;
 float			GStepFrameForecastInterval = 0.33;
 bool			GStepFrameLerp = true;
 float			GStepFrameLerpAlpha = 0.1f;
-float			GScaleTransform = 1.f;
+
 
 
 /************************************************************************/
@@ -46,6 +42,7 @@ float			GScaleTransform = 1.f;
 /************************************************************************/
 StepVrGlobal::StepVrGlobal()
 {
+	GScaleTransform = 1.f;
 }
 
 StepVrGlobal::~StepVrGlobal()
@@ -219,18 +216,11 @@ void StepVrGlobal::EngineBeginFrame()
 	/**
 	 * 更新同步数据
 	 */
-	//if (StepVrServer.IsValid() && StepVrReplicateData.IsValid())
-	//{
-	//	FStepAllPlayerFrame* Container = StepVrReplicateData->GetHeadContainer();
-	//	if (StepVrServer->SynchronizationStepVrData(Container))
-	//	{
-	//		StepVrReplicateData->FlushHeadContain();
-	//	}
-	//	else if (GStepFrameForecast)
-	//	{
-	//		StepVrReplicateData->ForecastNewData();
-	//	}
-	//}
+	if (STEPVR_Data_IsValid )
+	{
+		STEPVR_Data->SynchronizationStepVrData(CurDeviceData, CurMocapData);
+
+	}
 
 
 	if (!STEPVR_FRAME_IsValid)
@@ -318,9 +308,14 @@ void StepVrGlobal::SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform)
 	}
 }
 
-void StepVrGlobal::SetGameModeTypeGlobal(EGameModeType InGameModeType)
+AllDevicesData StepVrGlobal::GetAllDevicesData()
 {
-	STEPVR_Data->SetGameModeType(InGameModeType);
+	return GLocalDevicesRT;
+}
+
+void StepVrGlobal::SetScaleTransform(float ScaleTransform)
+{
+	GScaleTransform = ScaleTransform;
 }
 
 void StepVrGlobal::PostLoadMapWithWorld(UWorld* UsingWorld)
@@ -333,6 +328,8 @@ void StepVrGlobal::PostLoadMapWithWorld(UWorld* UsingWorld)
 	//	UE_LOG(LogTemp, Log, TEXT("%d"), mode);
 	//}
 }
+
+
 
 bool StepVrGlobal::IsValidPlayerAddr()
 {
@@ -355,6 +352,17 @@ UWorld* StepVrGlobal::GetWorld()
 	return GEngine->GetWorldContexts()[0].World();
 }
 
+FString StepVrGlobal::GetLocalAddressStr()
+{
+	if (STEPVR_Data_IsValid)
+	{
+
+		return STEPVR_Data->GetLocalAddressStr();
+	}
+	return "";
+
+}
+
 StepVR::Manager* StepVrGlobal::GetStepVrManager()
 {
 	return StepVrManager.IsValid() ? StepVrManager.Get() : nullptr;
@@ -365,32 +373,12 @@ FStepFrames* StepVrGlobal::GetStepVrReplicateFrame()
 	return StepVrReplicateData.IsValid() ? StepVrReplicateData.Get() : nullptr;
 }
 
-/****************************FStepFrams***********************************/
-/*                                                                      */
-/************************************************************************/
-FStepFrames::FStepFrames() :
-	IndexCurHead(0),
-	IndexHeadContain(0),
-	NewFrame(nullptr)
+
+
+void StepVrGlobal::GetLastReplicateDeviceData(uint32 lPlayerID, int32 DeviceID, FTransform& Data)
 {
-
-}
-
-void FStepFrames::GetLastReplicateDeviceData(uint32 PlayerID, int32 DeviceID, FTransform& Data)
-{
-	if (NewFrame == nullptr)
-	{
-		return;
-	}
-
-	auto TempPlayer = NewFrame->AllPlayerInfo.Find(PlayerID);
-	if (TempPlayer == nullptr)
-	{
-		return;
-	}
-
 	//最新数据
-	auto NewDeviceData = (*TempPlayer).CurDeviceData.Find(DeviceID);
+	auto NewDeviceData = CurDeviceData.Find(DeviceID);
 	if (NewDeviceData == nullptr)
 	{
 		return;
@@ -410,6 +398,19 @@ void FStepFrames::GetLastReplicateDeviceData(uint32 PlayerID, int32 DeviceID, FT
 	}
 }
 
+
+
+/****************************FStepFrams***********************************/
+/*                                                                      */
+/************************************************************************/
+FStepFrames::FStepFrames() :
+	IndexCurHead(0),
+	IndexHeadContain(0),
+	NewFrame(nullptr)
+{
+
+}
+
 FStepAllPlayerFrame* FStepFrames::GetHeadContainer()
 {
 	IndexHeadContain = (IndexCurHead + 1) % StepFramsMax;
@@ -421,59 +422,6 @@ void FStepFrames::FlushHeadContain()
 	IndexCurHead = IndexHeadContain;
 	NewFrame = &CacheFrames[IndexCurHead];
 }
-
-void FStepFrames::ForecastNewData()
-{
-	NewFrame = &ForecastFrame;
-
-	//预测新数据
-	float CurTime = FPlatformTime::Seconds();
-
-	FStepAllPlayerFrame* Data1 = &CacheFrames[IndexCurHead];
-	FStepAllPlayerFrame* Data2 = &CacheFrames[(FMath::Abs(IndexCurHead - 1)) % StepFramsMax];
-
-	float Alpha = (CurTime - Data2->TimeStemp) / (Data1->TimeStemp - Data2->TimeStemp);
-
-	for (auto& MapFrame : Data1->AllPlayerInfo)
-	{
-		FStepFrame* ForecastKey = ForecastFrame.AllPlayerInfo.Find(MapFrame.Key);
-		if (ForecastKey == nullptr)
-		{
-			ForecastFrame.AllPlayerInfo.Add(MapFrame.Key, FStepFrame());
-			ForecastKey = ForecastFrame.AllPlayerInfo.Find(MapFrame.Key);
-		}
-
-		auto PairKey = Data2->AllPlayerInfo.Find(MapFrame.Key);
-		if (PairKey == nullptr)
-		{
-			continue;
-		}
-
-		for (auto& MapDevice : MapFrame.Value.CurDeviceData)
-		{
-			FTransform* ForceDevice = ForecastKey->CurDeviceData.Find(MapDevice.Key);
-			if (ForceDevice == nullptr)
-			{
-				ForecastKey->CurDeviceData.Add(MapDevice.Key, FTransform());
-				ForceDevice = ForecastKey->CurDeviceData.Find(MapDevice.Key);
-			}
-
-			auto PairDevice = PairKey->CurDeviceData.Find(MapDevice.Key);
-			if (PairDevice == nullptr)
-			{
-				continue;
-			}
-
-			FVector Pre = PairDevice->GetLocation();
-			FVector Cur = Pre + Alpha * (MapDevice.Value.GetLocation() - Pre);
-			ForceDevice->SetLocation(Cur);
-			ForceDevice->SetRotation(MapDevice.Value.GetRotation());
-		}
-	}
-}
-
-
-
 
 
 /************************************************************************/

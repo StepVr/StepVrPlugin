@@ -3,7 +3,6 @@
 
 #include "StepVr.h"
 #include "CoreMinimal.h"
-#include "StepVrData.h"
 
 
 #define STEPVR_FRAME	(StepVrGlobal::GetInstance()->GetStepVrManager())
@@ -13,7 +12,7 @@
 
 
 #define STEPVR_GLOBAL   (StepVrGlobal::GetInstance())
-#define STEPVE_GLOBAL_IsValid (StepVrGlobal::GetInstance()->GlobalIsValid())
+#define STEPVR_GLOBAL_IsValid (StepVrGlobal::GetInstance()->GlobalIsValid())
 
 //class FStepVrServer;
 class UStepSetting;
@@ -26,22 +25,8 @@ typedef TArray<FTransform>					AllSkeletonData;
 typedef TMap<int32, FTransform>				AllDevicesData;
 
 
-//本机定位数据
-extern AllDevicesData	GLocalDevicesRT;
-
-//同步数据
-extern float											GLastReceiveTime;
-extern TMap<uint32, AllDevicesData>						GReplicateDevicesRT;
-extern STEPVRPLUGIN_API FCriticalSection				GReplicateSkeletonCS;
-extern STEPVRPLUGIN_API TAtomic<uint64>					GUpdateReplicateSkeleton;
-extern STEPVRPLUGIN_API TMap<uint32, AllSkeletonData>	GReplicateSkeletonRT;
-
 //需要获取定位的设备ID
 extern TArray<int32>	GNeedUpdateDevices;
-
-//定位缩放比例
-extern float			GScaleTransform;
-
 
 
 /************************************************************************/
@@ -99,13 +84,23 @@ public:
 	bool IsValidPlayerAddr();
 	uint32 GetPlayerAddr();
 	UWorld* GetWorld();
+
+	FString GetLocalAddressStr();
 public:
 	/*得到游戏状态*/
-	void SetGameModeTypeGlobal(EGameModeType InGameModeType);
+	//void SetGameModeTypeGlobal(EGameModeType InGameModeType);
 
 
 	void PostLoadMapWithWorld(UWorld* UsingWorld);
 	void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
+
+	AllDevicesData GetAllDevicesData();
+
+	/*缩放*/
+	void SetScaleTransform(float ScaleTransform);
+
+	//获取同步数据
+	void GetLastReplicateDeviceData(uint32 lPlayerID, int32 DeviceID, FTransform& Data);
 
 private:
 	static TSharedPtr<StepVrGlobal>	SingletonInstance;
@@ -130,6 +125,17 @@ public:
 	TArray<int32>	NeedUpdateDevices;
 
 	uint32   PlayerID;
+protected:
+
+	//本机定位数据
+	AllDevicesData	GLocalDevicesRT;
+	//定位缩放比例
+	 float			GScaleTransform;
+
+	 //当前数据
+	 AllDevicesData		CurDeviceData;
+
+	 AllSkeletonData		CurMocapData;
 };
 
 
@@ -139,10 +145,10 @@ public:
 class FStepFrame
 {
 public:
-	//当前数据
-	AllDevicesData		CurDeviceData;
+	////当前数据
+	//AllDevicesData		CurDeviceData;
 
-	AllSkeletonData		CurMocapData;
+	//AllSkeletonData		CurMocapData;
 };
 
 class FStepAllPlayerFrame
@@ -164,15 +170,9 @@ class FStepFrames
 public:
 	FStepFrames();
 
-	//获取同步数据
-	void GetLastReplicateDeviceData(uint32 PlayerID, int32 DeviceID, FTransform& Data);
-
 	//准备添加新数据的容器
 	FStepAllPlayerFrame* GetHeadContainer();
 	void FlushHeadContain();
-
-	//添加新数据失败，需要预测
-	void ForecastNewData();
 
 private:
 	//暂时缓存两帧，用于插值

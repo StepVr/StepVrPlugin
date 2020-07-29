@@ -1,7 +1,6 @@
 ﻿#include "StepVrComponent.h"
 #include "StepVrInput.h"
 #include "StepVrGlobal.h"
-
 #include "StepVrConfig.h"
 #include "StepVrCameraComponent.h"
 
@@ -41,13 +40,20 @@ void UStepVrComponent::ResetHMD()
 
 FString UStepVrComponent::GetLocalIP()
 {
-	//return FStepVrServer::GetLocalAddressStr();
+	if (STEPVR_GLOBAL_IsValid)
+	{
+
+		return STEPVR_GLOBAL->GetLocalAddressStr();
+	}
 	return "";
 }
 
 void UStepVrComponent::OnRep_PlayerIP()
 {
-	//PlayerID = GetTypeHash(PlayerIP);
+	if (STEPVR_GLOBAL_IsValid)
+	{
+		STEPVR_GLOBAL->PlayerID = GetTypeHash(PlayerIP);
+	}
 }
 
 void UStepVrComponent::SetPlayerAddrOnServer_Implementation(const FString& LocalIP)
@@ -75,9 +81,15 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 		CacheData = LastDeviceData.Find(DeviceID);
 	}
 
+	if (!STEPVR_GLOBAL_IsValid)
+	{
+		return;
+	}
+	
+
 	if (IsLocalControlled())
 	{
-		auto Temp = GLocalDevicesRT.Find(DeviceID);
+		auto Temp = STEPVR_GLOBAL->GetAllDevicesData().Find(DeviceID);
 		if (Temp)
 		{
 			Trans = *Temp;
@@ -92,13 +104,10 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 	}
 	else
 	{
-		if (STEPVE_GLOBAL_IsValid)
+		if (STEPVR_GLOBAL->IsValidPlayerAddr())
 		{
-			if (GStepFrames && STEPVR_GLOBAL->IsValidPlayerAddr())
-			{
-				GStepFrames->GetLastReplicateDeviceData(STEPVR_GLOBAL->PlayerID, DeviceID, *CacheData);
-				Trans = *CacheData;
-			}
+			STEPVR_GLOBAL->GetLastReplicateDeviceData(STEPVR_GLOBAL->PlayerID, DeviceID, *CacheData);
+			Trans = *CacheData;
 		}
 	}
 }
@@ -183,7 +192,7 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	/**
 	* 注册需要更新定位的标准件
 	*/
-	if (!STEPVE_GLOBAL_IsValid)
+	if (!STEPVR_GLOBAL_IsValid)
 	{
 		return;
 	}
@@ -367,7 +376,7 @@ void UStepVrComponent::ResetHMDAuto()
 
 void UStepVrComponent::TickLocal()
 {
-	if (!STEPVE_GLOBAL_IsValid)
+	if (!STEPVR_GLOBAL_IsValid)
 	{
 		return;
 	}

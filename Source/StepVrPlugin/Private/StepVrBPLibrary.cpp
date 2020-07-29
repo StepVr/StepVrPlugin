@@ -1,6 +1,7 @@
 ﻿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "StepVrBPLibrary.h"
 #include "StepVrData.h"
+#include "StepVrGlobal.h"
 #include "Engine.h"
 
 
@@ -25,5 +26,8 @@ void UStepVrBPLibrary::SetGameType(FGameType type, FString ServerIP)
 
 void UStepVrBPLibrary::SetScaleTransform(float Scales)
 {
-	//GScaleTransform = Scales;
+	if (STEPVR_GLOBAL_IsValid)
+	{
+		STEPVR_GLOBAL->SetScaleTransform(Scales);
+	}
 }

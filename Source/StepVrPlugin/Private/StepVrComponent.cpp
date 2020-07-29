@@ -69,10 +69,6 @@ bool UStepVrComponent::SetPlayerAddrOnServer_Validate(const FString& LocalIP)
 
 void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 {
-#if SHOW_STATE
-	SCOPE_CYCLE_COUNTER(stat_DeviceTransform_tick);
-#endif
-	
 	//获取同步数据
 	FTransform* CacheData = LastDeviceData.Find(DeviceID);
 	if (CacheData == nullptr)

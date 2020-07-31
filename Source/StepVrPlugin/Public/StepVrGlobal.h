@@ -119,7 +119,7 @@ public:
 	//当前帧
 	int32 CurFrams = 0;
 
-	TMap<uint32, FStepFrame> AllPlayerInfo;
+	//TMap<uint32, FStepFrame> AllPlayerInfo;
 };
 
 

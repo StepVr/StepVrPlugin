@@ -21,9 +21,7 @@
 /************************************************************************/
 /* Global Data                                                                     */
 /************************************************************************/
-
-TArray<int32>					GNeedUpdateDevices = { StepVrDeviceID::DHead };
-
+			
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 
 
@@ -34,6 +32,7 @@ TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 StepVrGlobal::StepVrGlobal()
 {
 	GScaleTransform = 1.f;
+	GNeedUpdateDevices = { StepVrDeviceID::DHead };
 }
 
 StepVrGlobal::~StepVrGlobal()
@@ -96,7 +95,6 @@ void StepVrGlobal::StartSDK()
 	 * 注册开始帧，刷新数据
 	 */
 	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this, &StepVrGlobal::EngineBeginFrame);
-	//PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &StepVrGlobal::PostLoadMapWithWorld);
 }
 
 bool StepVrGlobal::SDKIsValid()
@@ -174,7 +172,6 @@ void StepVrGlobal::LoadSDK()
 void StepVrGlobal::CloseSDK()
 {
 	FCoreDelegates::OnBeginFrame.Remove(EngineBeginFrameHandle);
-	//FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
 	if (DllHandle != nullptr)
 	{
 		FPlatformProcess::FreeDllHandle(DllHandle);
@@ -184,10 +181,6 @@ void StepVrGlobal::CloseSDK()
 
 void StepVrGlobal::EngineBeginFrame()
 {
-#if SHOW_STATE
-	SCOPE_CYCLE_COUNTER(stat_EngineBeginFrame_tick);
-#endif
-
 	/**
 	* 更新定位数据
 	*/
@@ -209,7 +202,7 @@ void StepVrGlobal::EngineBeginFrame()
 	 */
 	if (STEPVR_Data_IsValid )
 	{
-		STEPVR_Data->SynchronizationStepVrData(CurDeviceData, CurMocapData);
+		STEPVR_Data->SynchronizationStepVrData();
 
 	}
 
@@ -309,19 +302,6 @@ void StepVrGlobal::SetScaleTransform(float ScaleTransform)
 	GScaleTransform = ScaleTransform;
 }
 
-void StepVrGlobal::PostLoadMapWithWorld(UWorld* UsingWorld)
-{
-	//CurUsingWorld = UsingWorld;
-	//UNetDriver* Driver = CurUsingWorld->GetNetDriver();
-	//if (Driver)
-	//{
-	//	ENetMode mode = Driver->GetNetMode();
-	//	UE_LOG(LogTemp, Log, TEXT("%d"), mode);
-	//}
-}
-
-
-
 bool StepVrGlobal::IsValidPlayerAddr()
 {
 	return PlayerID > 0;
@@ -369,13 +349,22 @@ FStepFrames* StepVrGlobal::GetStepVrReplicateFrame()
 void StepVrGlobal::GetLastReplicateDeviceData(uint32 lPlayerID, int32 DeviceID, FTransform& Data)
 {
 	//最新数据
-	auto NewDeviceData = CurDeviceData.Find(DeviceID);
-	if (NewDeviceData == nullptr)
+	if (STEPVR_Data_IsValid)
 	{
-		return;
-	}
+		auto TempPlayer = STEPVR_Data->AllPlayerInfo.Find(lPlayerID);
+		if (TempPlayer == nullptr)
+		{
+			return;
+		}
 
-	Data = *NewDeviceData;
+		auto NewDeviceData = (*TempPlayer).CurrnetDeviceData.Find(DeviceID);
+		if (NewDeviceData == nullptr)
+		{
+			return;
+		}
+
+		Data = *NewDeviceData;
+	}
 	
 }
 

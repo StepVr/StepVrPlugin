@@ -85,16 +85,17 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 
 	if (IsLocalControlled())
 	{
-		auto Temp = STEPVR_GLOBAL->GetAllDevicesData().Find(DeviceID);
+		auto Temp = STEPVR_GLOBAL->GLocalDevicesRT.Find(DeviceID);
 		if (Temp)
 		{
 			Trans = *Temp;
+			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("Local is success"));
 		}
 		else
 		{
-			if (GNeedUpdateDevices.Find(DeviceID) == INDEX_NONE)
+			if (STEPVR_GLOBAL->GNeedUpdateDevices.Find(DeviceID) == INDEX_NONE)
 			{
-				GNeedUpdateDevices.Add(DeviceID);
+				STEPVR_GLOBAL->GNeedUpdateDevices.Add(DeviceID);
 			}
 		}
 	}
@@ -103,6 +104,7 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 		if (STEPVR_GLOBAL->IsValidPlayerAddr())
 		{
 			STEPVR_GLOBAL->GetLastReplicateDeviceData(STEPVR_GLOBAL->PlayerID, DeviceID, *CacheData);
+			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("Remote is success"));
 			Trans = *CacheData;
 		}
 	}
@@ -196,7 +198,7 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	{
 		if (DevID != StepVrDeviceID::DHMD)
 		{
-			GNeedUpdateDevices.AddUnique(DevID);
+			STEPVR_GLOBAL->GNeedUpdateDevices.AddUnique(DevID);
 		}
 	}
 	

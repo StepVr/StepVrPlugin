@@ -24,11 +24,6 @@ class FStepFrames;
 typedef TArray<FTransform>					AllSkeletonData;
 typedef TMap<int32, FTransform>				AllDevicesData;
 
-
-//需要获取定位的设备ID
-extern TArray<int32>	GNeedUpdateDevices;
-
-
 /************************************************************************/
 class STEPVRPLUGIN_API StepVrGlobal 
 {
@@ -66,11 +61,6 @@ public:
 
 	FString GetLocalAddressStr();
 public:
-	/*得到游戏状态*/
-	//void SetGameModeTypeGlobal(EGameModeType InGameModeType);
-
-
-	void PostLoadMapWithWorld(UWorld* UsingWorld);
 	void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
 
 	AllDevicesData GetAllDevicesData();
@@ -98,37 +88,27 @@ private:
 	void*	DllHandle;
 
 	FDelegateHandle EngineBeginFrameHandle;
-	//FDelegateHandle PostLoadMapHandle;
-
 public:
 	TArray<int32>	NeedUpdateDevices;
 
+	//需要获取定位的设备ID
+	TArray<int32>	GNeedUpdateDevices;
+
 	uint32   PlayerID;
-protected:
+
 
 	//本机定位数据
 	AllDevicesData	GLocalDevicesRT;
+
 	//定位缩放比例
 	 float			GScaleTransform;
-
-	 //当前数据
-	 AllDevicesData		CurDeviceData;
-
-	 AllSkeletonData		CurMocapData;
 };
 
 
 /************************************************************************/
 /* 同步数据                                                                     */
 /************************************************************************/
-class FStepFrame
-{
-public:
-	////当前数据
-	//AllDevicesData		CurDeviceData;
 
-	//AllSkeletonData		CurMocapData;
-};
 
 class FStepAllPlayerFrame
 {

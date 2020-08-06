@@ -41,6 +41,7 @@ public class StepVrPlugin : ModuleRules
         //外部链接头文件目录
         PublicIncludePaths.AddRange(
 			new string[] {
+                Path.Combine(ModulePath, "Classes"),
                 Path.Combine(ModulePath, "Public"),
                 Path.Combine(LibPath,"include"),
 				// ... add public include paths required here ...
@@ -51,7 +52,6 @@ public class StepVrPlugin : ModuleRules
         //本模块连接头文件路径
 		PrivateIncludePaths.AddRange(
 			new string[] {
-                "StepVrPlugin/Public",
                 "StepVrPlugin/Private",
 				// ... add other private include paths required here ...
 			}
@@ -79,7 +79,6 @@ public class StepVrPlugin : ModuleRules
                 "Networking",
                 "Sockets",
                 "Slate",
-                "StepVrServer"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

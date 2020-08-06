@@ -1,19 +1,9 @@
 ﻿#include "StepVrComponent.h"
-#include "StepVrInput.h"
 #include "StepVrGlobal.h"
-#include "StepVrConfig.h"
-#include "StepVrCameraComponent.h"
 
-
-#include "Kismet/GameplayStatics.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
-#include "IHeadMountedDisplay.h"
-#include "IXRTrackingSystem.h"
-#include "IXRSystemAssets.h"
 #include "Net/UnrealNetwork.h"
-#include "Engine/Engine.h"
-#include "Engine/NetDriver.h"
-#include "Engine/NetConnection.h"
+
 
 
 
@@ -26,8 +16,6 @@ UStepVrComponent::UStepVrComponent(const FObjectInitializer& ObjectInitializer)
 	PrimaryComponentTick.bCanEverTick = true;
 	bWantsInitializeComponent = true;
 	bAutoActivate = true;
-	
-	PlayerIP = TEXT("");
 
 	SetIsReplicatedByDefault(true);
 }
@@ -38,76 +26,32 @@ void UStepVrComponent::ResetHMD()
 	ResetHMDAuto();
 }
 
-FString UStepVrComponent::GetLocalIP()
-{
-	if (STEPVR_GLOBAL_IsValid)
-	{
-
-		return STEPVR_GLOBAL->GetLocalAddressStr();
-	}
-	return "";
-}
-
-void UStepVrComponent::OnRep_PlayerIP()
-{
-	if (STEPVR_GLOBAL_IsValid)
-	{
-		STEPVR_GLOBAL->PlayerID = GetTypeHash(PlayerIP);
-	}
-}
-
-void UStepVrComponent::SetPlayerAddrOnServer_Implementation(const FString& LocalIP)
-{
-	PlayerIP = LocalIP;
-	OnRep_PlayerIP();
-}
-
-bool UStepVrComponent::SetPlayerAddrOnServer_Validate(const FString& LocalIP)
-{
-	return true;
-}
-
 void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 {
-	//获取同步数据
-	FTransform* CacheData = LastDeviceData.Find(DeviceID);
-	if (CacheData == nullptr)
-	{
-		LastDeviceData.Add(DeviceID, FTransform());
-		CacheData = LastDeviceData.Find(DeviceID);
-	}
+#if SHOW_STATE
+	SCOPE_CYCLE_COUNTER(STAT_StepVR_SVComp_DeviceTransform);
+#endif
 
-	if (!STEPVR_GLOBAL_IsValid)
+	if (auto TempData = SinglePlayerData.Find(DeviceID))
 	{
-		return;
-	}
-	
-
-	if (IsLocalControlled())
-	{
-		auto Temp = STEPVR_GLOBAL->GLocalDevicesRT.Find(DeviceID);
-		if (Temp)
-		{
-			Trans = *Temp;
-			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::Blue, TEXT("Local is success"));
-		}
-		else
-		{
-			if (STEPVR_GLOBAL->GNeedUpdateDevices.Find(DeviceID) == INDEX_NONE)
-			{
-				STEPVR_GLOBAL->GNeedUpdateDevices.Add(DeviceID);
-			}
-		}
+		TempData->GetTransform(Trans);
 	}
 	else
 	{
-		if (STEPVR_GLOBAL->IsValidPlayerAddr())
-		{
-			STEPVR_GLOBAL->GetLastReplicateDeviceData(STEPVR_GLOBAL->PlayerID, DeviceID, *CacheData);
-			GEngine->AddOnScreenDebugMessage(-1, 0.f, FColor::White, TEXT("Remote is success"));
-			Trans = *CacheData;
-		}
+		STEPVR_GLOBAL->AddDeviceID(DeviceID);
 	}
+}
+
+void UStepVrComponent::SetPlayerGUID_Implementation(uint32 NewPlayerGUID)
+{
+	PlayerGUID = NewPlayerGUID;
+}
+
+void UStepVrComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(UStepVrComponent, PlayerGUID);
 }
 
 void UStepVrComponent::ResetHMDDirection()
@@ -142,25 +86,39 @@ void UStepVrComponent::RegistInputComponent()
 	APawn* Pawn = Cast<APawn>(GetOwner());
 	if (Pawn && Pawn->InputComponent)
 	{
+		Pawn->EnableInput(Pawn->GetController<APlayerController>());
 		Pawn->InputComponent->BindKey(EKeys::R, EInputEvent::IE_Pressed, this, &UStepVrComponent::ResetHMD);
+		UE_LOG(LogStepVrPlugin, Log, TEXT("ResetHMD"));
 	}
 }
 
 void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
 #if SHOW_STATE
-	SCOPE_CYCLE_COUNTER(stat_Componment_tick);
+	SCOPE_CYCLE_COUNTER(STAT_StepVR_StepVrComponet_tick);
 #endif
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (IsLocalControlled())
+	if (!bAlreadyInitializeLocal)
 	{
-		AfterinitializeLocalControlled();
-
-		TickLocal();
+		if (CheckControllState())
+		{
+			bAlreadyInitializeLocal = true;
+			AfterinitializeLocalControlled();
+		}
+		return;
 	}
 
+
+	if (bLocalControlled)
+	{
+		STEPVR_GLOBAL->GetDeviceTransform(SinglePlayerData);
+	}
+	else
+	{
+		STEPVR_GLOBAL->GetRemoteDeviceTransform(PlayerGUID, SinglePlayerData);
+	}
 }
 
 void UStepVrComponent::InitializeComponent()
@@ -171,37 +129,6 @@ void UStepVrComponent::InitializeComponent()
 
 void UStepVrComponent::AfterinitializeLocalControlled()
 {
-	if (bAlreadyInitializeLocal)
-	{
-		return;
-	}
-	bAlreadyInitializeLocal = true;
-
-	/**
-	 * Stepcamera 配置
-	 */
-	auto StepCamera = Cast<UStepVrCameraComponent>(GetOwner()->GetComponentByClass(UStepVrCameraComponent::StaticClass()));
-	if (StepCamera)
-	{
-		int32 CameraID = GameUseType == FGameUseType::UseType_Cave ? 198 : 6;
-		StepCamera->SetCameraInfo(CameraID);
-	}
-
-	/**
-	* 注册需要更新定位的标准件
-	*/
-	if (!STEPVR_GLOBAL_IsValid)
-	{
-		return;
-	}
-	for (auto DevID : STEPVR_GLOBAL->NeedUpdateDevices)
-	{
-		if (DevID != StepVrDeviceID::DHMD)
-		{
-			STEPVR_GLOBAL->GNeedUpdateDevices.AddUnique(DevID);
-		}
-	}
-	
 	/**
 	 * 编辑器模式重新校准
 	 */
@@ -217,10 +144,9 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 	RegistInputComponent();
 
 	/**
-	 * 同步定位数据
+	 * GUID
 	 */
-	FString Addr = GetLocalIP();
-	SetPlayerAddrOnServer(Addr);
+	SetPlayerGUID(STEPVR_GLOBAL->GetGUID());
 }
 
 void UStepVrComponent::ResetHMDFinal()
@@ -236,126 +162,126 @@ void UStepVrComponent::ResetHMDFinal()
 
 void UStepVrComponent::ResetOculusRealTime()
 {
-	FRotator	S_QTemp;
-	FVector		S_VTemp;
-	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(S_QTemp, S_VTemp);
-	
-	
-	HMDPitch = S_QTemp.Pitch;
+	//FRotator	S_QTemp;
+	//FVector		S_VTemp;
+	//UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(S_QTemp, S_VTemp);
+	//
+	//
+	//HMDPitch = S_QTemp.Pitch;
 
-	double Maxrate;
+	//double Maxrate;
 
-	/*存储4帧数据*/
-	if (!bIsStart)
-	{
-		Tnum = 0;
-		Cnum = 0;
-		bIsReset = false;
-		bIsStart = true;
-		bIsCorrect = false;
-	}
-	if (Tnum == 1)
-	{
-		HMDYaw[0] = S_QTemp.Yaw;
-		IMUYaw[0] = CurrentNodeState.FHead.Rotator().Yaw;
-		Tnum++;
-	}
-	else if (Tnum > 1)
-	{
-		for (int i = 1; i < Yawn; i++)
-		{
-			HMDYaw[Yawn - i] = HMDYaw[Yawn - 1 - i];
-			IMUYaw[Yawn - i] = IMUYaw[Yawn - 1 - i];
-		}
-		HMDYaw[0] = S_QTemp.Yaw;
-		IMUYaw[0] = CurrentNodeState.FHead.Rotator().Yaw;
-		HMDrate[0] = HMDYaw[1] - HMDYaw[0];
-		Maxrate = fabs(HMDrate[0]);
-		float Maxyaw = IMUYaw[0];
-		float Minyaw = IMUYaw[0];
-		for (int i = 1; i < Yawn - 1; i++)
-		{
-			HMDrate[i] = HMDYaw[i + 1] - HMDYaw[i];
-			Maxrate = fabs(HMDrate[i]) > Maxrate ? fabs(HMDrate[i]) : Maxrate;
-			Maxrate = Maxrate > 180 ? 360 - Maxrate : Maxrate;
-			Maxyaw = Maxyaw > IMUYaw[i] ? Maxyaw : IMUYaw[i];
-			Minyaw = Minyaw < IMUYaw[i] ? Minyaw : IMUYaw[i];
-		}
-		double DecYaw = (Maxyaw - Minyaw) > 180 ? 360 - (Maxyaw - Minyaw) : (Maxyaw - Minyaw);
-		if (Maxrate < 1 && fabs(DecYaw) < 2)
-		{
-			bIsReset = false;
-			bIsCorrect = false;
-		}
-		else if (Cnum < 200)
-		{
-			bIsReset = true;
-			bIsCorrect = false; 
+	///*存储4帧数据*/
+	//if (!bIsStart)
+	//{
+	//	Tnum = 0;
+	//	Cnum = 0;
+	//	bIsReset = false;
+	//	bIsStart = true;
+	//	bIsCorrect = false;
+	//}
+	//if (Tnum == 1)
+	//{
+	//	HMDYaw[0] = S_QTemp.Yaw;
+	//	IMUYaw[0] = CurrentNodeState.FHead.Rotator().Yaw;
+	//	Tnum++;
+	//}
+	//else if (Tnum > 1)
+	//{
+	//	for (int i = 1; i < Yawn; i++)
+	//	{
+	//		HMDYaw[Yawn - i] = HMDYaw[Yawn - 1 - i];
+	//		IMUYaw[Yawn - i] = IMUYaw[Yawn - 1 - i];
+	//	}
+	//	HMDYaw[0] = S_QTemp.Yaw;
+	//	IMUYaw[0] = CurrentNodeState.FHead.Rotator().Yaw;
+	//	HMDrate[0] = HMDYaw[1] - HMDYaw[0];
+	//	Maxrate = fabs(HMDrate[0]);
+	//	float Maxyaw = IMUYaw[0];
+	//	float Minyaw = IMUYaw[0];
+	//	for (int i = 1; i < Yawn - 1; i++)
+	//	{
+	//		HMDrate[i] = HMDYaw[i + 1] - HMDYaw[i];
+	//		Maxrate = fabs(HMDrate[i]) > Maxrate ? fabs(HMDrate[i]) : Maxrate;
+	//		Maxrate = Maxrate > 180 ? 360 - Maxrate : Maxrate;
+	//		Maxyaw = Maxyaw > IMUYaw[i] ? Maxyaw : IMUYaw[i];
+	//		Minyaw = Minyaw < IMUYaw[i] ? Minyaw : IMUYaw[i];
+	//	}
+	//	double DecYaw = (Maxyaw - Minyaw) > 180 ? 360 - (Maxyaw - Minyaw) : (Maxyaw - Minyaw);
+	//	if (Maxrate < 1 && fabs(DecYaw) < 2)
+	//	{
+	//		bIsReset = false;
+	//		bIsCorrect = false;
+	//	}
+	//	else if (Cnum < 200)
+	//	{
+	//		bIsReset = true;
+	//		bIsCorrect = false; 
 
-			Cnum = 0;
-		}
-		else
-		{
-			bIsReset = false;
-		}
-	}
+	//		Cnum = 0;
+	//	}
+	//	else
+	//	{
+	//		bIsReset = false;
+	//	}
+	//}
 
-	if (!bIsReset)
-	{
-		//校准
-		if (fabs(HMDPitch) > 60)
-		{
-			return;
-		}
+	//if (!bIsReset)
+	//{
+	//	//校准
+	//	if (fabs(HMDPitch) > 60)
+	//	{
+	//		return;
+	//	}
 
-		float Yaw = CurrentNodeState.FHead.Rotator().Yaw;
-		float DevYaw;
+	//	float Yaw = CurrentNodeState.FHead.Rotator().Yaw;
+	//	float DevYaw;
 
-		if (Tnum == 0)
-		{
-			NewYaw = Yaw + ResetYaw;
-			NewYaw = NewYaw > 180 ? NewYaw - 360 : NewYaw;
-			UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(NewYaw);
-			Tnum = 1;
-		}
-		else
-		{
-			float TempIMUYaw = Yaw + ResetYaw;
-			TempIMUYaw = TempIMUYaw > 180 ? TempIMUYaw - 360 : TempIMUYaw;
+	//	if (Tnum == 0)
+	//	{
+	//		NewYaw = Yaw + ResetYaw;
+	//		NewYaw = NewYaw > 180 ? NewYaw - 360 : NewYaw;
+	//		UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(NewYaw);
+	//		Tnum = 1;
+	//	}
+	//	else
+	//	{
+	//		float TempIMUYaw = Yaw + ResetYaw;
+	//		TempIMUYaw = TempIMUYaw > 180 ? TempIMUYaw - 360 : TempIMUYaw;
 
-			DevYaw = TempIMUYaw - HMDYaw[0];
-			DevYaw = DevYaw > 180 ? DevYaw - 360 : DevYaw;
-			DevYaw = DevYaw < -180 ? DevYaw + 360 : DevYaw;
-			if (!bIsCorrect && Cnum < 200)
-			{
-				if (fabs(DevYaw) > 5)
-				{
-					Cnum = fabs(DevYaw) / 0.01;
-					bIsCorrect = true;
-				}
-				else if (Cnum < 200)
-				{
-					return;
-				}
-			}
+	//		DevYaw = TempIMUYaw - HMDYaw[0];
+	//		DevYaw = DevYaw > 180 ? DevYaw - 360 : DevYaw;
+	//		DevYaw = DevYaw < -180 ? DevYaw + 360 : DevYaw;
+	//		if (!bIsCorrect && Cnum < 200)
+	//		{
+	//			if (fabs(DevYaw) > 5)
+	//			{
+	//				Cnum = fabs(DevYaw) / 0.01;
+	//				bIsCorrect = true;
+	//			}
+	//			else if (Cnum < 200)
+	//			{
+	//				return;
+	//			}
+	//		}
 
-			DevYaw = DevYaw > 0 ? 0.01 : -0.01;
-			NewYaw = NewYaw + DevYaw;
-			Cnum--;
-			s_bIsResetOculus = false;
-		}
+	//		DevYaw = DevYaw > 0 ? 0.01 : -0.01;
+	//		NewYaw = NewYaw + DevYaw;
+	//		Cnum--;
+	//		s_bIsResetOculus = false;
+	//	}
 
-		if (!s_bIsResetOculus)
-		{
-			//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(NewYaw);
-			FQuat BaseOrientation;
-			BaseOrientation = (NewYaw != 0.0f) ? FRotator(0, -NewYaw, 0).Quaternion() : FQuat::Identity;
-			GEngine->XRSystem->SetBaseOrientation(BaseOrientation);
-			//UE_LOG(LogStepVrPlugin, Warning, TEXT("Stepvr ResetHMD Yaw:%f,%f,%f"), Yaw, HMDYaw[0], NewYaw);
+	//	if (!s_bIsResetOculus)
+	//	{
+	//		//UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(NewYaw);
+	//		FQuat BaseOrientation;
+	//		BaseOrientation = (NewYaw != 0.0f) ? FRotator(0, -NewYaw, 0).Quaternion() : FQuat::Identity;
+	//		GEngine->XRSystem->SetBaseOrientation(BaseOrientation);
+	//		//UE_LOG(LogStepVrPlugin, Warning, TEXT("Stepvr ResetHMD Yaw:%f,%f,%f"), Yaw, HMDYaw[0], NewYaw);
 
-			s_bIsResetOculus = true;
-		}
-	}
+	//		s_bIsResetOculus = true;
+	//	}
+	//}
 }
 
 
@@ -372,54 +298,8 @@ void UStepVrComponent::ResetHMDAuto()
 	}
 }
 
-void UStepVrComponent::TickLocal()
-{
-	if (!STEPVR_GLOBAL_IsValid)
-	{
-		return;
-	}
 
-	//更新每个玩家的Device
-	for (auto DevID : STEPVR_GLOBAL->NeedUpdateDevices)
-	{
-		FTransform& TempPtr = GetDeviceDataPtr(DevID);
-		STEPVR_GLOBAL->SVGetDeviceStateWithID(DevID, TempPtr);
-	}
-}
-
-
-
-FTransform& UStepVrComponent::GetDeviceDataPtr(int32 DeviceID)
-{
-	switch (DeviceID)
-	{
-		case StepVrDeviceID::DHead:
-		{
-			return CurrentNodeState.FHead;
-		}
-		case StepVrDeviceID::DGun:
-		{
-			return CurrentNodeState.FGun;
-		}
-		case StepVrDeviceID::DLeftController:
-		{
-			return CurrentNodeState.FDLeftController;
-		}
-		case StepVrDeviceID::DRightController:
-		{
-			return CurrentNodeState.FRightController;
-		}
-		case StepVrDeviceID::DHMD:
-		{
-			return CurrentNodeState.FHeadForHMD;
-		}
-	}
-
-	static FTransform GTransform;
-	return GTransform;
-}
-
-bool UStepVrComponent::IsLocalControlled()
+bool UStepVrComponent::CheckControllState()
 {
 	APawn* LocalPawn = Cast<APawn>(GetOwner());
 	if (LocalPawn == nullptr)
@@ -427,13 +307,14 @@ bool UStepVrComponent::IsLocalControlled()
 		return false;
 	}
 
-	return LocalPawn->IsLocallyControlled();
+	bLocalControlled = LocalPawn->IsLocallyControlled();
+	return true;
 }
 
 
-void UStepVrComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(UStepVrComponent, PlayerIP);
-}
+//void UStepVrComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+//{
+//	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+//
+//	//DOREPLIFETIME(UStepVrComponent, PlayerIP);
+//}

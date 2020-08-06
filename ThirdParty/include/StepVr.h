@@ -106,12 +106,10 @@ namespace StepVR {
 	STEPVR_API class SingleNode
 	{
 	public:
-		/**
-		* Enumerates the names of node ID.
-		**/
+		//定位件ID【1 - 255】
 		typedef unsigned char NODEID;
 
-		//THIS ENUM WILL DISCARD,PLEASE DON'T USE IT
+		//废弃的
 		STEPVR_API enum NodeID
 		{
 			NodeID_LeftWrist = 1,
@@ -217,6 +215,10 @@ namespace StepVR {
 		STEPVR_API bool GetKey(NODEID _nodeid, KeyID _keyid);
 		STEPVR_API bool GetKey(NodeID _nodeid, KeyID _keyid);
 
+		//new key functions
+		STEPVR_API bool GetKeyDown1(NODEID _nodeid, KeyID _keyid);
+		STEPVR_API bool GetKeyUp1(NODEID _nodeid, KeyID _keyid);
+		STEPVR_API bool GetKey1(NODEID _nodeid, KeyID _keyid);;
 		/**
 		* Glove's button state
 		* id: 0->left  1->right
@@ -292,6 +294,14 @@ namespace StepVR {
 		STEPVR_API int GetProductNo(NODEID _nodeid);
 		STEPVR_API int GetSerialNo(NODEID _nodeid);
 
+
+		STEPVR_API Vector3f GetImuAcc(NODEID id);
+		STEPVR_API Vector3f GetImuGyro(NODEID id);
+		STEPVR_API Vector3f GetImuMag(NODEID id);
+
+		STEPVR_API Vector3f GetSpeedVec(NODEID id);
+		STEPVR_API Vector3f GetSpeedAcc(NODEID id);
+		STEPVR_API Vector3f GetSpeedGyro(NODEID id);
 	};
 
 	STEPVR_API struct GERData{
@@ -303,6 +313,7 @@ namespace StepVR {
 		int data50;int data51;int data52;int data53;int data54;int data55;int data56;int data57;int data58;	
 	};
 
+	//废弃的
 	STEPVR_API struct IMUData{
 		int data0;	int data1;	int data2;	int data3;	int data4;	int data5;	int data6;	int data7;	int data8;
 	};
@@ -345,8 +356,9 @@ namespace StepVR {
 		STEPVR_API void GetGERData(char *data);
 		STEPVR_API GERData GetGERData_CSharp();
 
-		//获取5040的IMU数据
+		//废弃的
 		STEPVR_API void GetImuData(short *data);
+		//废弃的
 		STEPVR_API IMUData GetImuData_CSharp();
 	};
 

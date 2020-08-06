@@ -9,14 +9,21 @@
 
 #define StepVrPluginName	"StepVrPlugin"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogStepVrPlugin, Log, All);
+
 //Stat stepvr
 #define SHOW_STATE	true
-DECLARE_STATS_GROUP(TEXT("stepvr"), STATGROUP_STEPVR, STATCAT_Advanced);
-DECLARE_CYCLE_STAT(TEXT("stat Componment tick"), stat_Componment_tick, STATGROUP_STEPVR);
-DECLARE_CYCLE_STAT(TEXT("stat DeviceTransform tick"), stat_DeviceTransform_tick, STATGROUP_STEPVR);
-DECLARE_CYCLE_STAT(TEXT("stat ControllerEvent tick"), stat_ControllerEvent_tick, STATGROUP_STEPVR);
-DECLARE_CYCLE_STAT(TEXT("stat EngineBeginFrame tick"), stat_EngineBeginFrame_tick, STATGROUP_STEPVR);
+DECLARE_STATS_GROUP(TEXT("StepVR"), STATGROUP_StepVR, STATCAT_Advanced);
+DECLARE_CYCLE_STAT(TEXT("##StepVrComponet tick"), STAT_StepVR_StepVrComponet_tick, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("SVComp DeviceTransform"), STAT_StepVR_SVComp_DeviceTransform, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("SVInput ControllerEvent"), STAT_StepVR_ControllerEvent, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("SVGlobal UpdateFrame"), STAT_StepVR_SVGlobal_UpdateFrame, STATGROUP_StepVR);
 
+//DECLARE_STATS_GROUP(TEXT("stepvrserver"), STATGROUP_STEPVRSERVER, STATCAT_Advanced);
+DECLARE_CYCLE_STAT(TEXT("Server Receive"), Stat_Receive, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("Server Send"), Stat_Send, STATGROUP_StepVR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("Server Send Tick (ms)"), Stat_Send_Tick, STATGROUP_StepVR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("Server Receive Interval (ms)"), Stat_ReceiveInterval, STATGROUP_StepVR);
 
 /*----------------------------------------------------------------------------
 	StepVr Node Convert
@@ -31,12 +38,6 @@ DECLARE_CYCLE_STAT(TEXT("stat EngineBeginFrame tick"), stat_EngineBeginFrame_tic
 #define STEPVRSUPPORTPLATFORMS PLATFORM_WINDOWS
 #define PLATFORM_WIN64 (PLATFORM_WINDOWS&&PLATFORM_64BITS)
 #define PLATFORM_WIN32 (PLATFORM_WINDOWS&&PLATFORM_32BITS)
-
-
-/*----------------------------------------------------------------------------
-	Log category for the StepVr module.
-----------------------------------------------------------------------------*/
-DECLARE_LOG_CATEGORY_EXTERN(LogStepVrPlugin, Log, All);
 
 #define SAFE_DELETE_NULL(_Point_)	if (_Point_!=nullptr) { delete _Point_;_Point_ = nullptr; }
 #define CHECK_BREAK(_Flag_)			if(_Flag_){break;}
@@ -65,7 +66,6 @@ namespace StepVrDeviceID {
 		DLeftFoot			= 0x0d,
 		DRightFoot			= 0x0e,
 
-		DHMD			= 0x1f,
+		DHMD				= 0x1f,
 	};
 }
-

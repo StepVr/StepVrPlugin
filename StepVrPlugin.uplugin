@@ -17,16 +17,10 @@
     {
       "Name": "StepVrPlugin",
       "Type": "Runtime",
-      "LoadingPhase": "PreDefault",
+      "LoadingPhase": "Default",
       "WhitelistPlatforms": [
         "Win64"
       ]
-    }
-  ],
-  "Plugins": [
-    {
-      "Name": "StepVrServer",
-      "Enabled": true
     }
   ]
 }

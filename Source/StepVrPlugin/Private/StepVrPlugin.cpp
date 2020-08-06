@@ -9,7 +9,7 @@ void FStepVrPluginModule::StartupModule()
 	
 	IInputDeviceModule::StartupModule();
 
-	StepVrGlobal::GetInstance();
+	StepVrGlobal::GetInstance()->StartSDK();
 }
 
 void FStepVrPluginModule::ShutdownModule()

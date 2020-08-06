@@ -58,14 +58,14 @@ public:
 
 	static UStepSetting* Instance();
 
+	void ReLoadConfig();
+
+	bool IsInit = false;
+
+public:
 	UPROPERTY(Config, VisibleAnywhere, Category = StepConfig)
 	TArray<int32> ReplicateDeviceID;
 
 	UPROPERTY(config, VisibleAnywhere, Category = StepConfig)
 	TArray<FStepDeviceAction> KeyAction;
-
-protected:
-	void ReLoadConfig();
-
-	bool IsInit = false;
 };

@@ -1,7 +1,8 @@
 ﻿// Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 #include "StepVrBPLibrary.h"
+#include "StepVrData.h"
 #include "StepVrGlobal.h"
-
+#include "Engine.h"
 
 
 
@@ -11,12 +12,22 @@ UStepVrBPLibrary::UStepVrBPLibrary(const FObjectInitializer& ObjectInitializer)
 
 }
 
-void UStepVrBPLibrary::SetGameType(EStepGameType type, FString ServerIP)
+void UStepVrBPLibrary::SetGameType(FGameType type, FString ServerIP)
 {
-	STEPVR_GLOBAL->SetGameType(type, ServerIP);
+	if (STEPVR_Data_IsValid)
+	{
+		STEPVR_Data->SetGameModeType((EGameModeType)type);
+		if (type == FGameType::GameClient)
+		{
+			STEPVR_Data->UpdateServerIP(ServerIP);
+		}
+	}
 }
 
 void UStepVrBPLibrary::SetScaleTransform(float Scales)
 {
-	STEPVR_GLOBAL->SetScaleTransform(Scales);
+	if (STEPVR_GLOBAL_IsValid)
+	{
+		STEPVR_GLOBAL->SetScaleTransform(Scales);
+	}
 }

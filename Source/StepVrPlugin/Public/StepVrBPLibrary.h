@@ -26,23 +26,41 @@
 */
 
 
+class Frame;
+/**
+* 
+* received Date class Need inherit StepVrServerInterface
+*/
+UENUM()
+enum class FGameType : uint8
+{
+	GameStandAlone,
+	GameClient,
+	GameServer,
+	
+};
 
 UCLASS()
 class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 
-public:
+	
+
 	/**
-	 *	Client模式需要设置ServerIP
+	 * 	type
+	 * 	0 EStandAlone,
+	 *	1 EClient,
+	 *	2 EServer,
+	 *	@ServerIP ：1 EClient 设置 ServerIP,
 	 */
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
-	static void SetGameType(EStepGameType type,FString ServerIP);
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
+	static void SetGameType(FGameType type,FString ServerIP);
 
 	/**
 	 * 设置缩放，所有定位数据得Location将进行缩放
 	 */
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
 	static void SetScaleTransform(float Scales);
 
 };

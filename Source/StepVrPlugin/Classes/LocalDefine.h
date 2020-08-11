@@ -14,16 +14,16 @@ DECLARE_LOG_CATEGORY_EXTERN(LogStepVrPlugin, Log, All);
 //Stat stepvr
 #define SHOW_STATE	true
 DECLARE_STATS_GROUP(TEXT("StepVR"), STATGROUP_StepVR, STATCAT_Advanced);
-DECLARE_CYCLE_STAT(TEXT("##StepVrComponet tick"), STAT_StepVR_StepVrComponet_tick, STATGROUP_StepVR);
-DECLARE_CYCLE_STAT(TEXT("SVComp DeviceTransform"), STAT_StepVR_SVComp_DeviceTransform, STATGROUP_StepVR);
-DECLARE_CYCLE_STAT(TEXT("SVInput ControllerEvent"), STAT_StepVR_ControllerEvent, STATGROUP_StepVR);
-DECLARE_CYCLE_STAT(TEXT("SVGlobal UpdateFrame"), STAT_StepVR_SVGlobal_UpdateFrame, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrComponet tick"), Stat_StepVrComponet_tick, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrComponet DeviceTransform"), Stat_StepVrComponetp_DeviceTransform, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrInput ControllerEvent"), Stat_StepVrInput_ControllerEvent, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrGlobal UpdateFrame"), Stat_StepVrGlobal_UpdateFrame, STATGROUP_StepVR);
 
 //DECLARE_STATS_GROUP(TEXT("stepvrserver"), STATGROUP_STEPVRSERVER, STATCAT_Advanced);
-DECLARE_CYCLE_STAT(TEXT("Server Receive"), Stat_Receive, STATGROUP_StepVR);
-DECLARE_CYCLE_STAT(TEXT("Server Send"), Stat_Send, STATGROUP_StepVR);
-DECLARE_DWORD_COUNTER_STAT(TEXT("Server Send Tick (ms)"), Stat_Send_Tick, STATGROUP_StepVR);
-DECLARE_DWORD_COUNTER_STAT(TEXT("Server Receive Interval (ms)"), Stat_ReceiveInterval, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrData Receive"), Stat_StepVrData_Receive, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrData Send"), Stat_StepVrData_Send, STATGROUP_StepVR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("StepVrData RemoteNums"), Statr_StepVrData_RemoteNums, STATGROUP_StepVR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("StepVrData Receive Interval (ms)"), Stat_StepVrData_Receive_Interval, STATGROUP_StepVR);
 
 /*----------------------------------------------------------------------------
 	StepVr Node Convert

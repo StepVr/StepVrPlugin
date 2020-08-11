@@ -20,3 +20,14 @@ void UStepVrBPLibrary::SetScaleTransform(float Scales)
 {
 	STEPVR_GLOBAL->SetScaleTransform(Scales);
 }
+
+
+bool UStepVrBPLibrary::GetDeviceTransform(int32 DeviceID, FTransform& OutData)
+{
+	return STEPVR_GLOBAL->GetDeviceTransform(DeviceID, OutData);
+}
+
+void UStepVrBPLibrary::SetRecordPCIP(const FString& PCIP)
+{
+	STEPVR_GLOBAL->SetRecordPCIP(PCIP);
+}

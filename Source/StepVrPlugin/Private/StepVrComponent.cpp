@@ -29,12 +29,12 @@ void UStepVrComponent::ResetHMD()
 void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 {
 #if SHOW_STATE
-	SCOPE_CYCLE_COUNTER(STAT_StepVR_SVComp_DeviceTransform);
+	SCOPE_CYCLE_COUNTER(Stat_StepVrComponetp_DeviceTransform);
 #endif
 
-	if (auto TempData = SinglePlayerData.Find(DeviceID))
+	if (SinglePlayerData.HasDevice(DeviceID))
 	{
-		TempData->GetTransform(Trans);
+		Trans = SinglePlayerData.GetDeviceRef(DeviceID).GetTransform();
 	}
 	else
 	{
@@ -95,7 +95,7 @@ void UStepVrComponent::RegistInputComponent()
 void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
 {
 #if SHOW_STATE
-	SCOPE_CYCLE_COUNTER(STAT_StepVR_StepVrComponet_tick);
+	SCOPE_CYCLE_COUNTER(Stat_StepVrComponet_tick);
 #endif
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);

@@ -7,6 +7,8 @@
 
 
 
+
+
 /**
  * 声明数据结构
  */
@@ -20,7 +22,31 @@ enum class EStepGameType : uint8
 
 
 
+class STEPVRPLUGIN_API FStepDataTime
+{
+public:
+	static int64 GetInterval(FDateTime& InTime)
+	{
+		return (FDateTime::Now().GetTicks() - InTime.GetTicks()) / ETimespan::TicksPerMillisecond;
+	}
 
+	static int64 GetInterval_Reset(FDateTime& InTime)
+	{
+		int64 Temp = FStepDataTime::GetInterval(InTime);
+		FStepDataTime::ResetDateTime(InTime);
+		return Temp;
+	}
+
+	static void ResetDateTime(FDateTime& InTime)
+	{
+		InTime = FDateTime::Now();
+	}
+
+	static int64 CurrentTicks()
+	{
+		return FDateTime::Now().GetTicks();
+	}
+};
 
 /**
  * 时间戳 用于各种计时
@@ -50,12 +76,13 @@ protected:
 
 
 /**
- * 定位键当前帧
+ * 一个定位键数据结构
  */
-class STEPVRPLUGIN_API FDeviceFrame
+#pragma region FDeviceData
+class STEPVRPLUGIN_API FDeviceData
 {
 public:
-	FDeviceFrame();
+	FDeviceData();
 
 	//临时时间戳
 	int64 TemporaryTimestamp;
@@ -67,25 +94,29 @@ public:
 	int64 GetMMAPTicks();
 	
 	void SetTransform(FTransform& InData);
-	void GetTransform(FTransform& OutData) const;
+	FTransform& GetTransform();
 
-	void SetSpeed(FVector Indata);
-	void SetAcceleration(FVector InData);
-	void SetPalstance(FVector InData);
+	void SetSpeed(const FVector& Indata);
 
-	friend FArchive& operator<< (FArchive& Ar, FDeviceFrame& ArData)
+	void SetAcceleration(const FVector& InData);
+	FVector& GetAcceleration();
+
+	void SetPalstance(const FVector& InData);
+
+	friend FArchive& operator<< (FArchive& Ar, FDeviceData& ArData)
 	{
 		Ar << ArData.MMAPTicks;
 		Ar << ArData.Transform;
 		//Ar << ArData.Speed;
-		//Ar << ArData.Acceleration;
+		Ar << ArData.Acceleration;
 		//Ar << ArData.Palstance;
 		return Ar;
 	}
+
 private:
 	//位置姿态
 	FTransform Transform;
-	
+
 	//速度		GetSpeedVec
 	FVector Speed;
 
@@ -100,9 +131,43 @@ private:
 };
 
 
+
 /**
- * 动补当前帧 
+ * 所有定位键一帧数据
  */
+#pragma region FDeviceFrame
+class STEPVRPLUGIN_API FDeviceFrame
+{
+public:
+	bool	HasDevice(uint8 DeviceID);
+	void	SetDeviceData(uint8 DeviceID , FDeviceData& InData);
+	
+	FDeviceData& GetDeviceRef(uint8 DeviceID);
+
+	//获取所有设备信息
+	TMap<uint8, FDeviceData>& GetAllDevicesData();
+
+	friend FArchive& operator<< (FArchive& Ar, FDeviceFrame& ArData)
+	{
+		Ar << ArData.AllDevices;
+		return Ar;
+	}
+
+	//最后更新时间戳
+	void SetTicks(int64 NewTicks);
+	int64 GetTIcks();
+
+private:
+	int64 UpdateTicks = 0;
+	TMap<uint8, FDeviceData> AllDevices;
+};
+
+
+
+/**
+ * 动补一帧数据 
+ */
+#pragma region FMocapFrame
 class STEPVRPLUGIN_API FMocapFrame
 {
 public:
@@ -122,16 +187,18 @@ public:
 	}
 };
 
+/**
+ * 所有玩家数据
+ */
+typedef TMap<int64, FDeviceFrame>	AllPlayerDevice;
+typedef TMap<int64, FMocapFrame>	AllPlayerMocap;
 
-
-typedef TMap<uint8,FDeviceFrame>	SinglePlayer;
-typedef TMap<uint32,SinglePlayer>	AllPlayer;
-typedef TMap<uint32, FMocapFrame>	AllPlayerMocap;
 
 
 /**
  * StepVR 数据类
  */
+#pragma region FStepVrDataInterface
 class STEPVRPLUGIN_API FStepVrDataInterface
 {
 public:
@@ -140,12 +207,17 @@ public:
 	virtual ~FStepVrDataInterface() {}
 
 private:
+	virtual void Init() = 0;
+
 	//设置当前游戏状态
 	virtual void SetNewGameType(EStepGameType NewType, const FString& NewServerIP) = 0;
 
 	//同步本地数据到Server
-	virtual void SynchronizationToServer(uint32 PlayerGUID, const SinglePlayer& LocalData) = 0;
+	virtual bool SynchronizationToServer(uint32 PlayerGUID, const FDeviceFrame& LocalData) = 0;
 
 	//同步Server远端数据到本地
-	virtual void SynchronizationToLocal(AllPlayer& RemoteData) = 0;
+	virtual bool SynchronizationToLocal(int64& LastTicks, AllPlayerDevice& RemoteData) = 0;
+
+	//设置需要录制的那台机的IP
+	virtual void SetNeedRecordIP(const FString& RecordIP) = 0;
 };

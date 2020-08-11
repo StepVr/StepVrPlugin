@@ -5,6 +5,10 @@
 #include "StepVrGlobal.h"
 
 
+void ExecCommand(ECommandState NewCommand, int32 InData)
+{
+	STEPVR_GLOBAL->ExecCommand(NewCommand, InData);
+}
 
 void UStepVrGameInstance::StepServerSendInterval(float Interval)
 {
@@ -31,31 +35,24 @@ void UStepVrGameInstance::StepFrameLerpAlpha(float Alpha)
 	//GStepFrameLerpAlpha = Alpha;
 }
 
-void UStepVrGameInstance::StepStartServerState()
+void UStepVrGameInstance::StepStartRecord()
 {
-	//ExecCommand(TEXT("StartServerState"));
+	ExecCommand(ECommandState::Stat_ServerRecord, 1);
 }
 
-void UStepVrGameInstance::StepStopServerState()
+void UStepVrGameInstance::StepStopRecord()
 {
-	//ExecCommand(TEXT("StopServerState"));
+	ExecCommand(ECommandState::Stat_ServerRecord, 0);
 }
 
-void UStepVrGameInstance::StepStartHMDState()
-{
-	//ExecCommand(TEXT("StartHMDState"));
-}
+//void UStepVrGameInstance::StepStartHMDState()
+//{
+//	//ExecCommand(TEXT("StartHMDState"));
+//}
+//
+//void UStepVrGameInstance::StepStopHMDState()
+//{
+//	//ExecCommand(TEXT("StopHMDState"));
+//}
 
-void UStepVrGameInstance::StepStopHMDState()
-{
-	//ExecCommand(TEXT("StopHMDState"));
-}
 
-void UStepVrGameInstance::ExecCommand(const FString& Command)
-{
-	//if (GStepCommand.IsBound())
-	//{
-	//	FString ExecStr(*Command);
-	//	GStepCommand.Broadcast(ExecStr);
-	//}
-}

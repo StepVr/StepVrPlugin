@@ -88,7 +88,7 @@ void FStepVrInput::Initialize()
 void FStepVrInput::SendControllerEvents()
 {
 #if SHOW_STATE
-	SCOPE_CYCLE_COUNTER(STAT_StepVR_ControllerEvent);
+	SCOPE_CYCLE_COUNTER(Stat_StepVrInput_ControllerEvent);
 #endif
 
 	if (!STEPVR_FRAME_ENABLE)

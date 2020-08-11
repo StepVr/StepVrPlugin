@@ -45,4 +45,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
 	static void SetScaleTransform(float Scales);
 
+	UFUNCTION(BlueprintPure, Category = "StepVr|Game")
+	static bool GetDeviceTransform(int32 DeviceID,FTransform& OutData);
+
+	/**
+	 * 设置录制机器IP
+	 */
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
+	static void SetRecordPCIP(const FString& PCIP);
 };

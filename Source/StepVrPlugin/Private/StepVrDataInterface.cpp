@@ -149,43 +149,90 @@ TSharedPtr<FStepTimer> FStepTimer::GetTimer()
 /************************************************************************/
 /*                         FDeviceFrame                                 */
 /************************************************************************/
-FDeviceFrame::FDeviceFrame():
+FDeviceData::FDeviceData():
 	MMAPTicks(0)
 {
 }
 
-int64 FDeviceFrame::GetInterval()
+int64 FDeviceData::GetInterval()
 {
 	return (FDateTime::Now().GetTicks() - MMAPTicks) / ETimespan::TicksPerMillisecond;
 }
 
-int64 FDeviceFrame::GetMMAPTicks()
+int64 FDeviceData::GetMMAPTicks()
 {
 	return MMAPTicks;
 }
 
-void FDeviceFrame::SetTransform(FTransform& InData)
+void FDeviceData::SetTransform(FTransform& InData)
 {
 	MMAPTicks = FDateTime::Now().GetTicks();
 	Transform = InData;
 }
 
-void FDeviceFrame::GetTransform(FTransform& OutData) const
+FTransform& FDeviceData::GetTransform()
 {
-	OutData = Transform;
+	return Transform;
 }
 
-void FDeviceFrame::SetSpeed(FVector Indata)
+void FDeviceData::SetSpeed(const FVector& Indata)
 {
 	Speed = Indata;
 }
 
-void FDeviceFrame::SetAcceleration(FVector InData)
+void FDeviceData::SetAcceleration(const FVector& InData)
 {
 	Acceleration = InData;
 }
 
-void FDeviceFrame::SetPalstance(FVector InData)
+FVector& FDeviceData::GetAcceleration()
+{
+	return Acceleration;
+}
+
+void FDeviceData::SetPalstance(const FVector& InData)
 {
 	Palstance = InData;
+}
+
+//void FPlayerFrame::SetDevicesFrame(FDeviceFrame& Indata)
+//{
+//	FScopeLock Lock(&LockDevices);
+//	PlayerDevice = Indata;
+//}
+//
+//void FPlayerFrame::GetDevicesFrame(TDevicesFrame& OutData)
+//{
+//	FScopeLock Lock(&LockDevices);
+//	OutData = PlayerDevice;
+//}
+
+bool FDeviceFrame::HasDevice(uint8 DeviceID)
+{
+	return AllDevices.Find(DeviceID) != nullptr;
+}
+
+FDeviceData& FDeviceFrame::GetDeviceRef(uint8 DeviceID)
+{
+	return AllDevices.FindOrAdd(DeviceID);
+}
+
+TMap<uint8, FDeviceData>& FDeviceFrame::GetAllDevicesData()
+{
+	return AllDevices;
+}
+
+void FDeviceFrame::SetTicks(int64 NewTicks)
+{
+	UpdateTicks = NewTicks;
+}
+
+int64 FDeviceFrame::GetTIcks()
+{
+	return UpdateTicks;
+}
+
+void FDeviceFrame::SetDeviceData(uint8 DeviceID, FDeviceData& InData)
+{
+	AllDevices.FindOrAdd(DeviceID) = InData;
 }

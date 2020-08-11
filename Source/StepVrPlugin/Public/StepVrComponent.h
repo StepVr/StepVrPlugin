@@ -94,7 +94,7 @@ private:
 	bool	bLocalControlled = false;
 
 	//所有定位
-	SinglePlayer SinglePlayerData;
+	FDeviceFrame SinglePlayerData;
 
 	//头显校准角度
 	float ResetYaw;

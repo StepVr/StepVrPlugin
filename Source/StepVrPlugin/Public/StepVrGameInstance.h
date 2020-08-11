@@ -36,16 +36,14 @@ public:
 	/*******************************录制数据********************************/
 	//录制客户端接收情况
 	UFUNCTION(exec)
-	void StepStartServerState();
+	void StepStartRecord();
 	UFUNCTION(exec)
-	void StepStopServerState();
+	void StepStopRecord();
 
-	//录制头显，定位数据
-	UFUNCTION(exec)
-	void StepStartHMDState();
-	UFUNCTION(exec)
-	void StepStopHMDState();
+	////录制头显，定位数据
+	//UFUNCTION(exec)
+	//void StepStartHMDState();
+	//UFUNCTION(exec)
+	//void StepStopHMDState();
 	/************************************************************************/
-private:
-	void ExecCommand(const FString& Command);
 };

@@ -35,24 +35,23 @@ void UStepVrGameInstance::StepFrameLerpAlpha(float Alpha)
 	//GStepFrameLerpAlpha = Alpha;
 }
 
-void UStepVrGameInstance::StepStartRecord()
+void UStepVrGameInstance::StepStartRecord_Online()
 {
-	ExecCommand(ECommandState::Stat_ServerRecord, 1);
+	ExecCommand(ECommandState::Stat_RecordOnline, 1);
 }
 
-void UStepVrGameInstance::StepStopRecord()
+void UStepVrGameInstance::StepStopRecord_Online()
 {
-	ExecCommand(ECommandState::Stat_ServerRecord, 0);
+	ExecCommand(ECommandState::Stat_RecordOnline, 0);
 }
 
-//void UStepVrGameInstance::StepStartHMDState()
-//{
-//	//ExecCommand(TEXT("StartHMDState"));
-//}
-//
-//void UStepVrGameInstance::StepStopHMDState()
-//{
-//	//ExecCommand(TEXT("StopHMDState"));
-//}
+void UStepVrGameInstance::StepStartRecord_Camera()
+{
+	ExecCommand(ECommandState::Stat_RecordCamera, 1);
+}
 
+void UStepVrGameInstance::StepStopRecord_Camera()
+{
+	ExecCommand(ECommandState::Stat_RecordCamera, 0);
+}
 

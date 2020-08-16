@@ -14,7 +14,8 @@
 
 enum class ECommandState : uint8
 {
-	Stat_ServerRecord,
+	Stat_RecordOnline,
+	Stat_RecordCamera,
 };
 
 

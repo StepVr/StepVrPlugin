@@ -1,7 +1,6 @@
 ﻿
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "StepVrCameraComponent.h"
-
 #include "StepVrGlobal.h"
 
 UStepVrCameraComponent::UStepVrCameraComponent(const FObjectInitializer& ObjectInitializer)
@@ -32,6 +31,15 @@ void UStepVrCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& De
 
 		RecaclCameraData(DeltaTime, DesiredView);
 	} while (0);
+
+	if (StepVrDataRecord.IsRecord())
+	{
+		FStepCameraData StepCameraData;
+		StepCameraData.SetTransform(DesiredView.Location, DesiredView.Rotation);
+
+		StepVrDataRecord.AddData(StepCameraData);
+		StepVrDataRecord.SaveLineData();
+	}
 }
 
 
@@ -43,6 +51,23 @@ void UStepVrCameraComponent::BeginDestroy()
 void UStepVrCameraComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	CommandHandle = STEPVR_GLOBAL->GetCommandDelegate().AddLambda([&](ECommandState NewState, int32 Values)
+		{
+			if (NewState != ECommandState::Stat_RecordCamera)
+			{
+				return;
+			}
+
+			if (Values != 0)
+			{
+				StepVrDataRecord.CreateFile("Camera");
+			}
+			else
+			{
+				StepVrDataRecord.CloseFile();
+			}
+		});
 }
 
 void UStepVrCameraComponent::ChangeCameraData()

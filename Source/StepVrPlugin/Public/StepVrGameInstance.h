@@ -36,14 +36,14 @@ public:
 	/*******************************录制数据********************************/
 	//录制客户端接收情况
 	UFUNCTION(exec)
-	void StepStartRecord();
+	void StepStartRecord_Online();
 	UFUNCTION(exec)
-	void StepStopRecord();
+	void StepStopRecord_Online();
 
-	////录制头显，定位数据
-	//UFUNCTION(exec)
-	//void StepStartHMDState();
-	//UFUNCTION(exec)
-	//void StepStopHMDState();
-	/************************************************************************/
+	//录制头显，定位数据
+	UFUNCTION(exec)
+	void StepStartRecord_Camera();
+	UFUNCTION(exec)
+	void StepStopRecord_Camera();
+
 };

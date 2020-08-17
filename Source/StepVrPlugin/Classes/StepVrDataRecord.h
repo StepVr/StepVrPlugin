@@ -80,7 +80,7 @@ public:
 	}
 
 	bool IsRecord()
-	{
+	{   
 		return bRecord;
 	}
 

@@ -86,6 +86,8 @@ private:
 
 	//定位服务
 	TSharedPtr<StepVR::Manager>			StepVrManager;
+	FString								StepVrManagerComplieTime;
+	FString								StepVrManagerVersion;
 
 	//定位数据
 	TSharedPtr<FStepVrDataInterface>	StepVrData;

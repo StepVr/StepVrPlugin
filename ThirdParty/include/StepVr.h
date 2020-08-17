@@ -249,6 +249,9 @@ namespace StepVR {
 		STEPVR_API float GetJoyStickPosX(NODEID _nodeid);
 		STEPVR_API float GetJoyStickPosY(NODEID _nodeid);
 
+		//-1.0 - 0 - 1.0
+		STEPVR_API float GetJoyStickPosX1(NODEID _nodeid);
+		STEPVR_API float GetJoyStickPosY1(NODEID _nodeid);
 		/**
 		* Check standard parts link or not.
 		*
@@ -525,6 +528,12 @@ namespace StepVR {
 
 		STEPVR_API void RecordOneMinuter();
 		STEPVR_API bool IsServerAlive();
+
+		STEPVR_API const char * GetCompileTime();
+		STEPVR_API const char * GetVersion1();
+
+		STEPVR_API const char * GetServerCompileTime();
+		STEPVR_API const char * GetServerVersion();
 	};
 
 	//this class just for Unreal develop

@@ -105,14 +105,21 @@ void StepVrGlobal::LoadSDK()
 			break;
 		}
 
-		StepVrManager = MakeShareable(new StepVR::Manager());
+		StepVrManager = MakeShared<StepVR::Manager>();
 		StepVR::StepVR_EnginAdaptor::MapCoordinate(StepVR::Vector3f(0, 0, 1), StepVR::Vector3f(-1, 0, 0), StepVR::Vector3f(0, 1, 0));
 		StepVR::StepVR_EnginAdaptor::setEulerOrder(StepVR::EulerOrder_ZYX);
-
+		
+		StepVrManagerComplieTime = StepVrManager->GetServerCompileTime();
+		StepVrManagerVersion = StepVrManager->GetServerVersion();
 		Success = (StepVrManager->Start() == 0);
 	} while (0);
 
-	if (!Success)
+	if (Success)
+	{
+		UE_LOG(LogStepVrPlugin, Log, TEXT("MMAP ComplieTime : %s"), *StepVrManagerComplieTime);
+		UE_LOG(LogStepVrPlugin, Log, TEXT("MMAP Version : %s"), *StepVrManagerVersion);
+	}
+	else
 	{
 		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(NSLOCTEXT("StepVR", "StepVR", "{0}"), FText::FromString("Failed To Connect MMAP")));
 	}

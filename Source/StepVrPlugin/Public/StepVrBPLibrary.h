@@ -43,7 +43,7 @@ public:
 	 * 设置缩放，所有定位数据得Location将进行缩放
 	 */
 	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
-	static void SetScaleTransform(float Scales);
+	static void SetScaleTransform(FVector Scales);
 
 	UFUNCTION(BlueprintPure, Category = "StepVr|Game")
 	static bool GetDeviceTransform(int32 DeviceID,FTransform& OutData);

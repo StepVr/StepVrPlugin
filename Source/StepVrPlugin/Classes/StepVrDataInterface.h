@@ -210,10 +210,10 @@ private:
 	virtual void Init() = 0;
 
 	//设置当前游戏状态
-	virtual void SetNewGameType(EStepGameType NewType, const FString& NewServerIP) = 0;
+	virtual void SetNewGameInfo(EStepGameType NewType, int64 LocalGUID, const FString& NewServerIP) = 0;
 
 	//同步本地数据到Server
-	virtual bool SynchronizationToServer(uint32 PlayerGUID, const FDeviceFrame& LocalData) = 0;
+	virtual bool SynchronizationToServer(const FDeviceFrame& LocalData) = 0;
 
 	//同步Server远端数据到本地
 	virtual bool SynchronizationToLocal(int64& LastTicks, AllPlayerDevice& RemoteData) = 0;

@@ -7,7 +7,6 @@
 
 #include "Engine/Engine.h"
 #include "Misc/MessageDialog.h"
-#include "Containers/Array.h"
 
 
 
@@ -48,6 +47,7 @@ void StepVrGlobal::StartSDK()
 	FGuid NewGUID = FGuid::NewGuid();
 	GameGUID = GetTypeHash(NewGUID);
 
+	//基础更新设备ID
 	NeedUpdateDeviceID = { 
 		StepVrDeviceID::DHead,
 		StepVrDeviceID::DGun 
@@ -109,9 +109,12 @@ void StepVrGlobal::LoadSDK()
 		StepVR::StepVR_EnginAdaptor::MapCoordinate(StepVR::Vector3f(0, 0, 1), StepVR::Vector3f(-1, 0, 0), StepVR::Vector3f(0, 1, 0));
 		StepVR::StepVR_EnginAdaptor::setEulerOrder(StepVR::EulerOrder_ZYX);
 		
-		StepVrManagerComplieTime = StepVrManager->GetServerCompileTime();
-		StepVrManagerVersion = StepVrManager->GetServerVersion();
 		Success = (StepVrManager->Start() == 0);
+		if (Success)
+		{
+			StepVrManagerComplieTime = StepVrManager->GetServerCompileTime();
+			StepVrManagerVersion = StepVrManager->GetServerVersion();
+		}
 	} while (0);
 
 	if (Success)
@@ -156,7 +159,7 @@ void StepVrGlobal::EngineBeginFrame()
 	if (StepVrData.IsValid())
 	{
 		//同步本机数据到Server
-		StepVrData->SynchronizationToServer(GameGUID, GameDevicesFrame);
+		StepVrData->SynchronizationToServer(GameDevicesFrame);
 
 		//同步数据到Game
 		StepVrData->SynchronizationToLocal(GameAllPlayerLastTicks, GameAllPlayer);
@@ -230,8 +233,9 @@ void StepVrGlobal::UpdateDeviceState(StepVR::SingleNode* InSingleNode, int32 Equ
 	//定位
 	vec3 = InSingleNode->GetPosition(SDKNODEID(EquipId));
 	vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
+
 	//定位缩放
-	Transform.SetLocation(FVector(vec3.x * 100, vec3.y * 100, vec3.z * 100) * ScaleTransform);
+	Transform.SetLocation(FVector(vec3.x, vec3.y, vec3.z) * 100 * ScaleTransform);
 
 	vec4 = InSingleNode->GetQuaternion(SDKNODEID(EquipId));
 	vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
@@ -247,7 +251,7 @@ void StepVrGlobal::UpdateDeviceState(StepVR::SingleNode* InSingleNode, int32 Equ
 	outputData.SetTransform(Transform);
 }
 
-void StepVrGlobal::SetScaleTransform(float NewScale)
+void StepVrGlobal::SetScaleTransform(FVector NewScale)
 {
 	ScaleTransform = NewScale;
 }
@@ -340,7 +344,7 @@ void StepVrGlobal::SetGameType(EStepGameType NewType, FString& NewServerIP)
 
 	if (StepVrData.IsValid())
 	{
-		StepVrData->SetNewGameType(GameType, GameServerIP);
+		StepVrData->SetNewGameInfo(GameType, GameGUID, GameServerIP);
 	}
 }
 

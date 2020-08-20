@@ -46,6 +46,7 @@ void UStepVrCameraComponent::GetCameraView(float DeltaTime, FMinimalViewInfo& De
 void UStepVrCameraComponent::BeginDestroy()
 {
 	Super::BeginDestroy();
+	STEPVR_GLOBAL->GetCommandDelegate().Remove(CommandHandle);
 }
 
 void UStepVrCameraComponent::BeginPlay()
@@ -54,7 +55,7 @@ void UStepVrCameraComponent::BeginPlay()
 
 	CommandHandle = STEPVR_GLOBAL->GetCommandDelegate().AddLambda([&](ECommandState NewState, int32 Values)
 		{
-			if (NewState != ECommandState::Stat_RecordCamera)
+			if (NewState != ECommandState::Stat_CameraRecord)
 			{
 				return;
 			}

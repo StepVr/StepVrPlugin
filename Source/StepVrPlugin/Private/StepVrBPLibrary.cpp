@@ -16,7 +16,7 @@ void UStepVrBPLibrary::SetGameType(EStepGameType type, FString ServerIP)
 	STEPVR_GLOBAL->SetGameType(type, ServerIP);
 }
 
-void UStepVrBPLibrary::SetScaleTransform(float Scales)
+void UStepVrBPLibrary::SetScaleTransform(FVector Scales)
 {
 	STEPVR_GLOBAL->SetScaleTransform(Scales);
 }

@@ -31,19 +31,27 @@ public:
 	
 	UFUNCTION(exec)
 	void StepFrameLerpAlpha(float Alpha);
+
+
 	/************************************************************************/
 
 	/*******************************录制数据********************************/
-	//录制客户端接收情况
+	//接收数据
 	UFUNCTION(exec)
-	void StepStartRecord_Online();
+	void StepServerReceive_Start();
 	UFUNCTION(exec)
-	void StepStopRecord_Online();
+	void StepServerReceive_Stop();
+
+	//发送数据
+	UFUNCTION(exec)
+	void StepServerSend_Start();
+	UFUNCTION(exec)
+	void StepServerSend_Stop();
 
 	//录制头显，定位数据
 	UFUNCTION(exec)
-	void StepStartRecord_Camera();
+	void StepCamera_Start();
 	UFUNCTION(exec)
-	void StepStopRecord_Camera();
+	void StepCamera_Stop();
 
 };

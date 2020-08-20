@@ -14,8 +14,9 @@
 
 enum class ECommandState : uint8
 {
-	Stat_RecordOnline,
-	Stat_RecordCamera,
+	Stat_ServerReceiveRecord,
+	Stat_ServerSendRecord,
+	Stat_CameraRecord,
 };
 
 
@@ -55,7 +56,7 @@ public:
 	void SetRecordPCIP(const FString& PCIP);
 
 	 //所有定位Location进行缩放
-	void SetScaleTransform(float NewScale);
+	void SetScaleTransform(FVector NewScale);
 	void AddDeviceID(int32 DeviceID);
 	bool GetDeviceTransform(FDeviceFrame& OutData);
 	bool GetDeviceTransform(int32 DeviceID, FTransform& OutData);
@@ -99,7 +100,7 @@ private:
 	FStepCommandDelegate				CommandDelegate;
 
 private:
-	float				ScaleTransform = 1.f;
+	FVector				ScaleTransform = FVector::OneVector;
 	TArray<int32>		NeedUpdateDeviceID;
 
 	EStepGameType		GameType = EStepGameType::EStandAlone;

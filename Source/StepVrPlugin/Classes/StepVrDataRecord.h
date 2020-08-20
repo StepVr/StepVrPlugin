@@ -3,6 +3,10 @@
 #pragma once
 #include "CoreMinimal.h"
 
+
+
+#define DEAL_INTERVAL 		static int64 Ticks = 0; DealTicks(Ticks);
+
 class FStepSaveData
 {
 public:
@@ -22,7 +26,10 @@ public:
 
 	virtual void GetLine(FString& OutLine)
 	{
-		OutLine = "None";
+		OutLine = FString::Format(TEXT("{0}\n"),
+			{
+				TEXT("None")
+			});
 	}
 
 protected:

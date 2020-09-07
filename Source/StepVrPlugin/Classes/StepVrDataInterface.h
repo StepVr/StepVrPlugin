@@ -87,35 +87,32 @@ public:
 	//临时时间戳
 	int64 TemporaryTimestamp;
 
-	//本机 从MMAP获取数据的时间间隔
-	int64 GetInterval();
-
 	//从MMAP刷新数据的时间戳
-	int64 GetMMAPTicks();
+	int64 GetMMAPTicks() const;
 	
-	void SetTransform(FTransform& InData);
-	FTransform& GetTransform();
+	void SetTransform(const FTransform& InData);
+	FTransform GetTransform() const;
 
 	void SetSpeed(const FVector& Indata);
+	FVector GetSpeed() const;
 
 	void SetAcceleration(const FVector& InData);
-	FVector& GetAcceleration();
+	FVector GetAcceleration() const;
 
 	void SetPalstance(const FVector& InData);
+	FVector GetPalstance() const;
 
 	friend FArchive& operator<< (FArchive& Ar, FDeviceData& ArData)
 	{
 		Ar << ArData.MMAPTicks;
-		Ar << ArData.Transform;
-		//Ar << ArData.Speed;
+		Ar << ArData.DeviceTransform;
 		Ar << ArData.Acceleration;
-		//Ar << ArData.Palstance;
 		return Ar;
 	}
 
 private:
 	//位置姿态
-	FTransform Transform;
+	FTransform DeviceTransform;
 
 	//速度		GetSpeedVec
 	FVector Speed;
@@ -127,7 +124,7 @@ private:
 	FVector Palstance;
 
 	//时间戳（UE获取属性开始计时）
-	int64					MMAPTicks;
+	int64	MMAPTicks;
 };
 
 
@@ -140,11 +137,12 @@ class STEPVRPLUGIN_API FDeviceFrame
 {
 public:
 	bool	HasDevice(uint8 DeviceID);
-	void	SetDeviceData(uint8 DeviceID , FDeviceData& InData);
 	
+	//获取单个设备
+	const FDeviceData& GetDevice(uint8 DeviceID);
 	FDeviceData& GetDeviceRef(uint8 DeviceID);
 
-	//获取所有设备信息
+	//获取所有设备
 	TMap<uint8, FDeviceData>& GetAllDevicesData();
 
 	friend FArchive& operator<< (FArchive& Ar, FDeviceFrame& ArData)

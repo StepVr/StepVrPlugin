@@ -8,6 +8,7 @@
 
 
 #define STEPVR_GLOBAL			(StepVrGlobal::GetInstance())
+#define STEPVR_GLOBAL_ENABLE	(StepVrGlobal::CheckValidInstance())
 #define STEPVR_FRAME			(StepVrGlobal::GetInstance()->GetStepVrManager())
 #define STEPVR_FRAME_ENABLE		(StepVrGlobal::GetInstance()->SDKIsValid())
 
@@ -28,7 +29,10 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FStepCommandDelegate, ECommandState, int32)
 class STEPVRPLUGIN_API StepVrGlobal 
 {
 public:
+	friend class FStepVrDataInterface;
+
 	static StepVrGlobal* GetInstance();
+	static bool	CheckValidInstance();
 	static void Shutdown();
 
 public:
@@ -40,11 +44,6 @@ public:
 	bool SDKIsValid();
 	StepVR::Manager* GetStepVrManager();
 
-	UWorld* GetWorld();
-
-	/************************************************************************/
-	/*                            本机设置                                */
-	/************************************************************************/
 	//本机唯一标识
 	uint32 GetGUID();
 
@@ -52,20 +51,31 @@ public:
 	void SetGameType(EStepGameType NewType, FString& NewServerIP);
 	EStepGameType GetGameType();
 
-	//录制机器IP
-	void SetRecordPCIP(const FString& PCIP);
-
-	 //所有定位Location进行缩放
-	void SetScaleTransform(FVector NewScale);
-	void AddDeviceID(int32 DeviceID);
-	bool GetDeviceTransform(FDeviceFrame& OutData);
+	//一帧数据
+	void RefreshFrame(FDeviceFrame& outFrame);
+	bool GetDeviceFrame(FDeviceFrame& OutData);
 	bool GetDeviceTransform(int32 DeviceID, FTransform& OutData);
-	bool GetDeviceTransformImmediately(int32 DeviceID, FTransform& OutData);
+	
 
 	/************************************************************************/
 	/*                            远端数据                                */
 	/************************************************************************/
-	bool GetRemoteDeviceTransform(uint32 GUID, FDeviceFrame& OutData);
+	bool GetRemoteDeviceFrame(uint32 GUID, FDeviceFrame& OutData);
+
+
+
+
+	/************************************************************************/
+	/*                            配置                                */
+	/************************************************************************/
+	//录制机器IP
+	void SetRecordPCIP(const FString& PCIP);
+	//定位进行缩放
+	void SetScaleTransform(const FVector& NewScale);
+	//定位进行偏移
+	void SetOffsetTransform(const FVector& NewOffset);
+
+	UWorld* GetWorld();
 
 protected:
 	StepVrGlobal();
@@ -77,21 +87,30 @@ protected:
 
 	void EngineBeginFrame();
 
-	void DataLerp(FDeviceData& inputData, FDeviceData& outputData);
+protected:
+	/************************************************************************/
+	/*                  	用于插值的参数缓存上一帧输出的数据
+	/************************************************************************/
+	FDeviceData       OutPutDataBuff;
+	bool isFirst = true;			//第一帧对齐的标志
+	int32 DelatTime = 100;			//延迟的时间ms
+	int64 FirstTime1, FirstTime2;	//第一帧对齐时候两个时间戳
 
-	/*获取定位状态*/
-	void UpdateDeviceState(StepVR::SingleNode* InSingleNode, int32 EquipId, FDeviceData& outputData);
+	void DataLerp(FDeviceData& inputData, FDeviceData& outputData);
 
 private:
 	static TSharedPtr<StepVrGlobal>		SingletonInstance;
 
 	//定位服务
+	FCriticalSection					StepVrManagerCritical;
 	TSharedPtr<StepVR::Manager>			StepVrManager;
 	FString								StepVrManagerComplieTime;
 	FString								StepVrManagerVersion;
 
-	//定位数据
+	//网络定位数据
 	TSharedPtr<FStepVrDataInterface>	StepVrData;
+	AllPlayerDevice						GameAllPlayer;
+	int64								GameAllPlayerLastTicks = 0;
 
 	FDelegateHandle						EngineBeginFrameHandle;
 
@@ -100,27 +119,18 @@ private:
 	FStepCommandDelegate				CommandDelegate;
 
 private:
+	FVector				OffsetTransform = FVector::ZeroVector;
 	FVector				ScaleTransform = FVector::OneVector;
-	TArray<int32>		NeedUpdateDeviceID;
+	TArray<uint8>		NeedUpdateDeviceID;
 
+	//服务器客户端
 	EStepGameType		GameType = EStepGameType::EStandAlone;
 	FString				GameServerIP = "";
 
 	//唯一标识
-	int64				GameGUID = 0;
+	uint32				GameGUID = 0;
 
 	//本机定位数据
 	FDeviceFrame		GameDevicesFrame;
-	
-	//远端定位数据
-	AllPlayerDevice		GameAllPlayer;
-	int64				GameAllPlayerLastTicks;
-
-	//用于插值的参数
-	//缓存上一帧输出的数据
-	FDeviceData       OutPutDataBuff;
-	bool isFirst = true;			//第一帧对齐的标志
-	int32 DelatTime = 100;			//延迟的时间ms
-	int64 FirstTime1, FirstTime2;	//第一帧对齐时候两个时间戳
 };
 

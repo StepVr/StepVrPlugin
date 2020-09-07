@@ -32,13 +32,18 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 	SCOPE_CYCLE_COUNTER(Stat_StepVrComponetp_DeviceTransform);
 #endif
 
-	if (SinglePlayerData.HasDevice(DeviceID))
+	if (!bAlreadyInitializeLocal)
 	{
-		Trans = SinglePlayerData.GetDeviceRef(DeviceID).GetTransform();
+		return;
+	}
+
+	if (bLocalControlled)
+	{
+		STEPVR_GLOBAL->GetDeviceTransform(DeviceID, Trans);
 	}
 	else
 	{
-		STEPVR_GLOBAL->AddDeviceID(DeviceID);
+		Trans = RemotePlayerData.GetDevice(DeviceID).GetTransform();
 	}
 }
 
@@ -111,13 +116,9 @@ void UStepVrComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, 
 	}
 
 
-	if (bLocalControlled)
+	if (!bLocalControlled)
 	{
-		STEPVR_GLOBAL->GetDeviceTransform(SinglePlayerData);
-	}
-	else
-	{
-		STEPVR_GLOBAL->GetRemoteDeviceTransform(PlayerGUID, SinglePlayerData);
+		STEPVR_GLOBAL->GetRemoteDeviceFrame(PlayerGUID, RemotePlayerData);
 	}
 }
 

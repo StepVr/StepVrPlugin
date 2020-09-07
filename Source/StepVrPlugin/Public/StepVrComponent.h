@@ -93,8 +93,7 @@ private:
 	bool    bAlreadyInitializeLocal = false;
 	bool	bLocalControlled = false;
 
-	//所有定位
-	FDeviceFrame SinglePlayerData;
+	FDeviceFrame RemotePlayerData;
 
 	//头显校准角度
 	float ResetYaw;

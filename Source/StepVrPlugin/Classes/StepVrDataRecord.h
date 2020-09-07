@@ -24,6 +24,14 @@ public:
 		LastTicks = CurTicks;
 	}
 
+	virtual void GetTitleLine(FString& OutLine)
+	{
+		OutLine = FString::Format(TEXT("{0}\n"),
+			{
+				TEXT("None")
+			});
+	}
+
 	virtual void GetLine(FString& OutLine)
 	{
 		OutLine = FString::Format(TEXT("{0}\n"),
@@ -71,6 +79,8 @@ public:
 		Paths.Append(AllFileName);
 		HandleFile = IFileManager::Get().CreateFileWriter(*Paths);
 		bRecord = true;
+
+		SaveTitleLineData();
 	}
 
 	void CloseFile()
@@ -111,7 +121,19 @@ public:
 			}
 		}
 	}
+	void SaveTitleLineData()
+	{
+		if (bRecord && HandleFile)
+		{
+			ItemType __CacheSaveReceive;
 
+			FString strLine;
+			(&__CacheSaveReceive)->GetTitleLine(strLine);
+
+			FTCHARToUTF8 UTF8String(*strLine);
+			HandleFile->Serialize((UTF8CHAR*)UTF8String.Get(), UTF8String.Length() * sizeof(UTF8CHAR));
+		}
+	}
 private:
 	TQueue<ItemType>	QueueReceiveData;
 	TAtomic<bool>		bRecord = false;

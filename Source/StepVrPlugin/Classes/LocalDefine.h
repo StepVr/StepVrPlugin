@@ -28,8 +28,8 @@ DECLARE_DWORD_COUNTER_STAT(TEXT("StepVrData Receive Interval (ms)"), Stat_StepVr
 /*----------------------------------------------------------------------------
 	StepVr Node Convert
 ----------------------------------------------------------------------------*/
-#define SDKNODEID(_ID_)	((StepVR::SingleNode::NodeID)(_ID_))
-#define SDKKEYID(_ID_)	((StepVR::SingleNode::KeyID)(_ID_))
+#define SDKNODEID(_ID_)		((StepVR::SingleNode::NODEID)(_ID_))
+#define SDKKEYID(_ID_)		((StepVR::SingleNode::KeyID)(_ID_))
 
 
 /*----------------------------------------------------------------------------

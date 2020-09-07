@@ -154,25 +154,20 @@ FDeviceData::FDeviceData():
 {
 }
 
-int64 FDeviceData::GetInterval()
-{
-	return (FDateTime::Now().GetTicks() - MMAPTicks) / ETimespan::TicksPerMillisecond;
-}
-
-int64 FDeviceData::GetMMAPTicks()
+int64 FDeviceData::GetMMAPTicks() const
 {
 	return MMAPTicks;
 }
 
-void FDeviceData::SetTransform(FTransform& InData)
+void FDeviceData::SetTransform(const FTransform& InData)
 {
 	MMAPTicks = FDateTime::Now().GetTicks();
-	Transform = InData;
+	DeviceTransform = InData;
 }
 
-FTransform& FDeviceData::GetTransform()
+FTransform FDeviceData::GetTransform() const
 {
-	return Transform;
+	return DeviceTransform;
 }
 
 void FDeviceData::SetSpeed(const FVector& Indata)
@@ -180,12 +175,17 @@ void FDeviceData::SetSpeed(const FVector& Indata)
 	Speed = Indata;
 }
 
+FVector FDeviceData::GetSpeed() const
+{
+	return Speed;
+}
+
 void FDeviceData::SetAcceleration(const FVector& InData)
 {
 	Acceleration = InData;
 }
 
-FVector& FDeviceData::GetAcceleration()
+FVector FDeviceData::GetAcceleration() const
 {
 	return Acceleration;
 }
@@ -195,21 +195,19 @@ void FDeviceData::SetPalstance(const FVector& InData)
 	Palstance = InData;
 }
 
-//void FPlayerFrame::SetDevicesFrame(FDeviceFrame& Indata)
-//{
-//	FScopeLock Lock(&LockDevices);
-//	PlayerDevice = Indata;
-//}
-//
-//void FPlayerFrame::GetDevicesFrame(TDevicesFrame& OutData)
-//{
-//	FScopeLock Lock(&LockDevices);
-//	OutData = PlayerDevice;
-//}
+FVector FDeviceData::GetPalstance() const
+{
+	return Palstance;
+}
 
 bool FDeviceFrame::HasDevice(uint8 DeviceID)
 {
 	return AllDevices.Find(DeviceID) != nullptr;
+}
+
+const FDeviceData& FDeviceFrame::GetDevice(uint8 DeviceID)
+{
+	return AllDevices.FindOrAdd(DeviceID);
 }
 
 FDeviceData& FDeviceFrame::GetDeviceRef(uint8 DeviceID)
@@ -230,9 +228,4 @@ void FDeviceFrame::SetTicks(int64 NewTicks)
 int64 FDeviceFrame::GetTIcks()
 {
 	return UpdateTicks;
-}
-
-void FDeviceFrame::SetDeviceData(uint8 DeviceID, FDeviceData& InData)
-{
-	AllDevices.FindOrAdd(DeviceID) = InData;
 }

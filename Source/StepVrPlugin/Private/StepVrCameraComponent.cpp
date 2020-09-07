@@ -78,11 +78,11 @@ void UStepVrCameraComponent::ChangeCameraData()
 
 void UStepVrCameraComponent::RecaclCameraData(float DeltaTime, FMinimalViewInfo& DesiredView)
 {
-	FTransform _StepvrHead;
-	STEPVR_GLOBAL->GetDeviceTransformImmediately(6, _StepvrHead);
+	FDeviceFrame TempFrame;
+	STEPVR_GLOBAL->RefreshFrame(TempFrame);
 	
 	//重新计算位置姿态
-	SetRelativeLocation(_StepvrHead.GetLocation());
+	SetRelativeLocation(TempFrame.GetDevice(6).GetTransform().GetLocation());
 	
 	DesiredView.Location = GetComponentToWorld().GetLocation();
 }

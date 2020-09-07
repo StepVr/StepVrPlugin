@@ -12,20 +12,32 @@
 
 
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
+bool _AlreadyCreate = false;
 StepVrGlobal::StepVrGlobal()
 {
 }
 
 StepVrGlobal* StepVrGlobal::GetInstance()
 {
+	if ((SingletonInstance.IsValid() == false) &&
+		(_AlreadyCreate == false))
+	{
+		_AlreadyCreate = true;
+		SingletonInstance = MakeShareable(new StepVrGlobal());
+		SingletonInstance->StartSDK();
+	}
+
 	if (SingletonInstance.IsValid())
 	{
 		return SingletonInstance.Get();
 	}
 
-	SingletonInstance = MakeShareable(new StepVrGlobal());
-	SingletonInstance->StartSDK();
-	return SingletonInstance.Get();
+	return nullptr;
+}
+
+bool StepVrGlobal::CheckValidInstance()
+{
+	return SingletonInstance.IsValid();
 }
 
 void StepVrGlobal::Shutdown()
@@ -145,22 +157,10 @@ void StepVrGlobal::EngineBeginFrame()
 	SCOPE_CYCLE_COUNTER(Stat_StepVrGlobal_UpdateFrame);
 #endif
 
-	//更新本机数据
-	if (StepVrManager.IsValid())
-	{
-		StepVR::SingleNode Node = StepVrManager->GetFrame().GetSingleNode();
-
-		for (auto DevID : NeedUpdateDeviceID)
-		{
-			UpdateDeviceState(&Node, DevID, GameDevicesFrame.GetDeviceRef(DevID));
-		}
-	}
+	RefreshFrame(GameDevicesFrame);
 	
 	if (StepVrData.IsValid())
 	{
-		//同步本机数据到Server
-		StepVrData->SynchronizationToServer(GameDevicesFrame);
-
 		//同步数据到Game
 		StepVrData->SynchronizationToLocal(GameAllPlayerLastTicks, GameAllPlayer);
 	}
@@ -211,57 +211,17 @@ void StepVrGlobal::DataLerp(FDeviceData& inputData, FDeviceData& outputData)
 	//}
 }
 
-void StepVrGlobal::UpdateDeviceState(StepVR::SingleNode* InSingleNode, int32 EquipId, FDeviceData& outputData)
-{
-	if (!InSingleNode->IsHardWareLink(EquipId))
-	{
-		return;
-	}
-
-	static StepVR::Vector3f vec3;
-	static StepVR::Vector4f vec4;
-	static FTransform       Transform;
-
-	//加速度角速度
-	vec3 = InSingleNode->GetSpeedVec(SDKNODEID(EquipId));
-	outputData.SetSpeed(FVector(vec3.x, vec3.y, vec3.z));
-	vec3 = InSingleNode->GetSpeedAcc(SDKNODEID(EquipId));
-	outputData.SetAcceleration(FVector(vec3.x, vec3.y, vec3.z));
-	vec3 = InSingleNode->GetSpeedGyro(SDKNODEID(EquipId));
-	outputData.SetPalstance(FVector(vec3.x, vec3.y, vec3.z));
-
-	//定位
-	vec3 = InSingleNode->GetPosition(SDKNODEID(EquipId));
-	vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
-
-	//定位缩放
-	Transform.SetLocation(FVector(vec3.x, vec3.y, vec3.z) * 100 * ScaleTransform);
-
-	vec4 = InSingleNode->GetQuaternion(SDKNODEID(EquipId));
-	vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
-	if (EquipId == 6)
-	{
-		Transform.SetRotation(FQuat(vec4.y * -1, vec4.x, vec4.z, vec4.w));
-	}
-	else
-	{
-		Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
-	}
-
-	outputData.SetTransform(Transform);
-}
-
-void StepVrGlobal::SetScaleTransform(FVector NewScale)
+void StepVrGlobal::SetScaleTransform(const FVector& NewScale)
 {
 	ScaleTransform = NewScale;
 }
 
-void StepVrGlobal::AddDeviceID(int32 DeviceID)
+void StepVrGlobal::SetOffsetTransform(const FVector& NewOffset)
 {
-	NeedUpdateDeviceID.AddUnique(DeviceID);
+	OffsetTransform = NewOffset;
 }
 
-bool StepVrGlobal::GetDeviceTransform(FDeviceFrame& OutData)
+bool StepVrGlobal::GetDeviceFrame(FDeviceFrame& OutData)
 {
 	OutData = GameDevicesFrame;
 	return true;
@@ -275,27 +235,11 @@ bool StepVrGlobal::GetDeviceTransform(int32 DeviceID, FTransform& OutData)
 		return true;
 	}
 
-	AddDeviceID(DeviceID);
+	NeedUpdateDeviceID.AddUnique(DeviceID);
 	return false;
 }
 
-bool StepVrGlobal::GetDeviceTransformImmediately(int32 DeviceID, FTransform& OutData)
-{
-	if (!StepVrManager.IsValid())
-	{
-		return false;
-	}
-
-	StepVR::SingleNode Node = StepVrManager->GetFrame().GetSingleNode();
-
-	FDeviceData DeviceFrame;
-	UpdateDeviceState(&Node, DeviceID, DeviceFrame);
-	OutData = DeviceFrame.GetTransform();
-
-	return true;
-}
-
-bool StepVrGlobal::GetRemoteDeviceTransform(uint32 GUID, FDeviceFrame& OutData)
+bool StepVrGlobal::GetRemoteDeviceFrame(uint32 GUID, FDeviceFrame& OutData)
 {
 	if (auto Single = GameAllPlayer.Find(GUID))
 	{
@@ -358,5 +302,64 @@ void StepVrGlobal::SetRecordPCIP(const FString& PCIP)
 	if (StepVrData.IsValid())
 	{
 		StepVrData->SetNeedRecordIP(PCIP);
+	}
+}
+
+void StepVrGlobal::RefreshFrame(FDeviceFrame& outFrame)
+{
+	static StepVR::Vector3f vec3;
+	static StepVR::Vector4f vec4;
+	static FTransform       Transform;
+
+	FScopeLock Lock(&StepVrManagerCritical);
+
+	//更新本机数据
+	if (StepVrManager.IsValid())
+	{
+		StepVR::SingleNode InSingleNode = StepVrManager->GetFrame().GetSingleNode();
+
+		for (uint8 DevID : NeedUpdateDeviceID)
+		{
+			if (!InSingleNode.IsHardWareLink(DevID))
+			{
+				continue;
+			}
+
+			FDeviceData& OutDevice = outFrame.GetDeviceRef(DevID);
+
+			//加速度角速度
+			vec3 = InSingleNode.GetSpeedVec(SDKNODEID(DevID));
+			OutDevice.SetSpeed(FVector(vec3.x, vec3.y, vec3.z));
+			vec3 = InSingleNode.GetSpeedAcc(SDKNODEID(DevID));
+			OutDevice.SetAcceleration(FVector(vec3.x, vec3.y, vec3.z));
+			vec3 = InSingleNode.GetSpeedGyro(SDKNODEID(DevID));
+			OutDevice.SetPalstance(FVector(vec3.x, vec3.y, vec3.z));
+
+			//定位
+			vec3 = InSingleNode.GetPosition(SDKNODEID(DevID));
+			vec3.x += (OffsetTransform.X/100);
+			vec3.y += (OffsetTransform.Y/100);
+			vec3.z += (OffsetTransform.Z/100);
+
+			vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
+
+			//定位缩放
+			Transform.SetLocation(FVector(vec3.x, vec3.y, vec3.z) * 100 * ScaleTransform);
+
+			vec4 = InSingleNode.GetQuaternion(SDKNODEID(DevID));
+			vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
+			
+			//头部姿态单独处理
+			if (DevID == 6)
+			{
+				Transform.SetRotation(FQuat(vec4.y * -1, vec4.x, vec4.z, vec4.w));
+			}
+			else
+			{
+				Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
+			}
+
+			OutDevice.SetTransform(Transform);
+		}
 	}
 }

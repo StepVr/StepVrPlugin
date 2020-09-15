@@ -153,11 +153,12 @@ void UStepVrComponent::AfterinitializeLocalControlled()
 void UStepVrComponent::ResetHMDFinal()
 {
 	FTransform TempData;
-	//UStepVrBPLibrary::SVGetDeviceStateWithID(StepVrDeviceID::DHead, TempData);
-	float TempYaw = TempData.Rotator().Yaw + ResetYaw;
-
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(TempYaw);
-	UE_LOG(LogStepVrPlugin, Log, TEXT("Reset HMD Yaw : %f"), TempYaw);
+	if (STEPVR_GLOBAL->GetDeviceTransform(6, TempData))
+	{
+		float TempYaw = TempData.Rotator().Yaw + ResetYaw;
+		UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition(TempYaw);
+		UE_LOG(LogStepVrPlugin, Log, TEXT("Reset HMD Yaw : %f"), TempYaw);
+	}	
 }
 
 

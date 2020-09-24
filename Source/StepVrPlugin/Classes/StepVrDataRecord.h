@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 
 
-
+//计算刷新间隔
 #define DEAL_INTERVAL 		static int64 Ticks = 0; DealTicks(Ticks);
 
 class FStepSaveData

@@ -54,4 +54,9 @@ public:
 	UFUNCTION(exec)
 	void StepCamera_Stop();
 
+	//录制动补数据
+	UFUNCTION(exec)
+	void StepMocap_Start(const FString& RecordIP);
+	UFUNCTION(exec)
+	void StepMocap_Stop();
 };

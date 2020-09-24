@@ -264,6 +264,19 @@ void StepVrGlobal::ExecCommand(ECommandState NewCommand, int32 Values)
 	}
 }
 
+void StepVrGlobal::ExecCommand(ECommandState NewCommand, const FString& Values)
+{
+	if (CommandDelegateStr.IsBound())
+	{
+		CommandDelegateStr.Broadcast(NewCommand, Values);
+	}
+}
+
+FStepCommandDelegateStr& StepVrGlobal::GetCommandDelegateStr()
+{
+	return CommandDelegateStr;
+}
+
 UWorld* StepVrGlobal::GetWorld()
 {
 #if WITH_EDITOR

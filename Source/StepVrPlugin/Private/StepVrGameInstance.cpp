@@ -65,3 +65,13 @@ void UStepVrGameInstance::StepCamera_Stop()
 	ExecCommand(ECommandState::Stat_CameraRecord, 0);
 }
 
+void UStepVrGameInstance::StepMocap_Start(const FString& RecordIP)
+{
+	STEPVR_GLOBAL->ExecCommand(ECommandState::Stat_MocapRecord, RecordIP);
+}
+
+void UStepVrGameInstance::StepMocap_Stop()
+{
+	STEPVR_GLOBAL->ExecCommand(ECommandState::Stat_MocapRecord, "");
+}
+

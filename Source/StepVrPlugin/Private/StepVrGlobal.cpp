@@ -350,9 +350,9 @@ void StepVrGlobal::RefreshFrame(FDeviceFrame& outFrame)
 
 			//定位
 			vec3 = InSingleNode.GetPosition(SDKNODEID(DevID));
-			vec3.x += (OffsetTransform.X/100);
-			vec3.y += (OffsetTransform.Y/100);
-			vec3.z += (OffsetTransform.Z/100);
+			vec3.x = vec3.x - (OffsetTransform.X/100);
+			vec3.y = vec3.y - (OffsetTransform.Y/100);
+			vec3.z = vec3.z - (OffsetTransform.Z/100);
 
 			vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
 

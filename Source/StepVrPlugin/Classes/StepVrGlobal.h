@@ -18,10 +18,12 @@ enum class ECommandState : uint8
 	Stat_ServerReceiveRecord,
 	Stat_ServerSendRecord,
 	Stat_CameraRecord,
+	Stat_MocapRecord,
 };
 
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FStepCommandDelegate, ECommandState, int32);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FStepCommandDelegateStr, ECommandState, FString);
 
 /**
  * 全局控制
@@ -39,6 +41,8 @@ public:
 	//命令行
 	FStepCommandDelegate& GetCommandDelegate();
 	void ExecCommand(ECommandState NewCommand, int32 Values);
+	FStepCommandDelegateStr& GetCommandDelegateStr();
+	void ExecCommand(ECommandState NewCommand, const FString& Values);
 
 	//SDK
 	bool SDKIsValid();
@@ -117,6 +121,7 @@ private:
 	void* DllHandle = nullptr;
 
 	FStepCommandDelegate				CommandDelegate;
+	FStepCommandDelegateStr				CommandDelegateStr;
 
 private:
 	FVector				OffsetTransform = FVector::ZeroVector;

@@ -9,6 +9,8 @@
 class FSocket;
 class FUdpSocketReceiver;
 
+
+
 //辅助软件消息类型
 enum ESendType
 {
@@ -19,10 +21,28 @@ enum ESendType
 
 //从Game接收
 	Etype_DeviceState,
+	Etype_ControllState,
 };
 
 
 DECLARE_DELEGATE_OneParam(FAuxiliaryReceive, ESendType)
+
+
+
+const int32 _TotalSize = 30;
+const char _AppendChar[_TotalSize] = {};
+static void MyStrSerialize(FArchive& Ar, FString& str)
+{
+	int32 strSize = str.GetCharArray().Num();
+	if (strSize > _TotalSize)
+	{
+		Ar.Serialize((void*)StringCast<ANSICHAR>(str.GetCharArray().GetData(), strSize).Get(), _TotalSize);
+	}
+	else {
+		Ar.Serialize((void*)StringCast<ANSICHAR>(str.GetCharArray().GetData(), strSize).Get(), sizeof(ANSICHAR) * strSize);
+		Ar.Serialize((void*)_AppendChar, _TotalSize - strSize);
+	}
+}
 
 /**
  * 发送当前设备状态
@@ -44,7 +64,6 @@ struct FAuxiliaryDevice
 	bool bGun;
 	FVector Gun;
 	
-
 	friend FArchive& operator<< (FArchive& Ar, FAuxiliaryDevice& ArData)
 	{
 		Ar << ArData.TotalFrames;
@@ -59,6 +78,57 @@ struct FAuxiliaryDevice
 		return Ar;
 	}
 };
+
+
+USTRUCT(BlueprintType)
+struct FAuxiliaryControll
+{
+	GENERATED_USTRUCT_BODY()
+
+	//控制的是谁
+	FString PawnName;
+
+	//人的位置
+	FVector PawnLocation;
+
+	//人的姿态
+	FVector PawnRotator;
+
+	//是否包含StepCamera
+	bool	bHaveCamera;
+
+	//当前相机的位置
+	FVector CameraLocation;
+
+	//相机的姿态
+	FVector CameraRotator;
+
+	//是否包含StepComponent
+	bool	bHaveComponent;
+
+	//是否包含动捕
+	bool	bHaveMocap;
+
+	friend FArchive& operator<< (FArchive& Ar, FAuxiliaryControll& ArData)
+	{
+		MyStrSerialize(Ar, ArData.PawnName);
+		Ar << ArData.PawnLocation;
+		Ar << ArData.PawnRotator;
+
+		Ar << ArData.bHaveCamera;
+		Ar << ArData.CameraLocation;
+		Ar << ArData.CameraRotator;
+
+		Ar << ArData.bHaveComponent;
+		Ar << ArData.bHaveMocap;
+		return Ar;
+	}
+};
+
+
+
+
+
 
 
 class FStepVrAuxiliaryUDP
@@ -76,6 +146,7 @@ public:
 
 	//发送数据
 	void SendDeviceData(FAuxiliaryDevice& InData);
+	void SendControllData(FAuxiliaryControll& InData);
 
 	/*发送数据的回调*/
 	void CallStepVrReceive(const FArrayReaderPtr& InReaderPtr, const FIPv4Endpoint& InEndpoint);

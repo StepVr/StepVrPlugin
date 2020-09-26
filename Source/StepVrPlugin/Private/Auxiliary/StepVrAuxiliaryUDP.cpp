@@ -76,6 +76,21 @@ void FStepVrAuxiliaryUDP::SendDeviceData(FAuxiliaryDevice& InData)
 	}
 }
 
+void FStepVrAuxiliaryUDP::SendControllData(FAuxiliaryControll& InData)
+{
+	int32 MessgeType = ESendType::Etype_ControllState;
+
+	FArrayWriter ArrayWriter;
+	ArrayWriter << MessgeType;
+	ArrayWriter << InData;
+
+	int32 SendNums = 0;
+	if (CacheRemoteAddr.IsValid() && m_pSendScoket)
+	{
+		m_pSendScoket->SendTo(ArrayWriter.GetData(), ArrayWriter.Num(), SendNums, *CacheRemoteAddr);
+	}
+}
+
 void FStepVrAuxiliaryUDP::CallStepVrReceive(const FArrayReaderPtr& InReaderPtr, const FIPv4Endpoint& InEndpoint)
 {
 	//数据反序列化

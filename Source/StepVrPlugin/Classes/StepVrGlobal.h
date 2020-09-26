@@ -13,6 +13,11 @@
 #define STEPVR_FRAME_ENABLE		(StepVrGlobal::GetInstance()->SDKIsValid())
 
 
+
+class FStepVrAuxiliaryCollection;
+
+
+
 enum class ECommandState : uint8
 {
 	Stat_ServerReceiveRecord,
@@ -57,7 +62,7 @@ public:
 
 	//一帧数据
 	void RefreshFrame(FDeviceFrame& outFrame);
-	bool GetDeviceFrame(FDeviceFrame& OutData);
+	FDeviceFrame& GetDeviceFrame();
 	bool GetDeviceTransform(int32 DeviceID, FTransform& OutData);
 	
 
@@ -91,6 +96,10 @@ protected:
 
 	void EngineBeginFrame();
 
+protected:
+	//辅助软件
+	TSharedPtr<FStepVrAuxiliaryCollection> StepVrAuxiliaryCollection;
+	
 protected:
 	/************************************************************************/
 	/*                  	用于插值的参数缓存上一帧输出的数据
@@ -137,5 +146,8 @@ private:
 
 	//本机定位数据
 	FDeviceFrame		GameDevicesFrame;
+
+
+
 };
 

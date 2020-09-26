@@ -2,7 +2,7 @@
 #include "LocalDefine.h"
 #include "StepVrConfig.h"
 #include "StepVrServerInterface.h"
-
+#include "Auxiliary/StepVrAuxiliaryCollection.h"
 
 
 #include "Engine/Engine.h"
@@ -11,10 +11,17 @@
 
 
 
+
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
 bool _AlreadyCreate = false;
+
+
 StepVrGlobal::StepVrGlobal()
 {
+	NeedUpdateDeviceID = {
+				StepVrDeviceID::DHead,
+				StepVrDeviceID::DGun
+				};
 }
 
 StepVrGlobal* StepVrGlobal::GetInstance()
@@ -55,15 +62,13 @@ void StepVrGlobal::StartSDK()
 
 	LoadServer();
 
+	//辅助软件
+	StepVrAuxiliaryCollection = MakeShared<FStepVrAuxiliaryCollection>();
+	StepVrAuxiliaryCollection->StartCollection();
+
 	//当前机器唯一标识
 	FGuid NewGUID = FGuid::NewGuid();
 	GameGUID = GetTypeHash(NewGUID);
-
-	//基础更新设备ID
-	NeedUpdateDeviceID = { 
-		StepVrDeviceID::DHead,
-		StepVrDeviceID::DGun 
-	};
 
 	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this, &StepVrGlobal::EngineBeginFrame);
 }
@@ -164,7 +169,13 @@ void StepVrGlobal::EngineBeginFrame()
 		//同步数据到Game
 		StepVrData->SynchronizationToLocal(GameAllPlayerLastTicks, GameAllPlayer);
 	}
+
+	if (StepVrAuxiliaryCollection.IsValid())
+	{
+		StepVrAuxiliaryCollection->EngineBeginFrame();
+	}
 }
+
 void StepVrGlobal::DataLerp(FDeviceData& inputData, FDeviceData& outputData)
 {
 	//FTransform TempData;
@@ -221,10 +232,9 @@ void StepVrGlobal::SetOffsetTransform(const FVector& NewOffset)
 	OffsetTransform = NewOffset;
 }
 
-bool StepVrGlobal::GetDeviceFrame(FDeviceFrame& OutData)
+FDeviceFrame& StepVrGlobal::GetDeviceFrame()
 {
-	OutData = GameDevicesFrame;
-	return true;
+	return GameDevicesFrame;
 }
 
 bool StepVrGlobal::GetDeviceTransform(int32 DeviceID, FTransform& OutData)
@@ -333,12 +343,15 @@ void StepVrGlobal::RefreshFrame(FDeviceFrame& outFrame)
 
 		for (uint8 DevID : NeedUpdateDeviceID)
 		{
-			if (!InSingleNode.IsHardWareLink(DevID))
+			FDeviceData& OutDevice = outFrame.GetDeviceRef(DevID);
+
+			bool isLink = InSingleNode.IsHardWareLink(DevID);
+			OutDevice.SetLink(isLink);
+
+			if (!isLink)
 			{
 				continue;
 			}
-
-			FDeviceData& OutDevice = outFrame.GetDeviceRef(DevID);
 
 			//加速度角速度
 			vec3 = InSingleNode.GetSpeedVec(SDKNODEID(DevID));

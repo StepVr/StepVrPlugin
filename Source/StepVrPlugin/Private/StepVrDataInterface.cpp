@@ -200,6 +200,16 @@ FVector FDeviceData::GetPalstance() const
 	return Palstance;
 }
 
+void FDeviceData::SetLink(bool NewState)
+{
+	bLink = NewState;
+}
+
+bool FDeviceData::ISLink()
+{
+	return bLink;
+}
+
 bool FDeviceFrame::HasDevice(uint8 DeviceID)
 {
 	return AllDevices.Find(DeviceID) != nullptr;

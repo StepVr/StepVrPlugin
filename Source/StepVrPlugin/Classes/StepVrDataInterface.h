@@ -102,6 +102,9 @@ public:
 	void SetPalstance(const FVector& InData);
 	FVector GetPalstance() const;
 
+	void SetLink(bool NewState);
+	bool ISLink();
+
 	friend FArchive& operator<< (FArchive& Ar, FDeviceData& ArData)
 	{
 		Ar << ArData.MMAPTicks;
@@ -124,7 +127,9 @@ private:
 	FVector Palstance;
 
 	//时间戳（UE获取属性开始计时）
-	int64	MMAPTicks;
+	int64	MMAPTicks = 0;
+
+	bool    bLink = false;
 };
 
 

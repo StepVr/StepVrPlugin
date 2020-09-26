@@ -9,6 +9,14 @@
 
 #define StepVrPluginName	"StepVrPlugin"
 
+//辅助程序接受端口
+#define AUXILIARY_PORT				7779
+#define AUXILIARY_LISTEN_MAX		5
+
+
+
+
+
 DECLARE_LOG_CATEGORY_EXTERN(LogStepVrPlugin, Log, All);
 
 //Stat stepvr

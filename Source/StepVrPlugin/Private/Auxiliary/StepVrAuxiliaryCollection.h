@@ -15,6 +15,9 @@ public:
 
 protected:
 	bool NeedCollection();
+	void CallReceiveUDP(int32 NewState);
+
+	void SendPluginState();
 
 	TSharedPtr<FStepVrAuxiliaryUDP> StepVrAuxiliaryUDP;
 private:

@@ -227,9 +227,19 @@ void StepVrGlobal::SetScaleTransform(const FVector& NewScale)
 	ScaleTransform = NewScale;
 }
 
+FVector StepVrGlobal::GetScaleTransform()
+{
+	return ScaleTransform;
+}
+
 void StepVrGlobal::SetOffsetTransform(const FVector& NewOffset)
 {
 	OffsetTransform = NewOffset;
+}
+
+FVector StepVrGlobal::GetOffsetTransform()
+{
+	return OffsetTransform;
 }
 
 FDeviceFrame& StepVrGlobal::GetDeviceFrame()
@@ -303,6 +313,16 @@ StepVR::Manager* StepVrGlobal::GetStepVrManager()
 	return StepVrManager.Get();
 }
 
+
+FString StepVrGlobal::GetManagerCompileTime()
+{
+	return StepVrManagerComplieTime;
+}
+
+FString StepVrGlobal::GetManagerCompileVersion()
+{
+	return StepVrManagerVersion;
+}
 
 void StepVrGlobal::SetGameType(EStepGameType NewType, FString& NewServerIP)
 {

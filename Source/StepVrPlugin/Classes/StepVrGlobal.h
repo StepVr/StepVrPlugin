@@ -52,6 +52,9 @@ public:
 	//SDK
 	bool SDKIsValid();
 	StepVR::Manager* GetStepVrManager();
+	FString GetManagerCompileTime();
+	FString GetManagerCompileVersion();
+
 
 	//本机唯一标识
 	uint32 GetGUID();
@@ -81,8 +84,11 @@ public:
 	void SetRecordPCIP(const FString& PCIP);
 	//定位进行缩放
 	void SetScaleTransform(const FVector& NewScale);
+	FVector GetScaleTransform();
+
 	//定位进行偏移
 	void SetOffsetTransform(const FVector& NewOffset);
+	FVector GetOffsetTransform();
 
 	UWorld* GetWorld();
 

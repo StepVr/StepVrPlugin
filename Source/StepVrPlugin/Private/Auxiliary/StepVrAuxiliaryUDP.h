@@ -22,10 +22,12 @@ enum ESendType
 //从Game接收
 	Etype_DeviceState,
 	Etype_ControllState,
+	Etype_StartState,
 };
 
 
-DECLARE_DELEGATE_OneParam(FAuxiliaryReceive, ESendType)
+//int32 = ESendType
+DECLARE_DELEGATE_OneParam(FAuxiliaryReceive, int32)
 
 
 
@@ -109,6 +111,19 @@ struct FAuxiliaryControll
 	//是否包含动捕
 	bool	bHaveMocap;
 
+	void ResetData()
+	{
+		PawnName = "None";
+		PawnLocation = FVector::ZeroVector;
+		PawnRotator = FVector::ZeroVector;
+
+		bHaveCamera = false;
+		CameraLocation = FVector::ZeroVector;
+		CameraRotator = FVector::ZeroVector;
+
+		bHaveComponent = false;
+		bHaveMocap = false;
+	}
 	friend FArchive& operator<< (FArchive& Ar, FAuxiliaryControll& ArData)
 	{
 		MyStrSerialize(Ar, ArData.PawnName);
@@ -126,6 +141,42 @@ struct FAuxiliaryControll
 };
 
 
+
+/**
+ * 游戏初始化状态
+ */
+USTRUCT(BlueprintType)
+struct FAuxiliaryStartState
+{
+	GENERATED_USTRUCT_BODY()
+
+	//服务编译时间
+	FString	StepVrManagerComplieTime;
+
+	//服务版本号
+	FString	StepVrManagerVersion;
+
+	//服务初始化是否成功
+	bool bMMAPState = false;
+
+	//游戏偏移
+	FVector GameOffSet = FVector::ZeroVector;
+
+	//定位缩放
+	FVector GameScale = FVector::OneVector;
+
+	friend FArchive& operator<< (FArchive& Ar, FAuxiliaryStartState& Data)
+	{
+		MyStrSerialize(Ar, Data.StepVrManagerComplieTime);
+		MyStrSerialize(Ar, Data.StepVrManagerVersion);
+
+		Ar << Data.bMMAPState;
+		Ar << Data.GameOffSet;
+		Ar << Data.GameScale;
+
+		return Ar;
+	}
+};
 
 
 
@@ -147,6 +198,7 @@ public:
 	//发送数据
 	void SendDeviceData(FAuxiliaryDevice& InData);
 	void SendControllData(FAuxiliaryControll& InData);
+	void SendStartState(FAuxiliaryStartState& InData);
 
 	/*发送数据的回调*/
 	void CallStepVrReceive(const FArrayReaderPtr& InReaderPtr, const FIPv4Endpoint& InEndpoint);

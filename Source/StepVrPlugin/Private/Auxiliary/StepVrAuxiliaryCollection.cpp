@@ -18,6 +18,7 @@ void FStepVrAuxiliaryCollection::StartCollection()
 	if (!StepVrAuxiliaryUDP.IsValid())
 	{
 		StepVrAuxiliaryUDP = MakeShared<FStepVrAuxiliaryUDP>();
+		StepVrAuxiliaryUDP->GetAuxiliaryReceive().BindRaw(this, &FStepVrAuxiliaryCollection::CallReceiveUDP);
 		StepVrAuxiliaryUDP->StartServer();
 	}
 }
@@ -104,10 +105,7 @@ void FStepVrAuxiliaryCollection::EngineBeginFrame()
 				}
 				else
 				{
-					AuxiliaryControll.PawnName = "None";
-					AuxiliaryControll.bHaveComponent = false;
-					AuxiliaryControll.bHaveCamera = false;
-					AuxiliaryControll.bHaveMocap = false;
+					AuxiliaryControll.ResetData();
 				}
 
 				StepVrAuxiliaryUDP->SendControllData(AuxiliaryControll);
@@ -119,4 +117,36 @@ void FStepVrAuxiliaryCollection::EngineBeginFrame()
 bool FStepVrAuxiliaryCollection::NeedCollection()
 {
 	return StepVrAuxiliaryUDP.IsValid() && (StepVrAuxiliaryUDP->GetSendType() == EType_Connect);
+}
+
+void FStepVrAuxiliaryCollection::CallReceiveUDP(int32 NewState)
+{
+	ESendType CurState = (ESendType)NewState;
+
+	switch (CurState)
+	{
+		case ESendType::Etype_StartState:
+		{
+			SendPluginState();
+			break;
+		}
+	default:
+		break;
+	}
+}
+
+void FStepVrAuxiliaryCollection::SendPluginState()
+{
+	if (NeedCollection())
+	{
+		FAuxiliaryStartState AuxiliaryStartState;
+		AuxiliaryStartState.bMMAPState = STEPVR_GLOBAL->SDKIsValid();
+		AuxiliaryStartState.StepVrManagerComplieTime = STEPVR_GLOBAL->GetManagerCompileTime();
+		AuxiliaryStartState.StepVrManagerVersion = STEPVR_GLOBAL->GetManagerCompileVersion();
+
+		AuxiliaryStartState.GameOffSet = STEPVR_GLOBAL->GetOffsetTransform();
+		AuxiliaryStartState.GameScale = STEPVR_GLOBAL->GetScaleTransform();
+
+		StepVrAuxiliaryUDP->SendStartState(AuxiliaryStartState);
+	}
 }

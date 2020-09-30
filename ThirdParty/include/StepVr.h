@@ -29,6 +29,7 @@
 #endif
 
 #include <string>
+#include <vector>
 
 typedef unsigned char U8;
 typedef void(*Glove_tcb_procFd)(U8* pFd_i, U8 comNum_i);
@@ -38,6 +39,12 @@ extern "C" STEPVR_API void SendGloveCmd(U8 *cmd);
 typedef void(*SpringVR_tcb_procFd)(U8* pFd_i, U8 comNum_i);
 extern "C" STEPVR_API void StepVR_initSpring(SpringVR_tcb_procFd pcb_procFd_i);
 extern "C" STEPVR_API void SendSpringCmd(U8 *cmd);
+
+STEPVR_API struct ST_FASTDATA
+{
+	unsigned int idx;
+	unsigned char data[63];
+};
 
 namespace StepVR {
 	class Manager;
@@ -91,6 +98,8 @@ namespace StepVR {
 		Vector4f(float ww, float xx, float yy, float zz) :
 			w(ww), x(xx), y(yy), z(zz) {};
 	};
+
+
 
 	/**
 	* The SingleNode class represents a set of position and rotation
@@ -516,6 +525,8 @@ namespace StepVR {
 		**/
 		STEPVR_API void SendStampZeroCmd(const unsigned char* cmd);
 
+
+		STEPVR_API void SendDebugCmd(char* cmd, int len, int iCom);
 		/**
 		* Send glove command.
 		* 
@@ -534,6 +545,14 @@ namespace StepVR {
 
 		STEPVR_API const char * GetServerCompileTime();
 		STEPVR_API const char * GetServerVersion();
+
+		STEPVR_API bool IsConnected();
+
+		STEPVR_API unsigned char GetServerStatus();
+		STEPVR_API unsigned char GetServerComCount();
+
+		STEPVR_API void GetMmapLog(std::vector<std::string> & vStr);
+		STEPVR_API void GetFastData(std::vector<ST_FASTDATA> & vStr);
 	};
 
 	//this class just for Unreal develop

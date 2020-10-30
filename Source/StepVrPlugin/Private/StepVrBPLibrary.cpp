@@ -27,7 +27,7 @@ bool UStepVrBPLibrary::SVCheckGameLic(FString gameId){
 	}
 	return true;
 }
-void UStepVrBPLibrary::SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 EquipId, FTransform& Transform)
+void UStepVrBPLibrary::SVGetDeviceStateWithID(StepVR::SingleNode* InSingleNode, int32 EquipId, FTransform& Transform)
 {
 	if (!InSingleNode->IsHardWareLink(EquipId))
 	{
@@ -55,17 +55,10 @@ void UStepVrBPLibrary::SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 
 				S_QTemp.Quaternion(), 
 				Transform.GetLocation() - S_VTemp);
 		}
-	}
-	else
+	}else
 	{
 		vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
 		Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
-	}
-
-	{
-		//数据进行缩放
-		FVector ScaleLocaltion = Transform.GetLocation() * GScaleTransform;
-		Transform.SetLocation(ScaleLocaltion);
 	}
 
 	GLocalDevicesRT.FindOrAdd(EquipId) = Transform;
@@ -108,19 +101,14 @@ FTransform UStepVrBPLibrary::Convert2UETransform(float Vx, float Vy, float Vz, f
 	return Transform;
 }
 
-void UStepVrBPLibrary::SetGameType(FGameType type, FString ServerIP)
+void UStepVrBPLibrary::SetGameType(int32 type, FString ServerIP)
 {
 	if (STEPVR_SERVER_IsValid)
 	{
 		STEPVR_SERVER->SetGameModeType((EGameModeType)type);
-		if (type == FGameType::GameClient)
+		if (type == EGameModeType::EClient)
 		{
 			STEPVR_SERVER->UpdateServerIP(ServerIP);
 		}
 	}
-}
-
-void UStepVrBPLibrary::SetScaleTransform(float Scales)
-{
-	GScaleTransform = Scales;
 }

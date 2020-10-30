@@ -31,15 +31,6 @@ class Frame;
 * 
 * received Date class Need inherit StepVrServerInterface
 */
-UENUM()
-enum class FGameType : uint8
-{
-	GameStandAlone,
-	GameClient,
-	GameServer,
-	
-};
-
 UCLASS()
 class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 {
@@ -49,19 +40,22 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	*	先确保PlayerController有效
 	*	@param: GameId和自定义的ID匹配	
 	*/
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
+	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
 	static bool SVCheckGameLic(FString gameId);
 
-	/**
-	* 获取标准件数据
-	*/
-	UFUNCTION(BlueprintPure, Category = "StepVr|Global")
-	static void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
 	
+	static void SVGetDeviceStateWithID(StepVR::SingleNode* InSingleNode,int32 DeviceID, FTransform& Transform);
+	
+	/**
+	 * 获取标准件数据
+	 */
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
+	static void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
+
 	/**
 	 * 激光系定位转UE系
 	 */
-	UFUNCTION(BlueprintPure, Category = "StepVr|Global")
+	UFUNCTION(BlueprintPure, Category = StepvrLibrary)
 	static FTransform Convert2UETransform(float Vx, float Vy, float Vz, float Qw, float Qx, float Qy, float Qz);
 
 	/**
@@ -71,14 +65,6 @@ class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 	 *	2 EServer,
 	 *	@ServerIP ：1 EClient 设置 ServerIP,
 	 */
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
-	static void SetGameType(FGameType type,FString ServerIP);
-
-	/**
-	 * 设置缩放，所有定位数据得Location将进行缩放
-	 */
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
-	static void SetScaleTransform(float Scales);
-
-	static void SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 DeviceID, FTransform& Transform);
+	UFUNCTION(BlueprintCallable, Category = StepvrLibrary)
+	static void SetGameType(int32 type,FString ServerIP);
 };

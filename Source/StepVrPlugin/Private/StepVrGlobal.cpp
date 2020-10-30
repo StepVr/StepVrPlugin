@@ -10,24 +10,15 @@
 /************************************************************************/
 /* Global Data                                                                     */
 /************************************************************************/
-AllDevicesData					GLocalDevicesRT;
-float							GLastReceiveTime = 0.f;
-TMap<uint32, AllDevicesData>	GReplicateDevicesRT;
-FCriticalSection				GReplicateSkeletonCS;
-TAtomic<uint64>					GUpdateReplicateSkeleton = 0;
-TMap<uint32, AllSkeletonData>	GReplicateSkeletonRT;
+AllDevicesTrans	GLocalDevicesRT;
+TMap<uint32, AllDevicesTrans> GReplicateDevicesRT;
+FCriticalSection GReplicateSkeletonCS;
+TAtomic<uint64> GUpdateReplicateSkeleton = 0;
+TMap<uint32, AllSkeletonData> GReplicateSkeletonRT;
 
-TArray<int32>					GNeedUpdateDevices = { StepVrDeviceID::DHead };
+TArray<int32>	GNeedUpdateDevices = { StepVrDeviceID::DHead };
 
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
-FStepCommand	GStepCommand;
-FStepFrames*	GStepFrames = nullptr;
-float			GStepServerSendInterval = 0.0333f;
-bool			GStepFrameForecast = false;
-float			GStepFrameForecastInterval = 0.33;
-bool			GStepFrameLerp = true;
-float			GStepFrameLerpAlpha = 0.1f;
-float			GScaleTransform = 1.f;
 
 
 /************************************************************************/
@@ -93,7 +84,6 @@ void StepVrGlobal::LoadServer()
 
 	if (_Server)
 	{
-		//创建服务器
 		StepVrServer = _Server->CreateServer();
 
 		if (StepVrServer.IsValid())
@@ -104,10 +94,6 @@ void StepVrGlobal::LoadServer()
 		{ 
 			UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrServer Start Faild"));
 		}	
-
-		//创建接收数据
-		StepVrReplicateData = MakeShareable(new FStepFrames());
-		GStepFrames = StepVrReplicateData.Get();
 	}
 }
 
@@ -142,14 +128,18 @@ void StepVrGlobal::LoadSDK()
 		}
 
 		StepVrManager = MakeShareable(new StepVR::Manager());
+
+		bool Flag = (StepVrManager->Start() == 0);
+		if (!Flag)
+		{
+			Message = "Failed to connect server";
+			break;
+		}
+
 		StepVR::StepVR_EnginAdaptor::MapCoordinate(StepVR::Vector3f(0, 0, 1), StepVR::Vector3f(-1, 0, 0), StepVR::Vector3f(0, 1, 0));
 		StepVR::StepVR_EnginAdaptor::setEulerOrder(StepVR::EulerOrder_ZYX);
 
-		Success = (StepVrManager->Start() == 0);
-		if (!Success)
-		{
-			Message = "Failed to connect server";
-		}
+		Success = true;
 	} while (0);
 
 	if (Success)
@@ -158,7 +148,7 @@ void StepVrGlobal::LoadSDK()
 	}
 	else
 	{
-		//CloseSDK();
+		CloseSDK();
 
 		UE_LOG(LogStepVrPlugin, Warning, TEXT("StepvrSDK Satrt Failed,Message:%s"), *Message);
 		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(NSLOCTEXT("StepVR", "StepVR", "{0}"), FText::FromString(Message)));
@@ -178,10 +168,8 @@ void StepVrGlobal::CloseSDK()
 
 void StepVrGlobal::EngineBeginFrame()
 {
-#if SHOW_STATE
-	SCOPE_CYCLE_COUNTER(stat_EngineBeginFrame_tick);
-#endif
-
+	INC_DWORD_STAT(StepVrGlobal_EngineBeginFrame_Count);
+	SCOPE_CYCLE_COUNTER(StepVrGlobal_EngineBeginFrame_State);
 	/**
 	* 更新定位数据
 	*/
@@ -192,26 +180,16 @@ void StepVrGlobal::EngineBeginFrame()
 		for (auto DevID : GNeedUpdateDevices)
 		{
 			FTransform TempData;
-			UStepVrBPLibrary::SVGetDeviceState(&Node, DevID, TempData);
+			UStepVrBPLibrary::SVGetDeviceStateWithID(&Node, DevID, TempData);
 		}
 	}
-
-	//UE_LOG(LogTemp,Log,TEXT("PLatform Time : %f"), FPlatformTime::Seconds());
 
 	/**
 	 * 更新同步数据
 	 */
-	if (StepVrServer.IsValid() && StepVrReplicateData.IsValid())
+	if (StepVrServer.IsValid())
 	{
-		FStepAllPlayerFrame* Container = StepVrReplicateData->GetHeadContainer();
-		if (StepVrServer->SynchronizationStepVrData(Container))
-		{
-			StepVrReplicateData->FlushHeadContain();
-		}
-		else if(GStepFrameForecast)
-		{
-			StepVrReplicateData->ForecastNewData();
-		}
+		StepVrServer->SynchronizationStepVrData();
 	}
 }
 
@@ -247,180 +225,3 @@ FStepVrServer* StepVrGlobal::GetStepVrServer()
 {
 	return StepVrServer.IsValid() ? StepVrServer.Get() : nullptr;
 }
-
-FStepFrames* StepVrGlobal::GetStepVrReplicateFrame()
-{
-	return StepVrReplicateData.IsValid() ? StepVrReplicateData.Get() : nullptr;
-}
-
-/****************************FStepFrams***********************************/
-/*                                                                      */
-/************************************************************************/
-FStepFrames::FStepFrames():
-	IndexCurHead(0),
-	IndexHeadContain(0),
-	NewFrame(nullptr)
-{
-
-}
-
-
-void FStepFrames::GetLastReplicateDeviceData(uint32 PlayerID, int32 DeviceID, FTransform& Data)
-{
-	if (NewFrame == nullptr)
-	{
-		return;
-	}
-
-	auto TempPlayer = NewFrame->AllPlayerInfo.Find(PlayerID);
-	if (TempPlayer == nullptr)
-	{
-		return;
-	}
-
-	//最新数据
-	auto NewDeviceData = (*TempPlayer).CurDeviceData.Find(DeviceID);
-	if (NewDeviceData == nullptr)
-	{
-		return;
-	}
-
-	if (GStepFrameLerp)
-	{
-		//插值
-		FVector CurLocation = Data.GetLocation();
-		FVector NewLocation = CurLocation + GStepFrameLerpAlpha * (NewDeviceData->GetLocation() - CurLocation);
-		Data.SetLocation(NewLocation);
-		Data.SetRotation(NewDeviceData->GetRotation());
-	}
-	else
-	{
-		Data = *NewDeviceData;
-	}
-}
-
-FStepAllPlayerFrame* FStepFrames::GetHeadContainer()
-{
-	IndexHeadContain = (IndexCurHead + 1) % StepFramsMax;
-	return &CacheFrames[IndexHeadContain];
-}
-
-void FStepFrames::FlushHeadContain()
-{
-	IndexCurHead = IndexHeadContain;
-    NewFrame = &CacheFrames[IndexCurHead];
-}
-
-void FStepFrames::ForecastNewData()
-{
-	NewFrame = &ForecastFrame;
-
-	//预测新数据
-	float CurTime = FPlatformTime::Seconds();
-
-	FStepAllPlayerFrame* Data1 = &CacheFrames[IndexCurHead];
-	FStepAllPlayerFrame* Data2 = &CacheFrames[(FMath::Abs(IndexCurHead - 1)) % StepFramsMax];
-
-	float Alpha = (CurTime - Data2->TimeStemp) / (Data1->TimeStemp - Data2->TimeStemp);
-
-	for (auto& MapFrame : Data1->AllPlayerInfo)
-	{
-		FStepFrame* ForecastKey = ForecastFrame.AllPlayerInfo.Find(MapFrame.Key);
-		if (ForecastKey == nullptr)
-		{
-			ForecastFrame.AllPlayerInfo.Add(MapFrame.Key, FStepFrame());
-			ForecastKey = ForecastFrame.AllPlayerInfo.Find(MapFrame.Key);
-		}
-
-		auto PairKey = Data2->AllPlayerInfo.Find(MapFrame.Key);
-		if (PairKey == nullptr)
-		{
-			continue;
-		}
-
-		for (auto& MapDevice : MapFrame.Value.CurDeviceData)
-		{
-			FTransform* ForceDevice = ForecastKey->CurDeviceData.Find(MapDevice.Key);
-			if (ForceDevice == nullptr)
-			{
-				ForecastKey->CurDeviceData.Add(MapDevice.Key, FTransform());
-				ForceDevice = ForecastKey->CurDeviceData.Find(MapDevice.Key);
-			}
-
-			auto PairDevice = PairKey->CurDeviceData.Find(MapDevice.Key);
-			if (PairDevice == nullptr)
-			{
-				continue;
-			}
-
-			FVector Pre = PairDevice->GetLocation();
-			FVector Cur = Pre + Alpha * (MapDevice.Value.GetLocation() - Pre);
-			ForceDevice->SetLocation(Cur);
-			ForceDevice->SetRotation(MapDevice.Value.GetRotation());
-		}
-	}
-}
-
-
-
-
-
-/************************************************************************/
-/* Time                                                                     */
-/************************************************************************/
-#include "Windows/AllowWindowsPlatformTypes.h"  
-#include <chrono>
-using namespace std;
-using namespace std::chrono;
-
-
-class StepTimeWin : public StepTime
-{
-public:
-	StepTimeWin() :
-		m_begin(high_resolution_clock::now())
-	{
-
-	}
-	virtual ~StepTimeWin()
-	{
-	}
-
-	virtual void ResetTime() override
-	{
-		//m_begin = high_resolution_clock::now();
-	}
-
-
-	virtual double IntervalAndReset() override
-	{
-		double __LastTime = Interval_MS();
-		double __Interval = __LastTime - LastTime;
-
-		LastTime = __LastTime;
-		return __Interval;
-	}
-
-
-	virtual double Interval_MS() override
-	{
-		return duration_cast<chrono::microseconds>(high_resolution_clock::now() - m_begin).count() / 1000.f;
-	}
-	virtual int64 Interval_Micro() override
-	{
-		return duration_cast<chrono::microseconds>(high_resolution_clock::now() - m_begin).count();
-	}
-
-protected:
-	time_point<high_resolution_clock> m_begin;
-
-	double LastTime = 0.f;
-};
-
-TSharedPtr<StepTime> StepTime::GetTime()
-{
-	return MakeShareable(new StepTimeWin());
-}
-
-
-#include "Windows/HideWindowsPlatformTypes.h"  

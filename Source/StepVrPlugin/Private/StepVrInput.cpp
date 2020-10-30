@@ -88,7 +88,7 @@ void FStepVrInput::Initialize()
 
 void FStepVrInput::SendControllerEvents()
 {
-	SCOPE_CYCLE_COUNTER(stat_ControllerEvent_tick);
+	SCOPE_CYCLE_COUNTER(StepVrInput_SendControllerEvents);
 
 	if (!STEPVR_FRAME_IsValid)
 	{
@@ -122,47 +122,32 @@ void FStepVrInput::SendControllerEvents()
 		{
 		case EStepDeviceKeyType::State_Button:
 		{
-			if (Node.GetKeyDown(DeviceID, SDKKEYID(ButtonState.KeyID)) ||
-				Node.GetKey(DeviceID, SDKKEYID(ButtonState.KeyID)))
+			flag = 0x0;
+			flag = (Node.GetKeyUp(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Release : 0x0) | flag;
+			flag = (Node.GetKeyDown(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Press : 0x0) | flag;
+			flag = (Node.GetKey(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Repeat : 0x0) | flag;
+
+			if (flag != ButtonState.PressedState)
 			{
-				if (ButtonState.PressedState != SButton_Press)
+				ButtonState.PressedState = flag;
+				if (ButtonState.PressedState == SButton_Release)
 				{
-					MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
-					ButtonState.PressedState = SButton_Press;
-				}
-			}else if (ButtonState.PressedState != SButton_Release)
-			{
+					UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Relese!"), DeviceID, *ButtonState.key.ToString());
 					MessageHandler->OnControllerButtonReleased(ButtonState.key, 0, false);
-					ButtonState.PressedState = SButton_Release;
+				}
+				if (ButtonState.PressedState == SButton_Press)
+				{
+					UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Press!"), DeviceID, *ButtonState.key.ToString());
+					MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
+					ButtonState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
+				}
 			}
-
-			//flag = 0x0;
-			//flag = (Node.GetKeyUp(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Release : 0x0) | flag;
-			//flag = (Node.GetKeyDown(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Press : 0x0) | flag;
-			//flag = (Node.GetKey(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Repeat : 0x0) | flag;
-
-			////UE_LOG(LogStepVrPlugin, Warning, TEXT("%d"),flag);
-			//if (flag != ButtonState.PressedState)
-			//{
-			//	ButtonState.PressedState = flag;
-			//	if (ButtonState.PressedState == SButton_Release)
-			//	{
-			//		//UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Relese!"), DeviceID, *ButtonState.key.ToString());
-			//		MessageHandler->OnControllerButtonReleased(ButtonState.key, 0, false);
-			//	}
-			//	if (ButtonState.PressedState == SButton_Press || SButton_Repeat)
-			//	{
-			//		//UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Press!"), DeviceID, *ButtonState.key.ToString());
-			//		MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
-			//		ButtonState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
-			//	}
-			//}
-			//if (ButtonState.PressedState == SButton_Repeat && ButtonState.NextRepeatTime <= CurrentTime)
-			//{
-			//	UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Repeat!"), DeviceID, *ButtonState.key.ToString());
-			//	MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
-			//	ButtonState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
-			//}
+			if (ButtonState.PressedState == SButton_Repeat && ButtonState.NextRepeatTime <= CurrentTime)
+			{
+				UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Repeat!"), DeviceID, *ButtonState.key.ToString());
+				MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
+				ButtonState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
+			}
 		}
 		break;
 		case EStepDeviceKeyType::State_ValueX:
@@ -173,23 +158,6 @@ void FStepVrInput::SendControllerEvents()
 		case EStepDeviceKeyType::State_ValueY:
 		{
 			MessageHandler->OnControllerAnalog(ButtonState.key, 0, Node.GetJoyStickPosY(DeviceID));
-		}
-		break;
-		case EStepDeviceKeyType::State_MocapHand:
-		{
-			if (Node.GetGloveKeyDown(ButtonState.KeyID) ||
-				Node.GetGloveKeyLongPress(ButtonState.KeyID))
-			{
-				if (ButtonState.PressedState != SButton_Press)
-				{
-					MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
-					ButtonState.PressedState = SButton_Press;
-				}
-			}else if (ButtonState.PressedState != SButton_Release)
-			{
-					MessageHandler->OnControllerButtonReleased(ButtonState.key, 0, false);
-					ButtonState.PressedState = SButton_Release;
-			}
 		}
 		break;
 		}
@@ -280,14 +248,9 @@ void FStepVrInput::RegisterDeviceKey()
 	for (int32 Index = 0; Index < StateController.Devices.Num(); Index++)
 	{
 		FStepVrButtonState& ButtonState = StateController.Devices[Index];
-
-		uint8 KeyFlag = FKeyDetails::GamepadKey;
-		if (ButtonState.ActionState == State_ValueX || 
-			ButtonState.ActionState == State_ValueY)
-		{
-			KeyFlag = FKeyDetails::FloatAxis;
-		}
-
+		uint8 KeyFlag = ButtonState.ActionState == EStepDeviceKeyType::State_Button ?
+			FKeyDetails::GamepadKey :
+			FKeyDetails::FloatAxis;
 		FText KeyText = FText::FromName(ButtonState.key);
 		FKey TargetKey(ButtonState.key);
 		EKeys::AddKey(FKeyDetails(TargetKey, KeyText, KeyFlag, StepVRCategoryName));

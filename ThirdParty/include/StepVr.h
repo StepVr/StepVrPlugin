@@ -164,6 +164,7 @@ namespace StepVR {
 		* function.
 		**/
 		STEPVR_API SingleNode(float* data);
+		STEPVR_API SingleNode(float* data, int idx);
 		STEPVR_API ~SingleNode();
 
 		/**
@@ -314,6 +315,12 @@ namespace StepVR {
 		STEPVR_API Vector3f GetSpeedVec(NODEID id);
 		STEPVR_API Vector3f GetSpeedAcc(NODEID id);
 		STEPVR_API Vector3f GetSpeedGyro(NODEID id);
+
+		STEPVR_API void GetGloveSensorState(float * sensorState);
+
+	private:
+		float *pstepvr_singlenode_data_ = NULL;
+		int m_idx = 0;
 	};
 
 	STEPVR_API struct GERData{
@@ -351,6 +358,7 @@ namespace StepVR {
 		* function.
 		**/
 		STEPVR_API Frame(float* data);
+		STEPVR_API Frame(float* data, int eid);
 		STEPVR_API ~Frame();
 
 
@@ -372,6 +380,10 @@ namespace StepVR {
 		STEPVR_API void GetImuData(short *data);
 		//废弃的
 		STEPVR_API IMUData GetImuData_CSharp();
+
+	private:
+		float * m_pData = NULL;
+		int m_idx = 0;
 	};
 
 	STEPVR_API struct CmdBuf{
@@ -495,6 +507,7 @@ namespace StepVR {
 		* @returns The specified MocapFrame.
 		**/
 		STEPVR_API Frame GetFrame();
+		STEPVR_API Frame GetFrame(int eid);
 		
 		/**
 		* Set receive position and rotation mode. block or non block 
@@ -553,6 +566,23 @@ namespace StepVR {
 
 		STEPVR_API void GetMmapLog(std::vector<std::string> & vStr);
 		STEPVR_API void GetFastData(std::vector<ST_FASTDATA> & vStr);
+
+		STEPVR_API int SendCmd63(char * data, int timeOut = 3);
+
+		//speed:[0,100]
+		//return
+		//-1：服务未开
+		//0：设置成功
+		//1：响应超时
+		//100：数据未发送（找不到串口导致）
+		STEPVR_API int SetKartMaxSpeed(int speed);
+		STEPVR_API int SetKartBrake(bool bSet);
+		STEPVR_API int SetKartEnableReverse(bool bSet);
+		STEPVR_API int SetKartForward(bool bForward);
+
+		//for multi-player
+		STEPVR_API int GetEquipCount();
+		STEPVR_API int GetEquipIdByIdx(int idx);
 	};
 
 	//this class just for Unreal develop

@@ -103,7 +103,10 @@ public:
 
 	void AddData(ItemType& Data)
 	{
-		QueueReceiveData.Enqueue(Data);
+		if (bRecord)
+		{
+			QueueReceiveData.Enqueue(Data);
+		}
 	}
 
 	void SaveLineData()

@@ -18,6 +18,7 @@ struct FStepVrButtonState
 	double NextRepeatTime = 0;
 
 	FName key;
+	FName Repeat;
 	EStepDeviceKeyType ActionState;
 };
 

@@ -1,10 +1,35 @@
 ﻿#include "StepVrComponent.h"
 #include "StepVrGlobal.h"
+#include "StepVrDataRecord.h"
+
+
+
 
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 
+
+class FStepComponentData : public FStepSaveData
+{
+public:
+
+	void GetLine(FString& OutLine) override
+	{
+		OutLine = "";
+
+		for (int32 i = 0; i<RecordData.Num(); i++)
+		{
+			OutLine.Append(FString::Printf(TEXT("%3.3f,%3.3f,%3.3f,"), RecordData[i].X, RecordData[i].Y, RecordData[i].Z));
+		}
+
+		OutLine.Append("\n");
+	}
+
+	TArray<FVector> RecordData;
+};
+
+FStepVrDataRecord<FStepComponentData> StepVrDataRecord;
 
 
 
@@ -57,6 +82,35 @@ void UStepVrComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(UStepVrComponent, PlayerGUID);
+}
+
+void UStepVrComponent::RecordStart()
+{
+	if (bLocalControlled == false)
+	{
+		return;
+	}
+
+	if (StepVrDataRecord.IsRecord())
+	{
+		return;
+	}
+
+	StepVrDataRecord.CreateFile("StepVrComponent");
+}
+
+void UStepVrComponent::RecordStop()
+{
+	StepVrDataRecord.CloseFile();
+}
+
+void UStepVrComponent::RecordPushaData(TArray<FVector> LineData)
+{
+	FStepComponentData StepComponentData;
+	StepComponentData.RecordData = LineData;
+
+	StepVrDataRecord.AddData(StepComponentData);
+	StepVrDataRecord.SaveLineData();
 }
 
 void UStepVrComponent::ResetHMDDirection()

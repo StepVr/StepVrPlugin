@@ -9,6 +9,10 @@
 #define StepvrLibrary
 #define StepvrClassGroup
 
+
+
+
+
 UENUM()
 enum class FResetHMDType : uint8
 {
@@ -65,6 +69,13 @@ public:
 	UFUNCTION(Server,Reliable)
 	void SetPlayerGUID(uint32 NewPlayerGUID);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(BlueprintCallable)
+	void RecordStart();
+	UFUNCTION(BlueprintCallable)
+	void RecordStop();
+	UFUNCTION(BlueprintCallable)
+	void RecordPushaData(TArray<FVector> LineData);
 
 protected:
 	/**

@@ -37,14 +37,14 @@ void FStepVrInput::Tick(float DeltaTime)
 	/**
 	 * 初始化
 	 */
-	{
-		static bool IsInitialize = false;
-		if (IsInitialize == false)
-		{
-			Initialize();
-			IsInitialize = true;
-		}
-	}
+	//{
+	//	static bool IsInitialize = false;
+	//	if (IsInitialize == false)
+	//	{
+	//		Initialize();
+	//		IsInitialize = true;
+	//	}
+	//}
 }
 
 bool FStepVrInput::IsGamepadAttached() const
@@ -64,6 +64,31 @@ void FStepVrInput::RegisterMotionPair()
 	m_MotionPair.Add((uint8)EControllerHand::Gun, (int32)StepVrDeviceID::DGun);
 }
 
+void FStepVrInput::EventMocapHand(StepVR::SingleNode& Node, FStepVrButtonState& ButtonState, int DeviceID)
+{
+	do 
+	{
+		if (Node.GetKeyUp1(DeviceID, SDKKEYID(ButtonState.KeyID)))
+		{
+			UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Relese!"), DeviceID, *ButtonState.key.ToString());
+			MessageHandler->OnControllerButtonReleased(ButtonState.key, 0, false);
+			break;
+		}
+		if (Node.GetKeyDown1(DeviceID, SDKKEYID(ButtonState.KeyID)))
+		{
+			UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Press!"), DeviceID, *ButtonState.key.ToString());
+			MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
+			break;
+		}
+		//if (Node.GetKey1(DeviceID, SDKKEYID(ButtonState.KeyID)))
+		//{
+		//	UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Repeat!"), DeviceID, *ButtonState.Repeat.ToString());
+		//	MessageHandler->OnControllerButtonPressed(ButtonState.Repeat, 0, false);
+		//	break;
+		//}
+	} while (0);
+}
+
 void FStepVrInput::Initialize()
 {
 	/**
@@ -73,10 +98,10 @@ void FStepVrInput::Initialize()
 		TArray<IMotionController*> _Arrays = IModularFeatures::Get().GetModularFeatureImplementations<IMotionController>(IMotionController::GetModularFeatureName());
 		for (int32 i = 0; i < _Arrays.Num(); i++)
 		{
-			if (_Arrays[i] != this)
-			{
-				IModularFeatures::Get().UnregisterModularFeature(IMotionController::GetModularFeatureName(), _Arrays[i]);
-			}
+			//if (_Arrays[i] != this)
+			//{
+			//	IModularFeatures::Get().UnregisterModularFeature(IMotionController::GetModularFeatureName(), _Arrays[i]);
+			//}
 		}
 	}
 
@@ -96,7 +121,6 @@ void FStepVrInput::SendControllerEvents()
 		return;
 	}
 
-	uint8 flag = 0x0;
 	StepVR::SingleNode Node = STEPVR_FRAME->GetFrame().GetSingleNode();
 
 	const double CurrentTime = FPlatformTime::Seconds();
@@ -119,11 +143,19 @@ void FStepVrInput::SendControllerEvents()
 			continue;
 		}
 
+		//手套那件单独处理
+		if (DeviceID == 49 || DeviceID == 56)
+		{
+			EventMocapHand(Node,ButtonState,DeviceID);
+			continue;
+		}
+
+
 		switch (ButtonState.ActionState)
 		{
 		case EStepDeviceKeyType::State_Button:
 		{
-			flag = 0x0;
+			uint8 flag = 1;
 			flag = (Node.GetKeyUp(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Release : 0x0) | flag;
 			flag = (Node.GetKeyDown(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Press : 0x0) | flag;
 			flag = (Node.GetKey(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Repeat : 0x0) | flag;
@@ -221,7 +253,9 @@ FName FStepVrInput::GetMotionControllerDeviceTypeName() const
 
 bool FStepVrInput::GetControllerOrientationAndPosition(const int32 ControllerIndex, const EControllerHand DeviceHand, FRotator& OutOrientation, FVector& OutPosition, float WorldToMetersScale) const
 {
-	return GetOrientationAndPosition(ControllerIndex, DeviceHand, OutOrientation, OutPosition);
+	GetOrientationAndPosition(ControllerIndex, DeviceHand, OutOrientation, OutPosition);
+
+	return STEPVR_GLOBAL->UseStepMotionController;
 }
 
 //void FStepVrInput::SetHapticFeedbackValues(int32 ControllerId, int32 Hand, const FHapticFeedbackValues& Values)
@@ -255,6 +289,20 @@ void FStepVrInput::RegisterDeviceKey()
 		FText KeyText = FText::FromName(ButtonState.key);
 		FKey TargetKey(ButtonState.key);
 		EKeys::AddKey(FKeyDetails(TargetKey, KeyText, KeyFlag, StepVRCategoryName));
+		//if (ButtonState.DeviceID == 56)
+		//{
+		//	ButtonState.Repeat = FName("StepVR_RightMocapHand_Repeat");
+		//	FText KeyText1 = FText::FromName(ButtonState.Repeat);
+		//	FKey  TargetKey1(ButtonState.Repeat);
+		//	EKeys::AddKey(FKeyDetails(TargetKey1, KeyText1, KeyFlag, StepVRCategoryName));
+		//}		
+		//if (ButtonState.DeviceID == 49)
+		//{
+		//	ButtonState.Repeat = FName("StepVR_LeftMocapHand_Repeat");
+		//	FText KeyText1 = FText::FromName(ButtonState.Repeat);
+		//	FKey  TargetKey1(ButtonState.Repeat);
+		//	EKeys::AddKey(FKeyDetails(TargetKey1, KeyText1, KeyFlag, StepVRCategoryName));
+		//}
 	}
 }
 

@@ -90,7 +90,32 @@ public:
 	void SetOffsetTransform(const FVector& NewOffset);
 	FVector GetOffsetTransform();
 
+
+
+	/************************************************************************/
+	/*                          卡丁车                                          */
+	/************************************************************************/
+	//设置最大速度（0到100）
+	int32 SetKartMaxSpeed(int32 speed);
+
+	//开启或解除急刹
+	int32 SetKartBrake(bool bSet);
+
+	//禁用或启用物理倒挡
+	int32 SetKartEnableReverse(bool bSet);
+
+	//设置前进或后退(禁用物理倒挡后才起作用)
+	int32 SetKartForward(bool bForward);
+
+
+
+	/************************************************************************/
+	/*                           Unreal                                           */
+	/************************************************************************/
 	UWorld* GetWorld();
+
+	//是否使用StepMotionController
+	bool UseStepMotionController = true;
 
 protected:
 	StepVrGlobal();

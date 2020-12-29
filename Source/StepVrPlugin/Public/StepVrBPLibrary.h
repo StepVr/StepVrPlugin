@@ -53,4 +53,41 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
 	static void SetRecordPCIP(const FString& PCIP);
+
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
+	static void SetUseStepMotionController(bool UseStep);
+
+
+	/**
+	 * 卡丁车
+	 */
+
+
+	/*
+	* Percent speed:[0,100],设置当前速度
+	* -1：服务未开
+	* 0：设置成功
+	* 1：响应超时
+	* 100：数据未发送（找不到串口导致）
+	*/
+	UFUNCTION(BlueprintCallable, Category = "StepVr|KaDing")
+	static bool StepSetKartMaxSpeed(int32 Percent);
+	
+	/**
+	 * 开启或解除急刹
+	 */
+	UFUNCTION(BlueprintCallable, Category = "StepVr|KaDing")
+	static bool StepSetKartBrake(bool bSet);
+	
+	/**
+	 * 是否禁用物理倒挡
+	 */
+	UFUNCTION(BlueprintCallable, Category = "StepVr|KaDing")
+	static bool StepSetKartEnableReverse(bool bset);
+
+	/**
+	 * 设置前进或后退(禁用物理倒挡后才起作用)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "StepVr|KaDing")
+	static bool StepSetKartForward(bool bForward);
 };

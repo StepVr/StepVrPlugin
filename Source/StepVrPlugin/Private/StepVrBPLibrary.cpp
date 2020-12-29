@@ -31,3 +31,28 @@ void UStepVrBPLibrary::SetRecordPCIP(const FString& PCIP)
 {
 	STEPVR_GLOBAL->SetRecordPCIP(PCIP);
 }
+
+void UStepVrBPLibrary::SetUseStepMotionController(bool UseStep)
+{
+	STEPVR_GLOBAL->UseStepMotionController = UseStep;
+}
+
+bool UStepVrBPLibrary::StepSetKartMaxSpeed(int32 Percent)
+{
+	return STEPVR_GLOBAL->SetKartMaxSpeed(Percent) == 0;
+}
+
+bool UStepVrBPLibrary::StepSetKartBrake(bool bSet)
+{
+	return STEPVR_GLOBAL->SetKartBrake(bSet) == 0;
+}
+
+bool UStepVrBPLibrary::StepSetKartEnableReverse(bool bset)
+{
+	return STEPVR_GLOBAL->SetKartEnableReverse(bset) == 0;
+}
+
+bool UStepVrBPLibrary::StepSetKartForward(bool bForward)
+{
+	return STEPVR_GLOBAL->SetKartForward(bForward) == 0;
+}

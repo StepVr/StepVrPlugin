@@ -242,6 +242,50 @@ FVector StepVrGlobal::GetOffsetTransform()
 	return OffsetTransform;
 }
 
+int32 StepVrGlobal::SetKartMaxSpeed(int32 speed)
+{
+	int32 success = -1;
+
+	if (StepVrManager.IsValid())
+	{
+		success = StepVrManager->SetKartMaxSpeed(speed);
+	}
+	return success;
+}
+
+int32 StepVrGlobal::SetKartBrake(bool bSet)
+{
+	int32 success = -1;
+
+	if (StepVrManager.IsValid())
+	{
+		success = StepVrManager->SetKartBrake(bSet);
+	}
+	return success;
+}
+
+int32 StepVrGlobal::SetKartEnableReverse(bool bSet)
+{
+	int32 success = -1;
+
+	if (StepVrManager.IsValid())
+	{
+		success = StepVrManager->SetKartEnableReverse(bSet);
+	}
+	return success;
+}
+
+int32 StepVrGlobal::SetKartForward(bool bForward)
+{
+	int32 success = -1;
+
+	if (StepVrManager.IsValid())
+	{
+		success = StepVrManager->SetKartForward(bForward);
+	}
+	return success;
+}
+
 FDeviceFrame& StepVrGlobal::GetDeviceFrame()
 {
 	return GameDevicesFrame;

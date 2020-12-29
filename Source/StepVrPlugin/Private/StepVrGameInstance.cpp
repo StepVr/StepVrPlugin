@@ -5,57 +5,73 @@
 #include "StepVrGlobal.h"
 
 
+void ExecCommand(ECommandState NewCommand, int32 InData)
+{
+	STEPVR_GLOBAL->ExecCommand(NewCommand, InData);
+}
 
 void UStepVrGameInstance::StepServerSendInterval(float Interval)
 {
-	GStepServerSendInterval = Interval;
+	//GStepServerSendInterval = Interval;
 }
 
 void UStepVrGameInstance::StepFrameForecastInterval(float Interval)
 {
-	GStepFrameForecastInterval = Interval;
+	//GStepFrameForecastInterval = Interval;
 }
 
 void UStepVrGameInstance::StepFrameForecast(int32 IsForecast)
 {
-	GStepFrameForecast = IsForecast != 0 ? true : false;
+	//GStepFrameForecast = IsForecast != 0 ? true : false;
 }
 
 void UStepVrGameInstance::StepFrameLerp(int32 IsLerp)
 {
-	GStepFrameLerp = IsLerp != 0 ? true : false;
+	//GStepFrameLerp = IsLerp != 0 ? true : false;
 }
 
 void UStepVrGameInstance::StepFrameLerpAlpha(float Alpha)
 {
-	GStepFrameLerpAlpha = Alpha;
+	//GStepFrameLerpAlpha = Alpha;
 }
 
-void UStepVrGameInstance::StepStartServerState()
+void UStepVrGameInstance::StepServerReceive_Start()
 {
-	ExecCommand(TEXT("StartServerState"));
+	ExecCommand(ECommandState::Stat_ServerReceiveRecord, 1);
 }
 
-void UStepVrGameInstance::StepStopServerState()
+void UStepVrGameInstance::StepServerReceive_Stop()
 {
-	ExecCommand(TEXT("StopServerState"));
+	ExecCommand(ECommandState::Stat_ServerReceiveRecord, 0);
 }
 
-void UStepVrGameInstance::StepStartHMDState()
+void UStepVrGameInstance::StepServerSend_Start()
 {
-	ExecCommand(TEXT("StartHMDState"));
+	ExecCommand(ECommandState::Stat_ServerSendRecord, 1);
 }
 
-void UStepVrGameInstance::StepStopHMDState()
+void UStepVrGameInstance::StepServerSend_Stop()
 {
-	ExecCommand(TEXT("StopHMDState"));
+	ExecCommand(ECommandState::Stat_ServerSendRecord, 0);
 }
 
-void UStepVrGameInstance::ExecCommand(const FString& Command)
+void UStepVrGameInstance::StepCamera_Start()
 {
-	if (GStepCommand.IsBound())
-	{
-		FString ExecStr(*Command);
-		GStepCommand.Broadcast(ExecStr);
-	}
+	ExecCommand(ECommandState::Stat_CameraRecord, 1);
 }
+
+void UStepVrGameInstance::StepCamera_Stop()
+{
+	ExecCommand(ECommandState::Stat_CameraRecord, 0);
+}
+
+void UStepVrGameInstance::StepMocap_Start(const FString& RecordIP)
+{
+	STEPVR_GLOBAL->ExecCommand(ECommandState::Stat_MocapRecord, RecordIP);
+}
+
+void UStepVrGameInstance::StepMocap_Stop()
+{
+	STEPVR_GLOBAL->ExecCommand(ECommandState::Stat_MocapRecord, "");
+}
+

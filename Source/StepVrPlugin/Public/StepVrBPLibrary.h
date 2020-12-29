@@ -26,59 +26,68 @@
 */
 
 
-class Frame;
-/**
-* 
-* received Date class Need inherit StepVrServerInterface
-*/
-UENUM()
-enum class FGameType : uint8
-{
-	GameStandAlone,
-	GameClient,
-	GameServer,
-	
-};
 
 UCLASS()
 class STEPVRPLUGIN_API UStepVrBPLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_UCLASS_BODY()
 
+public:
 	/**
-	*	先确保PlayerController有效
-	*	@param: GameId和自定义的ID匹配	
-	*/
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
-	static bool SVCheckGameLic(FString gameId);
-
-	/**
-	* 获取标准件数据
-	*/
-	UFUNCTION(BlueprintPure, Category = "StepVr|Global")
-	static void SVGetDeviceStateWithID(int32 DeviceID, FTransform& Transform);
-	
-	/**
-	 * 激光系定位转UE系
+	 *	Client模式需要设置ServerIP
 	 */
-	UFUNCTION(BlueprintPure, Category = "StepVr|Global")
-	static FTransform Convert2UETransform(float Vx, float Vy, float Vz, float Qw, float Qx, float Qy, float Qz);
-
-	/**
-	 * 	type
-	 * 	0 EStandAlone,
-	 *	1 EClient,
-	 *	2 EServer,
-	 *	@ServerIP ：1 EClient 设置 ServerIP,
-	 */
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
-	static void SetGameType(FGameType type,FString ServerIP);
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
+	static void SetGameType(EStepGameType type,FString ServerIP);
 
 	/**
 	 * 设置缩放，所有定位数据得Location将进行缩放
 	 */
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Global")
-	static void SetScaleTransform(float Scales);
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
+	static void SetScaleTransform(FVector Scales);
 
-	static void SVGetDeviceState(StepVR::SingleNode* InSingleNode, int32 DeviceID, FTransform& Transform);
+	UFUNCTION(BlueprintPure, Category = "StepVr|Game")
+	static bool GetDeviceTransform(int32 DeviceID,FTransform& OutData);
+
+	/**
+	 * 设置录制机器IP
+	 */
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
+	static void SetRecordPCIP(const FString& PCIP);
+
+	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
+	static void SetUseStepMotionController(bool UseStep);
+
+
+	/**
+	 * 卡丁车
+	 */
+
+
+	/*
+	* Percent speed:[0,100],设置当前速度
+	* -1：服务未开
+	* 0：设置成功
+	* 1：响应超时
+	* 100：数据未发送（找不到串口导致）
+	*/
+	UFUNCTION(BlueprintCallable, Category = "StepVr|KaDing")
+	static bool StepSetKartMaxSpeed(int32 Percent);
+	
+	/**
+	 * 开启或解除急刹
+	 */
+	UFUNCTION(BlueprintCallable, Category = "StepVr|KaDing")
+	static bool StepSetKartBrake(bool bSet);
+	
+	/**
+	 * 是否禁用物理倒挡
+	 */
+	UFUNCTION(BlueprintCallable, Category = "StepVr|KaDing")
+	static bool StepSetKartEnableReverse(bool bset);
+
+	/**
+	 * 设置前进或后退(禁用物理倒挡后才起作用)
+	 */
+	UFUNCTION(BlueprintCallable, Category = "StepVr|KaDing")
+	static bool StepSetKartForward(bool bForward);
 };

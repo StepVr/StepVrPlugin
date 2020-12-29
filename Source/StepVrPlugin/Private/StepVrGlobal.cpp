@@ -1,113 +1,94 @@
 ﻿#include "StepVrGlobal.h"
-#include "Engine.h"
-
-#include "StepVrServerModule.h"
-#include "StepVrBPLibrary.h"
 #include "LocalDefine.h"
-#include "StepVrPlugin.h"
+#include "StepVrConfig.h"
+#include "StepVrServerInterface.h"
+#include "Auxiliary/StepVrAuxiliaryCollection.h"
 
 
-/************************************************************************/
-/* Global Data                                                                     */
-/************************************************************************/
-AllDevicesData					GLocalDevicesRT;
-float							GLastReceiveTime = 0.f;
-TMap<uint32, AllDevicesData>	GReplicateDevicesRT;
-FCriticalSection				GReplicateSkeletonCS;
-TAtomic<uint64>					GUpdateReplicateSkeleton = 0;
-TMap<uint32, AllSkeletonData>	GReplicateSkeletonRT;
+#include "Engine/Engine.h"
+#include "Misc/MessageDialog.h"
 
-TArray<int32>					GNeedUpdateDevices = { StepVrDeviceID::DHead };
+
+
+
 
 TSharedPtr<StepVrGlobal> StepVrGlobal::SingletonInstance = nullptr;
-FStepCommand	GStepCommand;
-FStepFrames*	GStepFrames = nullptr;
-float			GStepServerSendInterval = 0.0333f;
-bool			GStepFrameForecast = false;
-float			GStepFrameForecastInterval = 0.33;
-bool			GStepFrameLerp = true;
-float			GStepFrameLerpAlpha = 0.1f;
-float			GScaleTransform = 1.f;
+bool _AlreadyCreate = false;
 
 
-/************************************************************************/
-/* Global Class                                                                     */
-/************************************************************************/
 StepVrGlobal::StepVrGlobal()
 {
+	NeedUpdateDeviceID = {
+				StepVrDeviceID::DHead,
+				StepVrDeviceID::DGun
+				};
 }
-
-StepVrGlobal::~StepVrGlobal()
-{
-	CloseSDK();
-}
-
 
 StepVrGlobal* StepVrGlobal::GetInstance()
 {
+	if ((SingletonInstance.IsValid() == false) &&
+		(_AlreadyCreate == false))
+	{
+		_AlreadyCreate = true;
+		SingletonInstance = MakeShareable(new StepVrGlobal());
+		SingletonInstance->StartSDK();
+	}
+
 	if (SingletonInstance.IsValid())
 	{
 		return SingletonInstance.Get();
 	}
 
-	SingletonInstance = MakeShareable(new StepVrGlobal());
-	return SingletonInstance.Get();
+	return nullptr;
 }
+
+bool StepVrGlobal::CheckValidInstance()
+{
+	return SingletonInstance.IsValid();
+}
+
 void StepVrGlobal::Shutdown()
 {
 	if (SingletonInstance.IsValid())
 	{
+		SingletonInstance->CloseSDK();
 		SingletonInstance.Reset();
 	}
 }
 
 void StepVrGlobal::StartSDK()
 {
-	//加载本地SDK
 	LoadSDK();
 
-	//加载Server
 	LoadServer();
 
-	/**
-	 * 注册开始帧，刷新数据
-	 */
+	//辅助软件
+	StepVrAuxiliaryCollection = MakeShared<FStepVrAuxiliaryCollection>();
+	StepVrAuxiliaryCollection->StartCollection();
+
+	//当前机器唯一标识
+	FGuid NewGUID = FGuid::NewGuid();
+	GameGUID = GetTypeHash(NewGUID);
+
 	EngineBeginFrameHandle = FCoreDelegates::OnBeginFrame.AddRaw(this, &StepVrGlobal::EngineBeginFrame);
-	//PostLoadMapHandle = FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &StepVrGlobal::PostLoadMapWithWorld);
 }
-
-bool StepVrGlobal::ServerIsValid()
-{
-	return StepVrServer.IsValid();
-}
-
 
 bool StepVrGlobal::SDKIsValid()
 {
 	return StepVrManager.IsValid();
 }
 
+uint32 StepVrGlobal::GetGUID()
+{
+	return GameGUID;
+}
+
 void StepVrGlobal::LoadServer()
 {
-	IStepvrServerModule* _Server = static_cast<IStepvrServerModule*>(FModuleManager::Get().GetModule(IStepvrServerModule::GetModularFeatureName()));
-
-	if (_Server)
+	if (IStepvrServerModule::IsAvailable())
 	{
-		//创建服务器
-		StepVrServer = _Server->CreateServer();
-
-		if (StepVrServer.IsValid())
-		{ 
-			UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrServer Start Success"));
-		}
-		else 
-		{ 
-			UE_LOG(LogStepVrPlugin, Warning, TEXT("StepVrServer Start Faild"));
-		}	
-
-		//创建接收数据
-		StepVrReplicateData = MakeShareable(new FStepFrames());
-		GStepFrames = StepVrReplicateData.Get();
+		StepVrData = IStepvrServerModule::Get().CreateStepVrData();
+		StepVrData->Init();
 	}
 }
 
@@ -141,34 +122,33 @@ void StepVrGlobal::LoadSDK()
 			break;
 		}
 
-		StepVrManager = MakeShareable(new StepVR::Manager());
+		StepVrManager = MakeShared<StepVR::Manager>();
 		StepVR::StepVR_EnginAdaptor::MapCoordinate(StepVR::Vector3f(0, 0, 1), StepVR::Vector3f(-1, 0, 0), StepVR::Vector3f(0, 1, 0));
 		StepVR::StepVR_EnginAdaptor::setEulerOrder(StepVR::EulerOrder_ZYX);
-
+		
 		Success = (StepVrManager->Start() == 0);
-		if (!Success)
+		if (Success)
 		{
-			Message = "Failed to connect server";
+			StepVrManagerComplieTime = StepVrManager->GetServerCompileTime();
+			StepVrManagerVersion = StepVrManager->GetServerVersion();
 		}
 	} while (0);
 
 	if (Success)
 	{
-		UE_LOG(LogStepVrPlugin, Warning, TEXT("StepvrSDK Satrt Success"));
+		UE_LOG(LogStepVrPlugin, Log, TEXT("MMAP ComplieTime : %s"), *StepVrManagerComplieTime);
+		UE_LOG(LogStepVrPlugin, Log, TEXT("MMAP Version : %s"), *StepVrManagerVersion);
 	}
 	else
 	{
-		//CloseSDK();
-
-		UE_LOG(LogStepVrPlugin, Warning, TEXT("StepvrSDK Satrt Failed,Message:%s"), *Message);
-		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(NSLOCTEXT("StepVR", "StepVR", "{0}"), FText::FromString(Message)));
+		FMessageDialog::Open(EAppMsgType::Ok, FText::Format(NSLOCTEXT("StepVR", "StepVR", "{0}"), FText::FromString("Failed To Connect MMAP")));
 	}
 }
 
 void StepVrGlobal::CloseSDK()
 {
 	FCoreDelegates::OnBeginFrame.Remove(EngineBeginFrameHandle);
-	//FCoreUObjectDelegates::PostLoadMapWithWorld.Remove(PostLoadMapHandle);
+
 	if (DllHandle != nullptr)
 	{
 		FPlatformProcess::FreeDllHandle(DllHandle);
@@ -179,51 +159,186 @@ void StepVrGlobal::CloseSDK()
 void StepVrGlobal::EngineBeginFrame()
 {
 #if SHOW_STATE
-	SCOPE_CYCLE_COUNTER(stat_EngineBeginFrame_tick);
+	SCOPE_CYCLE_COUNTER(Stat_StepVrGlobal_UpdateFrame);
 #endif
 
-	/**
-	* 更新定位数据
-	*/
-	if (StepVrManager.IsValid())
+	RefreshFrame(GameDevicesFrame);
+	
+	if (StepVrData.IsValid())
 	{
-		StepVR::SingleNode Node = StepVrManager->GetFrame().GetSingleNode();
-
-		for (auto DevID : GNeedUpdateDevices)
-		{
-			FTransform TempData;
-			UStepVrBPLibrary::SVGetDeviceState(&Node, DevID, TempData);
-		}
+		//同步数据到Game
+		StepVrData->SynchronizationToLocal(GameAllPlayerLastTicks, GameAllPlayer);
 	}
 
-	//UE_LOG(LogTemp,Log,TEXT("PLatform Time : %f"), FPlatformTime::Seconds());
-
-	/**
-	 * 更新同步数据
-	 */
-	if (StepVrServer.IsValid() && StepVrReplicateData.IsValid())
+	if (StepVrAuxiliaryCollection.IsValid())
 	{
-		FStepAllPlayerFrame* Container = StepVrReplicateData->GetHeadContainer();
-		if (StepVrServer->SynchronizationStepVrData(Container))
-		{
-			StepVrReplicateData->FlushHeadContain();
-		}
-		else if(GStepFrameForecast)
-		{
-			StepVrReplicateData->ForecastNewData();
-		}
+		StepVrAuxiliaryCollection->EngineBeginFrame();
 	}
 }
 
-void StepVrGlobal::PostLoadMapWithWorld(UWorld* UsingWorld)
+void StepVrGlobal::DataLerp(FDeviceData& inputData, FDeviceData& outputData)
 {
-	//CurUsingWorld = UsingWorld;
-	//UNetDriver* Driver = CurUsingWorld->GetNetDriver();
-	//if (Driver)
+	//FTransform TempData;
+
+	////第一帧接收到数据，同步两个时间戳
+	//if (isFirst)
 	//{
-	//	ENetMode mode = Driver->GetNetMode();
-	//	UE_LOG(LogTemp, Log, TEXT("%d"), mode);
+	//	//记录对齐时候的两个时间戳
+	//	FirstTime1 = inputData.GetMMAPTicks();
+	//	FirstTime2 = inputData.TemporaryTimestamp;
+
+	//	//输出时间戳均为0
+	//	outputData.Transform = inputData.Transform;
+	//	outputData.TemporaryTimestamp = 0;
+
+	//	//缓存时间戳
+	//	OutPutDataBuff = outputData;
+	//	return;
 	//}
+
+	//if ((inputData.TemporaryTimestamp - FirstTime2) < DelatTime)
+	//{
+	//	//接收到的数据的时间小于延迟时间，输出仍为第一帧，用于产生延迟
+	//	outputData.Transform = inputData.Transform;
+	//	outputData.TemporaryTimestamp = 0;
+
+	//	OutPutDataBuff = outputData;
+	//}
+	//else
+	//{
+	//	int64 OutTime = inputData.TemporaryTimestamp - FirstTime2 - DelatTime;  //经过延迟输出的时间戳
+	//	int64 InTime = inputData.GetMMAPTicks() - FirstTime1;					//接收到的网络数据的时间戳
+
+	//	//根据上一帧输出数据的时间戳，本次输出应有的时间戳，以及接收到网络数据的时间戳计算插值比例（因为延迟，接收到的时间戳肯定大于上一帧输出时间戳）
+	//	double k = (OutTime - OutPutDataBuff.GetMMAPTicks()) / (InTime - OutPutDataBuff.GetMMAPTicks());
+	//	
+	//	//插值
+	//	FVector Plerp = OutPutDataBuff.Transform.GetLocation() + k * (inputData.Transform.GetLocation() - outputData.Transform.GetLocation());
+
+	//	outputData.Transform.SetLocation(Plerp);
+	//	outputData.TemporaryTimestamp = OutTime;
+
+	//	OutPutDataBuff = outputData;
+	//}
+}
+
+void StepVrGlobal::SetScaleTransform(const FVector& NewScale)
+{
+	ScaleTransform = NewScale;
+}
+
+FVector StepVrGlobal::GetScaleTransform()
+{
+	return ScaleTransform;
+}
+
+void StepVrGlobal::SetOffsetTransform(const FVector& NewOffset)
+{
+	OffsetTransform = NewOffset;
+}
+
+FVector StepVrGlobal::GetOffsetTransform()
+{
+	return OffsetTransform;
+}
+
+int32 StepVrGlobal::SetKartMaxSpeed(int32 speed)
+{
+	int32 success = -1;
+
+	if (StepVrManager.IsValid())
+	{
+		success = StepVrManager->SetKartMaxSpeed(speed);
+	}
+	return success;
+}
+
+int32 StepVrGlobal::SetKartBrake(bool bSet)
+{
+	int32 success = -1;
+
+	if (StepVrManager.IsValid())
+	{
+		success = StepVrManager->SetKartBrake(bSet);
+	}
+	return success;
+}
+
+int32 StepVrGlobal::SetKartEnableReverse(bool bSet)
+{
+	int32 success = -1;
+
+	if (StepVrManager.IsValid())
+	{
+		success = StepVrManager->SetKartEnableReverse(bSet);
+	}
+	return success;
+}
+
+int32 StepVrGlobal::SetKartForward(bool bForward)
+{
+	int32 success = -1;
+
+	if (StepVrManager.IsValid())
+	{
+		success = StepVrManager->SetKartForward(bForward);
+	}
+	return success;
+}
+
+FDeviceFrame& StepVrGlobal::GetDeviceFrame()
+{
+	return GameDevicesFrame;
+}
+
+bool StepVrGlobal::GetDeviceTransform(int32 DeviceID, FTransform& OutData)
+{
+	if (GameDevicesFrame.HasDevice(DeviceID))
+	{
+		OutData = GameDevicesFrame.GetDeviceRef(DeviceID).GetTransform();
+		return true;
+	}
+
+	NeedUpdateDeviceID.AddUnique(DeviceID);
+	return false;
+}
+
+bool StepVrGlobal::GetRemoteDeviceFrame(uint32 GUID, FDeviceFrame& OutData)
+{
+	if (auto Single = GameAllPlayer.Find(GUID))
+	{
+		OutData = *Single;
+		return true;
+	}
+
+	return false;
+}
+
+
+FStepCommandDelegate& StepVrGlobal::GetCommandDelegate()
+{
+	return CommandDelegate;
+}
+
+void StepVrGlobal::ExecCommand(ECommandState NewCommand, int32 Values)
+{
+	if (CommandDelegate.IsBound())
+	{
+		CommandDelegate.Broadcast(NewCommand, Values);
+	}
+}
+
+void StepVrGlobal::ExecCommand(ECommandState NewCommand, const FString& Values)
+{
+	if (CommandDelegateStr.IsBound())
+	{
+		CommandDelegateStr.Broadcast(NewCommand, Values);
+	}
+}
+
+FStepCommandDelegateStr& StepVrGlobal::GetCommandDelegateStr()
+{
+	return CommandDelegateStr;
 }
 
 UWorld* StepVrGlobal::GetWorld()
@@ -239,188 +354,102 @@ UWorld* StepVrGlobal::GetWorld()
 
 StepVR::Manager* StepVrGlobal::GetStepVrManager()
 {
-	return StepVrManager.IsValid() ? StepVrManager.Get() : nullptr;
+	return StepVrManager.Get();
 }
 
 
-FStepVrServer* StepVrGlobal::GetStepVrServer()
+FString StepVrGlobal::GetManagerCompileTime()
 {
-	return StepVrServer.IsValid() ? StepVrServer.Get() : nullptr;
+	return StepVrManagerComplieTime;
 }
 
-FStepFrames* StepVrGlobal::GetStepVrReplicateFrame()
+FString StepVrGlobal::GetManagerCompileVersion()
 {
-	return StepVrReplicateData.IsValid() ? StepVrReplicateData.Get() : nullptr;
+	return StepVrManagerVersion;
 }
 
-/****************************FStepFrams***********************************/
-/*                                                                      */
-/************************************************************************/
-FStepFrames::FStepFrames():
-	IndexCurHead(0),
-	IndexHeadContain(0),
-	NewFrame(nullptr)
+void StepVrGlobal::SetGameType(EStepGameType NewType, FString& NewServerIP)
 {
+	GameType = NewType;
+	GameServerIP = NewServerIP;
 
-}
-
-
-void FStepFrames::GetLastReplicateDeviceData(uint32 PlayerID, int32 DeviceID, FTransform& Data)
-{
-	if (NewFrame == nullptr)
+	if (StepVrData.IsValid())
 	{
-		return;
-	}
-
-	auto TempPlayer = NewFrame->AllPlayerInfo.Find(PlayerID);
-	if (TempPlayer == nullptr)
-	{
-		return;
-	}
-
-	//最新数据
-	auto NewDeviceData = (*TempPlayer).CurDeviceData.Find(DeviceID);
-	if (NewDeviceData == nullptr)
-	{
-		return;
-	}
-
-	if (GStepFrameLerp)
-	{
-		//插值
-		FVector CurLocation = Data.GetLocation();
-		FVector NewLocation = CurLocation + GStepFrameLerpAlpha * (NewDeviceData->GetLocation() - CurLocation);
-		Data.SetLocation(NewLocation);
-		Data.SetRotation(NewDeviceData->GetRotation());
-	}
-	else
-	{
-		Data = *NewDeviceData;
+		StepVrData->SetNewGameInfo(GameType, GameGUID, GameServerIP);
 	}
 }
 
-FStepAllPlayerFrame* FStepFrames::GetHeadContainer()
+EStepGameType StepVrGlobal::GetGameType()
 {
-	IndexHeadContain = (IndexCurHead + 1) % StepFramsMax;
-	return &CacheFrames[IndexHeadContain];
+	return GameType;
 }
 
-void FStepFrames::FlushHeadContain()
+void StepVrGlobal::SetRecordPCIP(const FString& PCIP)
 {
-	IndexCurHead = IndexHeadContain;
-    NewFrame = &CacheFrames[IndexCurHead];
-}
-
-void FStepFrames::ForecastNewData()
-{
-	NewFrame = &ForecastFrame;
-
-	//预测新数据
-	float CurTime = FPlatformTime::Seconds();
-
-	FStepAllPlayerFrame* Data1 = &CacheFrames[IndexCurHead];
-	FStepAllPlayerFrame* Data2 = &CacheFrames[(FMath::Abs(IndexCurHead - 1)) % StepFramsMax];
-
-	float Alpha = (CurTime - Data2->TimeStemp) / (Data1->TimeStemp - Data2->TimeStemp);
-
-	for (auto& MapFrame : Data1->AllPlayerInfo)
+	if (StepVrData.IsValid())
 	{
-		FStepFrame* ForecastKey = ForecastFrame.AllPlayerInfo.Find(MapFrame.Key);
-		if (ForecastKey == nullptr)
+		StepVrData->SetNeedRecordIP(PCIP);
+	}
+}
+
+void StepVrGlobal::RefreshFrame(FDeviceFrame& outFrame)
+{
+	static StepVR::Vector3f vec3;
+	static StepVR::Vector4f vec4;
+	static FTransform       Transform;
+
+	FScopeLock Lock(&StepVrManagerCritical);
+
+	//更新本机数据
+	if (StepVrManager.IsValid())
+	{
+		StepVR::SingleNode InSingleNode = StepVrManager->GetFrame().GetSingleNode();
+
+		for (uint8 DevID : NeedUpdateDeviceID)
 		{
-			ForecastFrame.AllPlayerInfo.Add(MapFrame.Key, FStepFrame());
-			ForecastKey = ForecastFrame.AllPlayerInfo.Find(MapFrame.Key);
-		}
+			FDeviceData& OutDevice = outFrame.GetDeviceRef(DevID);
 
-		auto PairKey = Data2->AllPlayerInfo.Find(MapFrame.Key);
-		if (PairKey == nullptr)
-		{
-			continue;
-		}
+			bool isLink = InSingleNode.IsHardWareLink(DevID);
+			OutDevice.SetLink(isLink);
 
-		for (auto& MapDevice : MapFrame.Value.CurDeviceData)
-		{
-			FTransform* ForceDevice = ForecastKey->CurDeviceData.Find(MapDevice.Key);
-			if (ForceDevice == nullptr)
-			{
-				ForecastKey->CurDeviceData.Add(MapDevice.Key, FTransform());
-				ForceDevice = ForecastKey->CurDeviceData.Find(MapDevice.Key);
-			}
-
-			auto PairDevice = PairKey->CurDeviceData.Find(MapDevice.Key);
-			if (PairDevice == nullptr)
+			if (!isLink)
 			{
 				continue;
 			}
 
-			FVector Pre = PairDevice->GetLocation();
-			FVector Cur = Pre + Alpha * (MapDevice.Value.GetLocation() - Pre);
-			ForceDevice->SetLocation(Cur);
-			ForceDevice->SetRotation(MapDevice.Value.GetRotation());
+			//加速度角速度
+			vec3 = InSingleNode.GetSpeedVec(SDKNODEID(DevID));
+			OutDevice.SetSpeed(FVector(vec3.x, vec3.y, vec3.z));
+			vec3 = InSingleNode.GetSpeedAcc(SDKNODEID(DevID));
+			OutDevice.SetAcceleration(FVector(vec3.x, vec3.y, vec3.z));
+			vec3 = InSingleNode.GetSpeedGyro(SDKNODEID(DevID));
+			OutDevice.SetPalstance(FVector(vec3.x, vec3.y, vec3.z));
+
+			//定位
+			vec3 = InSingleNode.GetPosition(SDKNODEID(DevID));
+			vec3.x = vec3.x - (OffsetTransform.X/100);
+			vec3.y = vec3.y - (OffsetTransform.Y/100);
+			vec3.z = vec3.z - (OffsetTransform.Z/100);
+
+			vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
+
+			//定位缩放
+			Transform.SetLocation(FVector(vec3.x, vec3.y, vec3.z) * 100 * ScaleTransform);
+
+			vec4 = InSingleNode.GetQuaternion(SDKNODEID(DevID));
+			vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
+			
+			//头部姿态单独处理
+			if (DevID == 6)
+			{
+				Transform.SetRotation(FQuat(vec4.y * -1, vec4.x, vec4.z, vec4.w));
+			}
+			else
+			{
+				Transform.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
+			}
+
+			OutDevice.SetTransform(Transform);
 		}
 	}
 }
-
-
-
-
-
-/************************************************************************/
-/* Time                                                                     */
-/************************************************************************/
-#include "Windows/AllowWindowsPlatformTypes.h"  
-#include <chrono>
-using namespace std;
-using namespace std::chrono;
-
-
-class StepTimeWin : public StepTime
-{
-public:
-	StepTimeWin() :
-		m_begin(high_resolution_clock::now())
-	{
-
-	}
-	virtual ~StepTimeWin()
-	{
-	}
-
-	virtual void ResetTime() override
-	{
-		//m_begin = high_resolution_clock::now();
-	}
-
-
-	virtual double IntervalAndReset() override
-	{
-		double __LastTime = Interval_MS();
-		double __Interval = __LastTime - LastTime;
-
-		LastTime = __LastTime;
-		return __Interval;
-	}
-
-
-	virtual double Interval_MS() override
-	{
-		return duration_cast<chrono::microseconds>(high_resolution_clock::now() - m_begin).count() / 1000.f;
-	}
-	virtual int64 Interval_Micro() override
-	{
-		return duration_cast<chrono::microseconds>(high_resolution_clock::now() - m_begin).count();
-	}
-
-protected:
-	time_point<high_resolution_clock> m_begin;
-
-	double LastTime = 0.f;
-};
-
-TSharedPtr<StepTime> StepTime::GetTime()
-{
-	return MakeShareable(new StepTimeWin());
-}
-
-
-#include "Windows/HideWindowsPlatformTypes.h"  

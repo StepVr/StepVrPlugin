@@ -9,20 +9,35 @@
 
 #define StepVrPluginName	"StepVrPlugin"
 
+//辅助程序接受端口
+#define AUXILIARY_PORT				7779
+#define AUXILIARY_LISTEN_MAX		5
+
+
+
+
+
+DECLARE_LOG_CATEGORY_EXTERN(LogStepVrPlugin, Log, All);
+
 //Stat stepvr
 #define SHOW_STATE	true
-DECLARE_STATS_GROUP(TEXT("stepvr"), STATGROUP_STEPVR, STATCAT_Advanced);
-DECLARE_CYCLE_STAT(TEXT("stat Componment tick"), stat_Componment_tick, STATGROUP_STEPVR);
-DECLARE_CYCLE_STAT(TEXT("stat DeviceTransform tick"), stat_DeviceTransform_tick, STATGROUP_STEPVR);
-DECLARE_CYCLE_STAT(TEXT("stat ControllerEvent tick"), stat_ControllerEvent_tick, STATGROUP_STEPVR);
-DECLARE_CYCLE_STAT(TEXT("stat EngineBeginFrame tick"), stat_EngineBeginFrame_tick, STATGROUP_STEPVR);
+DECLARE_STATS_GROUP(TEXT("StepVR"), STATGROUP_StepVR, STATCAT_Advanced);
+DECLARE_CYCLE_STAT(TEXT("StepVrComponet tick"), Stat_StepVrComponet_tick, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrComponet DeviceTransform"), Stat_StepVrComponetp_DeviceTransform, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrInput ControllerEvent"), Stat_StepVrInput_ControllerEvent, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrGlobal UpdateFrame"), Stat_StepVrGlobal_UpdateFrame, STATGROUP_StepVR);
 
+//DECLARE_STATS_GROUP(TEXT("stepvrserver"), STATGROUP_STEPVRSERVER, STATCAT_Advanced);
+DECLARE_CYCLE_STAT(TEXT("StepVrData Receive"), Stat_StepVrData_Receive, STATGROUP_StepVR);
+DECLARE_CYCLE_STAT(TEXT("StepVrData Send"), Stat_StepVrData_Send, STATGROUP_StepVR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("StepVrData RemoteNums"), Statr_StepVrData_RemoteNums, STATGROUP_StepVR);
+DECLARE_DWORD_COUNTER_STAT(TEXT("StepVrData Receive Interval (ms)"), Stat_StepVrData_Receive_Interval, STATGROUP_StepVR);
 
 /*----------------------------------------------------------------------------
 	StepVr Node Convert
 ----------------------------------------------------------------------------*/
-#define SDKNODEID(_ID_)	((StepVR::SingleNode::NodeID)(_ID_))
-#define SDKKEYID(_ID_)	((StepVR::SingleNode::KeyID)(_ID_))
+#define SDKNODEID(_ID_)		((StepVR::SingleNode::NODEID)(_ID_))
+#define SDKKEYID(_ID_)		((StepVR::SingleNode::KeyID)(_ID_))
 
 
 /*----------------------------------------------------------------------------
@@ -31,12 +46,6 @@ DECLARE_CYCLE_STAT(TEXT("stat EngineBeginFrame tick"), stat_EngineBeginFrame_tic
 #define STEPVRSUPPORTPLATFORMS PLATFORM_WINDOWS
 #define PLATFORM_WIN64 (PLATFORM_WINDOWS&&PLATFORM_64BITS)
 #define PLATFORM_WIN32 (PLATFORM_WINDOWS&&PLATFORM_32BITS)
-
-
-/*----------------------------------------------------------------------------
-	Log category for the StepVr module.
-----------------------------------------------------------------------------*/
-DECLARE_LOG_CATEGORY_EXTERN(LogStepVrPlugin, Log, All);
 
 #define SAFE_DELETE_NULL(_Point_)	if (_Point_!=nullptr) { delete _Point_;_Point_ = nullptr; }
 #define CHECK_BREAK(_Flag_)			if(_Flag_){break;}
@@ -65,7 +74,6 @@ namespace StepVrDeviceID {
 		DLeftFoot			= 0x0d,
 		DRightFoot			= 0x0e,
 
-		DHMD			= 0x1f,
+		DHMD				= 0x1f,
 	};
 }
-

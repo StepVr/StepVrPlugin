@@ -2,38 +2,68 @@
 
 #pragma once
 #include "Camera/CameraComponent.h"
+#include "StepVrDataRecord.h"
 #include "StepVrCameraComponent.generated.h"
 
-class FArchive;
+
+
+
+class FStepCameraData : public FStepSaveData
+{
+public:
+	FVector		Location;
+	FRotator	Rotator;
+
+	void SetTransform(FVector& inLocation, FRotator& inRotator)
+	{
+		Location = inLocation;
+		Rotator = inRotator;
+
+		//数据间隔
+		{
+			static int64 _CacheTicks;
+			DealTicks(_CacheTicks);
+		}
+	}
+
+	virtual void GetLine(FString& OutLine)
+	{
+		OutLine = FString::Format(TEXT("{0},{1},{2},{3},{4},{5},{6}\n"),
+			{ 
+				DataInterval,
+				Location.X,
+				Location.Y,
+				Location.Z,
+				Rotator.Yaw,
+				Rotator.Pitch,
+				Rotator.Roll
+			});
+	}
+
+};
+
 
 
 UCLASS(meta = (BlueprintSpawnableComponent), ClassGroup = (StepVR,Camera))
 class STEPVRPLUGIN_API UStepVrCameraComponent : public UCameraComponent
 {
 	GENERATED_UCLASS_BODY()
-		
-public:
-	virtual void GetCameraView(float DeltaTime, FMinimalViewInfo& DesiredView) override;
 	
-	//设置Camera类型
-	void SetCameraInfo(int32 CameraID);
+public:
+	
+	virtual void GetCameraView(float DeltaTime, FMinimalViewInfo& DesiredView) override;
 
 	virtual void BeginDestroy() override;
 
 	virtual void BeginPlay() override;
 
-	void ExecCommands(FString& Commands);
+	UFUNCTION(BlueprintCallable)
+	void ChangeCameraData();
 
 protected:
 	void RecaclCameraData(float DeltaTime, FMinimalViewInfo& DesiredView);
 
-	void RecordHMDData(FTransform& Head, FMinimalViewInfo& CameraInfo);
-
-	int32	iCameraID = 6;
-
-	//Delegate
-	FDelegateHandle HandleCommand;
-
-	bool					IsStartRecord;
-	FArchive*				HandleFile;
+	FStepVrDataRecord<FStepCameraData>	StepVrDataRecord;
+	FDelegateHandle	CommandHandle;
+	bool UseStepData = true;
 };

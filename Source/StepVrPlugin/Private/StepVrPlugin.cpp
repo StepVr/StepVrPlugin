@@ -4,12 +4,12 @@
 #include "StepVrGlobal.h"
 
 
+
 void FStepVrPluginModule::StartupModule()
 {
-	
 	IInputDeviceModule::StartupModule();
 
-	StepVrGlobal::GetInstance()->StartSDK();
+	StepVrGlobal::GetInstance();
 }
 
 void FStepVrPluginModule::ShutdownModule()

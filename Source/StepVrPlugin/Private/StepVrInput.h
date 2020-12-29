@@ -47,6 +47,8 @@ private:
 	void RegisterDeviceKey();
 	void RegisterMotionPair();
 
+	void EventMocapHand(StepVR::SingleNode& Node, FStepVrButtonState& BtnState, int DiviceID);
+
 	/**
 	 * 初始化数据
 	 */

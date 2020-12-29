@@ -29,6 +29,7 @@
 #endif
 
 #include <string>
+#include <vector>
 
 typedef unsigned char U8;
 typedef void(*Glove_tcb_procFd)(U8* pFd_i, U8 comNum_i);
@@ -38,6 +39,12 @@ extern "C" STEPVR_API void SendGloveCmd(U8 *cmd);
 typedef void(*SpringVR_tcb_procFd)(U8* pFd_i, U8 comNum_i);
 extern "C" STEPVR_API void StepVR_initSpring(SpringVR_tcb_procFd pcb_procFd_i);
 extern "C" STEPVR_API void SendSpringCmd(U8 *cmd);
+
+STEPVR_API struct ST_FASTDATA
+{
+	unsigned int idx;
+	unsigned char data[63];
+};
 
 namespace StepVR {
 	class Manager;
@@ -92,6 +99,8 @@ namespace StepVR {
 			w(ww), x(xx), y(yy), z(zz) {};
 	};
 
+
+
 	/**
 	* The SingleNode class represents a set of position and rotation
 	* tracking data detected in a single frame.
@@ -106,12 +115,10 @@ namespace StepVR {
 	STEPVR_API class SingleNode
 	{
 	public:
-		/**
-		* Enumerates the names of node ID.
-		**/
+		//定位件ID【1 - 255】
 		typedef unsigned char NODEID;
 
-		//THIS ENUM WILL DISCARD,PLEASE DON'T USE IT
+		//废弃的
 		STEPVR_API enum NodeID
 		{
 			NodeID_LeftWrist = 1,
@@ -157,6 +164,7 @@ namespace StepVR {
 		* function.
 		**/
 		STEPVR_API SingleNode(float* data);
+		STEPVR_API SingleNode(float* data, int idx);
 		STEPVR_API ~SingleNode();
 
 		/**
@@ -217,6 +225,10 @@ namespace StepVR {
 		STEPVR_API bool GetKey(NODEID _nodeid, KeyID _keyid);
 		STEPVR_API bool GetKey(NodeID _nodeid, KeyID _keyid);
 
+		//new key functions
+		STEPVR_API bool GetKeyDown1(NODEID _nodeid, KeyID _keyid);
+		STEPVR_API bool GetKeyUp1(NODEID _nodeid, KeyID _keyid);
+		STEPVR_API bool GetKey1(NODEID _nodeid, KeyID _keyid);;
 		/**
 		* Glove's button state
 		* id: 0->left  1->right
@@ -247,6 +259,9 @@ namespace StepVR {
 		STEPVR_API float GetJoyStickPosX(NODEID _nodeid);
 		STEPVR_API float GetJoyStickPosY(NODEID _nodeid);
 
+		//-1.0 - 0 - 1.0
+		STEPVR_API float GetJoyStickPosX1(NODEID _nodeid);
+		STEPVR_API float GetJoyStickPosY1(NODEID _nodeid);
 		/**
 		* Check standard parts link or not.
 		*
@@ -292,6 +307,20 @@ namespace StepVR {
 		STEPVR_API int GetProductNo(NODEID _nodeid);
 		STEPVR_API int GetSerialNo(NODEID _nodeid);
 
+
+		STEPVR_API Vector3f GetImuAcc(NODEID id);
+		STEPVR_API Vector3f GetImuGyro(NODEID id);
+		STEPVR_API Vector3f GetImuMag(NODEID id);
+
+		STEPVR_API Vector3f GetSpeedVec(NODEID id);
+		STEPVR_API Vector3f GetSpeedAcc(NODEID id);
+		STEPVR_API Vector3f GetSpeedGyro(NODEID id);
+
+		STEPVR_API void GetGloveSensorState(float * sensorState);
+
+	private:
+		float *pstepvr_singlenode_data_ = NULL;
+		int m_idx = 0;
 	};
 
 	STEPVR_API struct GERData{
@@ -303,6 +332,7 @@ namespace StepVR {
 		int data50;int data51;int data52;int data53;int data54;int data55;int data56;int data57;int data58;	
 	};
 
+	//废弃的
 	STEPVR_API struct IMUData{
 		int data0;	int data1;	int data2;	int data3;	int data4;	int data5;	int data6;	int data7;	int data8;
 	};
@@ -328,6 +358,7 @@ namespace StepVR {
 		* function.
 		**/
 		STEPVR_API Frame(float* data);
+		STEPVR_API Frame(float* data, int eid);
 		STEPVR_API ~Frame();
 
 
@@ -345,9 +376,14 @@ namespace StepVR {
 		STEPVR_API void GetGERData(char *data);
 		STEPVR_API GERData GetGERData_CSharp();
 
-		//获取5040的IMU数据
+		//废弃的
 		STEPVR_API void GetImuData(short *data);
+		//废弃的
 		STEPVR_API IMUData GetImuData_CSharp();
+
+	private:
+		float * m_pData = NULL;
+		int m_idx = 0;
 	};
 
 	STEPVR_API struct CmdBuf{
@@ -471,6 +507,7 @@ namespace StepVR {
 		* @returns The specified MocapFrame.
 		**/
 		STEPVR_API Frame GetFrame();
+		STEPVR_API Frame GetFrame(int eid);
 		
 		/**
 		* Set receive position and rotation mode. block or non block 
@@ -501,6 +538,8 @@ namespace StepVR {
 		**/
 		STEPVR_API void SendStampZeroCmd(const unsigned char* cmd);
 
+
+		STEPVR_API void SendDebugCmd(char* cmd, int len, int iCom);
 		/**
 		* Send glove command.
 		* 
@@ -513,6 +552,37 @@ namespace StepVR {
 
 		STEPVR_API void RecordOneMinuter();
 		STEPVR_API bool IsServerAlive();
+
+		STEPVR_API const char * GetCompileTime();
+		STEPVR_API const char * GetVersion1();
+
+		STEPVR_API const char * GetServerCompileTime();
+		STEPVR_API const char * GetServerVersion();
+
+		STEPVR_API bool IsConnected();
+
+		STEPVR_API unsigned char GetServerStatus();
+		STEPVR_API unsigned char GetServerComCount();
+
+		STEPVR_API void GetMmapLog(std::vector<std::string> & vStr);
+		STEPVR_API void GetFastData(std::vector<ST_FASTDATA> & vStr);
+
+		STEPVR_API int SendCmd63(char * data, int timeOut = 3);
+
+		//speed:[0,100]
+		//return
+		//-1：服务未开
+		//0：设置成功
+		//1：响应超时
+		//100：数据未发送（找不到串口导致）
+		STEPVR_API int SetKartMaxSpeed(int speed);
+		STEPVR_API int SetKartBrake(bool bSet);
+		STEPVR_API int SetKartEnableReverse(bool bSet);
+		STEPVR_API int SetKartForward(bool bForward);
+
+		//for multi-player
+		STEPVR_API int GetEquipCount();
+		STEPVR_API int GetEquipIdByIdx(int idx);
 	};
 
 	//this class just for Unreal develop

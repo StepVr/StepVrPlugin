@@ -64,12 +64,12 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 
 	if (bLocalControlled)
 	{
-		STEPVR_GLOBAL->GetDeviceTransform(DeviceID, Trans);
-	}
+		STEPVR_GLOBAL->RefreshFrame(DeviceID, Trans);
+	}/*
 	else
 	{
 		Trans = RemotePlayerData.GetDevice(DeviceID).GetTransform();
-	}
+	}*/
 }
 
 void UStepVrComponent::SetPlayerGUID_Implementation(uint32 NewPlayerGUID)

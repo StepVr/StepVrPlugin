@@ -453,3 +453,42 @@ void StepVrGlobal::RefreshFrame(FDeviceFrame& outFrame)
 		}
 	}
 }
+
+void StepVrGlobal::RefreshFrame(int32 DeviceID, FTransform& OutData)
+{
+	static StepVR::Vector3f vec3;
+	static StepVR::Vector4f vec4;
+
+	//更新本机数据
+	if (StepVrManager.IsValid())
+	{
+		StepVR::SingleNode InSingleNode = StepVrManager->GetFrame().GetSingleNode();
+
+		bool isLink = InSingleNode.IsHardWareLink(DeviceID);
+
+		if (!isLink)
+		{
+			return;
+		}
+
+		//定位
+		vec3 = InSingleNode.GetPosition(SDKNODEID(DeviceID));
+		vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
+
+		//定位缩放
+		OutData.SetLocation(FVector(vec3.x, vec3.y, vec3.z) * 100);
+
+		vec4 = InSingleNode.GetQuaternion(SDKNODEID(DeviceID));
+		vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
+
+		//头部姿态单独处理
+		if (DeviceID == 6)
+		{
+			OutData.SetRotation(FQuat(vec4.y * -1, vec4.x, vec4.z, vec4.w));
+		}
+		else
+		{
+			OutData.SetRotation(FQuat(vec4.x, vec4.y, vec4.z, vec4.w));
+		}
+	}
+}

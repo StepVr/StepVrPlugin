@@ -65,6 +65,8 @@ public:
 
 	//一帧数据
 	void RefreshFrame(FDeviceFrame& outFrame);
+	void RefreshFrame(int32 DeviceID, FTransform& OutData);
+
 	FDeviceFrame& GetDeviceFrame();
 	bool GetDeviceTransform(int32 DeviceID, FTransform& OutData);
 	

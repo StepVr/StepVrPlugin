@@ -175,12 +175,12 @@ void FStepVrInput::SendControllerEvents()
 					ButtonState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
 				}
 			}
-			if (ButtonState.PressedState == SButton_Repeat && ButtonState.NextRepeatTime <= CurrentTime)
-			{
-				UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Repeat!"), DeviceID, *ButtonState.key.ToString());
-				MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
-				ButtonState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
-			}
+			//if (ButtonState.PressedState == SButton_Repeat && ButtonState.NextRepeatTime <= CurrentTime)
+			//{
+			//	UE_LOG(LogStepVrPlugin, Warning, TEXT("EquipID:%d,%s Repeat!"), DeviceID, *ButtonState.key.ToString());
+			//	MessageHandler->OnControllerButtonPressed(ButtonState.key, 0, false);
+			//	ButtonState.NextRepeatTime = m_fBtnRepeatTime + CurrentTime;
+			//}
 		}
 		break;
 		case EStepDeviceKeyType::State_ValueX:

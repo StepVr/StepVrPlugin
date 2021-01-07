@@ -155,7 +155,7 @@ void FStepVrInput::SendControllerEvents()
 		{
 		case EStepDeviceKeyType::State_Button:
 		{
-			uint8 flag = 1;
+			uint8 flag = 0;
 			flag = (Node.GetKeyUp(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Release : 0x0) | flag;
 			flag = (Node.GetKeyDown(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Press : 0x0) | flag;
 			flag = (Node.GetKey(DeviceID, SDKKEYID(ButtonState.KeyID)) ? SButton_Repeat : 0x0) | flag;

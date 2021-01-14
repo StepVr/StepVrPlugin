@@ -224,7 +224,9 @@ void StepVrGlobal::DataLerp(FDeviceData& inputData, FDeviceData& outputData)
 
 void StepVrGlobal::SetScaleTransform(const FVector& NewScale)
 {
-	ScaleTransform = NewScale;
+	ScaleTransform.X = NewScale.X;
+	ScaleTransform.Y = NewScale.Y;
+	ScaleTransform.Z = 1;
 }
 
 FVector StepVrGlobal::GetScaleTransform()

@@ -79,6 +79,7 @@ public class StepVrPlugin : ModuleRules
                 "Networking",
                 "Sockets",
                 "Slate",
+                "DeveloperSettings"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

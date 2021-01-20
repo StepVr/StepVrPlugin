@@ -82,8 +82,6 @@ public:
 	/************************************************************************/
 	/*                            配置                                */
 	/************************************************************************/
-	//录制机器IP
-	void SetRecordPCIP(const FString& PCIP);
 	//定位进行缩放
 	void SetScaleTransform(const FVector& NewScale);
 	FVector GetScaleTransform();
@@ -166,8 +164,13 @@ private:
 	FStepCommandDelegateStr				CommandDelegateStr;
 
 private:
+	//定位偏移
+	bool				bOffset = false;
 	FVector				OffsetTransform = FVector::ZeroVector;
+	//定位缩放
+	bool				bScale = false;
 	FVector				ScaleTransform = FVector::OneVector;
+
 	TArray<uint8>		NeedUpdateDeviceID;
 
 	//服务器客户端
@@ -179,8 +182,5 @@ private:
 
 	//本机定位数据
 	FDeviceFrame		GameDevicesFrame;
-
-
-
 };
 

@@ -27,11 +27,6 @@ bool UStepVrBPLibrary::GetDeviceTransform(int32 DeviceID, FTransform& OutData)
 	return STEPVR_GLOBAL->GetDeviceTransform(DeviceID, OutData);
 }
 
-void UStepVrBPLibrary::SetRecordPCIP(const FString& PCIP)
-{
-	STEPVR_GLOBAL->SetRecordPCIP(PCIP);
-}
-
 void UStepVrBPLibrary::SetUseStepMotionController(bool UseStep)
 {
 	STEPVR_GLOBAL->UseStepMotionController = UseStep;

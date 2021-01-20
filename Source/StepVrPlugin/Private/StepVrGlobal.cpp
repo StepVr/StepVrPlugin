@@ -224,6 +224,7 @@ void StepVrGlobal::DataLerp(FDeviceData& inputData, FDeviceData& outputData)
 
 void StepVrGlobal::SetScaleTransform(const FVector& NewScale)
 {
+	bScale = true;
 	ScaleTransform.X = NewScale.X;
 	ScaleTransform.Y = NewScale.Y;
 	ScaleTransform.Z = 1;
@@ -236,6 +237,7 @@ FVector StepVrGlobal::GetScaleTransform()
 
 void StepVrGlobal::SetOffsetTransform(const FVector& NewOffset)
 {
+	bOffset = true;
 	OffsetTransform = NewOffset;
 }
 
@@ -386,14 +388,6 @@ EStepGameType StepVrGlobal::GetGameType()
 	return GameType;
 }
 
-void StepVrGlobal::SetRecordPCIP(const FString& PCIP)
-{
-	if (StepVrData.IsValid())
-	{
-		StepVrData->SetNeedRecordIP(PCIP);
-	}
-}
-
 void StepVrGlobal::RefreshFrame(FDeviceFrame& outFrame)
 {
 	static StepVR::Vector3f vec3;
@@ -420,23 +414,31 @@ void StepVrGlobal::RefreshFrame(FDeviceFrame& outFrame)
 			}
 
 			//加速度角速度
-			vec3 = InSingleNode.GetSpeedVec(SDKNODEID(DevID));
-			OutDevice.SetSpeed(FVector(vec3.x, vec3.y, vec3.z));
-			vec3 = InSingleNode.GetSpeedAcc(SDKNODEID(DevID));
-			OutDevice.SetAcceleration(FVector(vec3.x, vec3.y, vec3.z));
-			vec3 = InSingleNode.GetSpeedGyro(SDKNODEID(DevID));
-			OutDevice.SetPalstance(FVector(vec3.x, vec3.y, vec3.z));
+			//vec3 = InSingleNode.GetSpeedVec(SDKNODEID(DevID));
+			//OutDevice.SetSpeed(FVector(vec3.x, vec3.y, vec3.z));
+			//vec3 = InSingleNode.GetSpeedAcc(SDKNODEID(DevID));
+			//OutDevice.SetAcceleration(FVector(vec3.x, vec3.y, vec3.z));
+			//vec3 = InSingleNode.GetSpeedGyro(SDKNODEID(DevID));
+			//OutDevice.SetPalstance(FVector(vec3.x, vec3.y, vec3.z));
 
 			//定位
 			vec3 = InSingleNode.GetPosition(SDKNODEID(DevID));
-			vec3.x = vec3.x - (OffsetTransform.X/100);
-			vec3.y = vec3.y - (OffsetTransform.Y/100);
-			vec3.z = vec3.z - (OffsetTransform.Z/100);
-
 			vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
 
+			FVector Location = FVector(vec3.x, vec3.y, vec3.z) * 100;
+			if (bOffset)
+			{
+				Location.X = Location.X - (OffsetTransform.X / 100);
+				Location.Y = Location.Y - (OffsetTransform.Y / 100);
+				Location.Z = Location.Z - (OffsetTransform.Z / 100);
+			}
+			if (bScale)
+			{
+				Location *= ScaleTransform;
+			}
+
 			//定位缩放
-			Transform.SetLocation(FVector(vec3.x, vec3.y, vec3.z) * 100 * ScaleTransform);
+			Transform.SetLocation(Location);
 
 			vec4 = InSingleNode.GetQuaternion(SDKNODEID(DevID));
 			vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);
@@ -477,8 +479,21 @@ void StepVrGlobal::RefreshFrame(int32 DeviceID, FTransform& OutData)
 		vec3 = InSingleNode.GetPosition(SDKNODEID(DeviceID));
 		vec3 = StepVR::StepVR_EnginAdaptor::toUserPosition(vec3);
 
+		FVector Location = FVector(vec3.x, vec3.y, vec3.z) * 100;
+		if (bOffset)
+		{
+			Location.X = Location.X - (OffsetTransform.X / 100);
+			Location.Y = Location.Y - (OffsetTransform.Y / 100);
+			Location.Z = Location.Z - (OffsetTransform.Z / 100);
+		}
+		if (bScale)
+		{
+			Location *= ScaleTransform;
+		}
+
 		//定位缩放
-		OutData.SetLocation(FVector(vec3.x, vec3.y, vec3.z) * 100);
+		OutData.SetLocation(Location);
+
 
 		vec4 = InSingleNode.GetQuaternion(SDKNODEID(DeviceID));
 		vec4 = StepVR::StepVR_EnginAdaptor::toUserQuat(vec4);

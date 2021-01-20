@@ -49,20 +49,16 @@ public:
 	static bool GetDeviceTransform(int32 DeviceID,FTransform& OutData);
 
 	/**
-	 * 设置录制机器IP
+	 * 是否使用Step的MotionController
+	 * 默认使用
 	 */
-	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
-	static void SetRecordPCIP(const FString& PCIP);
-
 	UFUNCTION(BlueprintCallable, Category = "StepVr|Game")
 	static void SetUseStepMotionController(bool UseStep);
 
 
-	/**
-	 * 卡丁车
-	 */
-
-
+	/************************************************************************/
+	/*                            卡丁车                                     */
+	/************************************************************************/
 	/*
 	* Percent speed:[0,100],设置当前速度
 	* -1：服务未开

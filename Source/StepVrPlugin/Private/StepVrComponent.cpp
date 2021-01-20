@@ -64,7 +64,8 @@ void UStepVrComponent::DeviceTransform(int32 DeviceID, FTransform& Trans)
 
 	if (bLocalControlled)
 	{
-		STEPVR_GLOBAL->RefreshFrame(DeviceID, Trans);
+		//STEPVR_GLOBAL->RefreshFrame(DeviceID, Trans);
+		STEPVR_GLOBAL->GetDeviceTransform(DeviceID, Trans);
 	}/*
 	else
 	{

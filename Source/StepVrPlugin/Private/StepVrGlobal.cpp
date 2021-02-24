@@ -222,9 +222,9 @@ void StepVrGlobal::DataLerp(FDeviceData& inputData, FDeviceData& outputData)
 	//}
 }
 
-void StepVrGlobal::SetScaleTransform(const FVector& NewScale)
+void StepVrGlobal::SetScaleTransform(bool Enable, const FVector& NewScale)
 {
-	bScale = true;
+	bScale = Enable;
 	ScaleTransform.X = NewScale.X;
 	ScaleTransform.Y = NewScale.Y;
 	ScaleTransform.Z = 1;
@@ -235,9 +235,9 @@ FVector StepVrGlobal::GetScaleTransform()
 	return ScaleTransform;
 }
 
-void StepVrGlobal::SetOffsetTransform(const FVector& NewOffset)
+void StepVrGlobal::SetOffsetTransform(bool Enable, const FVector& NewOffset)
 {
-	bOffset = true;
+	bOffset = Enable;
 	OffsetTransform = NewOffset;
 }
 

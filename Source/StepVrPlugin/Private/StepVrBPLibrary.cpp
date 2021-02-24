@@ -16,11 +16,16 @@ void UStepVrBPLibrary::SetGameType(EStepGameType type, FString ServerIP)
 	STEPVR_GLOBAL->SetGameType(type, ServerIP);
 }
 
-void UStepVrBPLibrary::SetScaleTransform(FVector Scales)
+void UStepVrBPLibrary::SetScaleTransform(bool NewState, FVector Scales)
 {
-	STEPVR_GLOBAL->SetScaleTransform(Scales);
+	STEPVR_GLOBAL->SetScaleTransform(NewState,Scales);
 }
 
+
+void UStepVrBPLibrary::SetOffsetTransform(bool NewState, FVector Offset)
+{
+	STEPVR_GLOBAL->SetOffsetTransform(NewState, Offset);
+}
 
 bool UStepVrBPLibrary::GetDeviceTransform(int32 DeviceID, FTransform& OutData)
 {

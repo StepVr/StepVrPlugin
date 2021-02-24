@@ -83,11 +83,11 @@ public:
 	/*                            配置                                */
 	/************************************************************************/
 	//定位进行缩放
-	void SetScaleTransform(const FVector& NewScale);
+	void SetScaleTransform(bool Enable, const FVector& NewScale);
 	FVector GetScaleTransform();
 
 	//定位进行偏移
-	void SetOffsetTransform(const FVector& NewOffset);
+	void SetOffsetTransform(bool Enable, const FVector& NewOffset);
 	FVector GetOffsetTransform();
 
 
